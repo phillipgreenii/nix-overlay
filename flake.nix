@@ -25,12 +25,18 @@
       {
         formatter = treefmtEval.config.build.wrapper;
 
-        packages = { };
+        packages = {
+          beads-web = pkgs.callPackage ./packages/beads-web { };
+        };
 
         apps = { };
       }
     )
     // {
-      overlays.default = _final: _prev: { };
+      overlays.default =
+        final: _prev:
+        {
+          beads-web = self.packages.${final.stdenv.hostPlatform.system}.beads-web;
+        };
     };
 }
