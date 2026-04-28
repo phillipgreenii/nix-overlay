@@ -25,21 +25,31 @@
       {
         formatter = treefmtEval.config.build.wrapper;
 
-        packages =
-          {
-            beads-web = pkgs.callPackage ./packages/beads-web { };
-            tmux-open-nvim = pkgs.callPackage ./packages/tmux-open-nvim { };
-            tmux-mouse-swipe = pkgs.callPackage ./packages/tmux-mouse-swipe { };
-            tmux-nerd-font-window-name = pkgs.callPackage ./packages/tmux-nerd-font-window-name { };
-            bat-gherkin-syntax = pkgs.callPackage ./packages/bat-gherkin-syntax { };
-          }
-          // lib.optionalAttrs pkgs.stdenv.isDarwin {
-            cmux = pkgs.callPackage ./packages/cmux { };
-            c9watch-gui = pkgs.callPackage ./packages/c9watch/gui.nix { };
-            c9watch-cli = pkgs.callPackage ./packages/c9watch/cli.nix { };
-          };
+        packages = {
+          beads-web = pkgs.callPackage ./packages/beads-web { };
+          tmux-open-nvim = pkgs.callPackage ./packages/tmux-open-nvim { };
+          tmux-mouse-swipe = pkgs.callPackage ./packages/tmux-mouse-swipe { };
+          tmux-nerd-font-window-name = pkgs.callPackage ./packages/tmux-nerd-font-window-name { };
+          bat-gherkin-syntax = pkgs.callPackage ./packages/bat-gherkin-syntax { };
+        }
+        // lib.optionalAttrs pkgs.stdenv.isDarwin {
+          cmux = pkgs.callPackage ./packages/cmux { };
+          c9watch-gui = pkgs.callPackage ./packages/c9watch/gui.nix { };
+          c9watch-cli = pkgs.callPackage ./packages/c9watch/cli.nix { };
+        };
 
-        apps = { };
+        apps =
+          let
+            mkApp = drv: {
+              type = "app";
+              program = "${drv}/bin/${drv.meta.mainProgram or drv.name}";
+            };
+          in
+          {
+            update-cmux = mkApp (pkgs.callPackage ./nix/update-cmux.nix { });
+            update-c9watch = mkApp (pkgs.callPackage ./nix/update-c9watch.nix { });
+            update-beads-web = mkApp (pkgs.callPackage ./nix/update-beads-web.nix { });
+          };
       }
     )
     // {
@@ -51,7 +61,8 @@
           tmuxPlugins = prev.tmuxPlugins // {
             tmux-open-nvim = self.packages.${final.stdenv.hostPlatform.system}.tmux-open-nvim;
             tmux-mouse-swipe = self.packages.${final.stdenv.hostPlatform.system}.tmux-mouse-swipe;
-            tmux-nerd-font-window-name = self.packages.${final.stdenv.hostPlatform.system}.tmux-nerd-font-window-name;
+            tmux-nerd-font-window-name =
+              self.packages.${final.stdenv.hostPlatform.system}.tmux-nerd-font-window-name;
           };
         }
         // final.lib.optionalAttrs final.stdenv.isDarwin {

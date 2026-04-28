@@ -1,4 +1,4 @@
-{ pkgs }:
+{ lib, pkgs }:
 
 let
   version = "0.10.1";
@@ -14,6 +14,8 @@ let
 
   hashes = {
     darwin-arm64 = "sha256-r6IMAWAz8CZA77VTrjwCSqMjalacuIZRAuFh70mGbb0=";
+    darwin-x64 = lib.fakeHash;
+    linux-x64 = lib.fakeHash;
   };
 in
 pkgs.stdenv.mkDerivation {
