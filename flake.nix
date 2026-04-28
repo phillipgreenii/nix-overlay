@@ -53,6 +53,8 @@
       }
     )
     // {
+      overlays.firefox-binary-wrapper = import ./overlays/firefox-binary-wrapper.nix;
+
       overlays.default =
         final: prev:
         {
