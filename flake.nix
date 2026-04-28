@@ -56,19 +56,19 @@
       overlays.default =
         final: prev:
         {
-          beads-web = self.packages.${final.stdenv.hostPlatform.system}.beads-web;
-          bat-gherkin-syntax = self.packages.${final.stdenv.hostPlatform.system}.bat-gherkin-syntax;
+          beads-web = self.packages.${prev.stdenv.hostPlatform.system}.beads-web;
+          bat-gherkin-syntax = self.packages.${prev.stdenv.hostPlatform.system}.bat-gherkin-syntax;
           tmuxPlugins = prev.tmuxPlugins // {
-            tmux-open-nvim = self.packages.${final.stdenv.hostPlatform.system}.tmux-open-nvim;
-            tmux-mouse-swipe = self.packages.${final.stdenv.hostPlatform.system}.tmux-mouse-swipe;
+            tmux-open-nvim = self.packages.${prev.stdenv.hostPlatform.system}.tmux-open-nvim;
+            tmux-mouse-swipe = self.packages.${prev.stdenv.hostPlatform.system}.tmux-mouse-swipe;
             tmux-nerd-font-window-name =
-              self.packages.${final.stdenv.hostPlatform.system}.tmux-nerd-font-window-name;
+              self.packages.${prev.stdenv.hostPlatform.system}.tmux-nerd-font-window-name;
           };
         }
-        // final.lib.optionalAttrs final.stdenv.isDarwin {
-          cmux = self.packages.${final.stdenv.hostPlatform.system}.cmux;
-          c9watch-gui = self.packages.${final.stdenv.hostPlatform.system}.c9watch-gui;
-          c9watch-cli = self.packages.${final.stdenv.hostPlatform.system}.c9watch-cli;
+        // prev.lib.optionalAttrs prev.stdenv.isDarwin {
+          cmux = self.packages.${prev.stdenv.hostPlatform.system}.cmux;
+          c9watch-gui = self.packages.${prev.stdenv.hostPlatform.system}.c9watch-gui;
+          c9watch-cli = self.packages.${prev.stdenv.hostPlatform.system}.c9watch-cli;
         };
     };
 }
