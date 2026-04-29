@@ -6,6 +6,17 @@
     flake-utils.url = "github:numtide/flake-utils";
     treefmt-nix.url = "github:numtide/treefmt-nix";
     treefmt-nix.inputs.nixpkgs.follows = "nixpkgs";
+    git-hooks.url = "github:cachix/git-hooks.nix";
+    git-hooks.inputs.nixpkgs.follows = "nixpkgs";
+    phillipgreenii-nix-base = {
+      url = "github:phillipgreenii/nix-repo-base";
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+        flake-utils.follows = "flake-utils";
+        treefmt-nix.follows = "treefmt-nix";
+        git-hooks.follows = "git-hooks";
+      };
+    };
   };
 
   outputs =
@@ -14,6 +25,8 @@
       nixpkgs,
       flake-utils,
       treefmt-nix,
+      phillipgreenii-nix-base,
+      ...
     }:
     flake-utils.lib.eachDefaultSystem (
       system:
@@ -21,9 +34,25 @@
         pkgs = nixpkgs.legacyPackages.${system};
         inherit (pkgs) lib;
         treefmtEval = treefmt-nix.lib.evalModule pkgs ./treefmt.nix;
+        checks-lib = phillipgreenii-nix-base.lib.mkChecks pkgs;
+        pre-commit = phillipgreenii-nix-base.lib.mkPreCommitHooks {
+          inherit system;
+          src = ./.;
+          treefmtWrapper = treefmtEval.config.build.wrapper;
+        };
       in
       {
         formatter = treefmtEval.config.build.wrapper;
+
+        checks = {
+          formatting = treefmtEval.config.build.check self;
+          linting = checks-lib.linting ./.;
+        };
+
+        devShells.default = phillipgreenii-nix-base.lib.mkDevShell {
+          inherit pkgs;
+          pre-commit-shellHook = pre-commit.shellHook;
+        };
 
         packages = {
           beads-web = pkgs.callPackage ./packages/beads-web { };
@@ -31,6 +60,16 @@
           tmux-mouse-swipe = pkgs.callPackage ./packages/tmux-mouse-swipe { };
           tmux-nerd-font-window-name = pkgs.callPackage ./packages/tmux-nerd-font-window-name { };
           bat-gherkin-syntax = pkgs.callPackage ./packages/bat-gherkin-syntax { };
+
+          fix-lint = pkgs.writeShellScriptBin "fix-lint" ''
+            ${lib.getExe pkgs.statix} fix ${./.}
+          '';
+
+          install-pre-commit-hooks = pkgs.writeShellScriptBin "install-pre-commit-hooks" ''
+            ${pre-commit.shellHook}
+            echo "Pre-commit hooks installed successfully!"
+            echo "Run 'pre-commit run --all-files' to test them."
+          '';
         }
         // lib.optionalAttrs pkgs.stdenv.isDarwin {
           cmux = pkgs.callPackage ./packages/cmux { };
@@ -56,21 +95,22 @@
       overlays.firefox-binary-wrapper = import ./overlays/firefox-binary-wrapper.nix;
 
       overlays.default =
-        final: prev:
+        _final: prev:
+        let
+          ownPackages = self.packages.${prev.stdenv.hostPlatform.system};
+        in
         {
-          beads-web = self.packages.${prev.stdenv.hostPlatform.system}.beads-web;
-          bat-gherkin-syntax = self.packages.${prev.stdenv.hostPlatform.system}.bat-gherkin-syntax;
+          inherit (ownPackages) beads-web bat-gherkin-syntax;
           tmuxPlugins = prev.tmuxPlugins // {
-            tmux-open-nvim = self.packages.${prev.stdenv.hostPlatform.system}.tmux-open-nvim;
-            tmux-mouse-swipe = self.packages.${prev.stdenv.hostPlatform.system}.tmux-mouse-swipe;
-            tmux-nerd-font-window-name =
-              self.packages.${prev.stdenv.hostPlatform.system}.tmux-nerd-font-window-name;
+            inherit (ownPackages)
+              tmux-open-nvim
+              tmux-mouse-swipe
+              tmux-nerd-font-window-name
+              ;
           };
         }
         // prev.lib.optionalAttrs prev.stdenv.isDarwin {
-          cmux = self.packages.${prev.stdenv.hostPlatform.system}.cmux;
-          c9watch-gui = self.packages.${prev.stdenv.hostPlatform.system}.c9watch-gui;
-          c9watch-cli = self.packages.${prev.stdenv.hostPlatform.system}.c9watch-cli;
+          inherit (ownPackages) cmux c9watch-gui c9watch-cli;
         };
     };
 }

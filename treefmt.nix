@@ -1,8 +1,12 @@
 { pkgs, ... }:
 {
   projectRootFile = "flake.nix";
-  programs.nixfmt.enable = true;
-  programs.nixfmt.package = pkgs.nixfmt-rfc-style;
-  programs.shellcheck.enable = true;
-  programs.shfmt.enable = true;
+  programs = {
+    nixfmt = {
+      enable = true;
+      package = pkgs.nixfmt-rfc-style;
+    };
+    shellcheck.enable = true;
+    shfmt.enable = true;
+  };
 }
