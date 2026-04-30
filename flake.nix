@@ -92,6 +92,11 @@
       }
     )
     // {
+      homeModules.install-metadata = phillipgreenii-nix-base.lib.mkInstallMetadata {
+        flakeSelf = self;
+        name = "phillipgreenii-nix-overlay";
+      };
+
       overlays.firefox-binary-wrapper = import ./overlays/firefox-binary-wrapper.nix;
 
       overlays.default =
