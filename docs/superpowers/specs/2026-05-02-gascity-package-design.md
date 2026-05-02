@@ -64,14 +64,16 @@ Modeled directly on `packages/beads-web/default.nix`.
 - `installPhase`:
   ```sh
   mkdir -p $out/bin
-  install -m755 gascity $out/bin/gascity
+  install -m755 gc $out/bin/gc
   ```
+
+  The upstream tarball ships the binary as `gc` (verified: tarball contains exactly `LICENSE`, `README.md`, `gc`). The Nix `pname` is `gascity` (matching the project name and the upstream Homebrew formula `gastownhall/gascity/gascity`), but the installed command is `gc`, matching the README's quickstart (`gc init`, `gc start`, `gc version`).
 
 - `meta`:
   - `description = "Orchestration-builder SDK for multi-agent systems"`.
   - `homepage = "https://github.com/gastownhall/gascity"`.
   - `license = licenses.mit`.
-  - `mainProgram = "gascity"`.
+  - `mainProgram = "gc"`.
   - `platforms = [ "aarch64-darwin" "x86_64-darwin" "x86_64-linux" "aarch64-linux" ]`.
 
 ### 2. `nix/update-gascity.nix`
@@ -155,7 +157,7 @@ Inherits the patterns of the existing updaters and derivations:
 
 ## Testing & verification
 
-- `nix build .#gascity` succeeds on the build host's platform; resulting `result/bin/gascity` is executable and prints a help/version banner.
+- `nix build .#gascity` succeeds on the build host's platform; resulting `result/bin/gc` is executable and prints a help/version banner (e.g., `result/bin/gc version`).
 - `nix flake check` passes formatting (`treefmt`) and linting (`statix`) on the new files. Builds on platforms with `fakeHash` placeholders will fail — expected, matches `beads-web`.
 - `nix run .#update-gascity -- "$PWD"` against an unchanged repo prints "up to date" and exits 0.
 - `nix run .#update-gascity -- "$PWD"` after manually setting `version` to a stale value bumps it back and updates the real-hash entries; the `lib.fakeHash` lines are unchanged in the diff.
