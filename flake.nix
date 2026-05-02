@@ -111,7 +111,7 @@
           ownPackages = self.packages.${prev.stdenv.hostPlatform.system};
         in
         {
-          inherit (ownPackages) beads-web bat-gherkin-syntax;
+          inherit (ownPackages) beads-web bat-gherkin-syntax gascity;
           tmuxPlugins = prev.tmuxPlugins // {
             inherit (ownPackages)
               tmux-open-nvim
