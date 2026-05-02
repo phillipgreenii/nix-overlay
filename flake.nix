@@ -94,6 +94,7 @@
             update-cmux = mkApp (pkgs.callPackage ./nix/update-cmux.nix { });
             update-c9watch = mkApp (pkgs.callPackage ./nix/update-c9watch.nix { });
             update-beads-web = mkApp (pkgs.callPackage ./nix/update-beads-web.nix { });
+            update-gascity = mkApp (pkgs.callPackage ./nix/update-gascity.nix { });
           };
       }
     )
