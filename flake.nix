@@ -61,6 +61,7 @@
 
         packages = {
           beads-web = pkgs.callPackage ./packages/beads-web { };
+          gascity = pkgs.callPackage ./packages/gascity { };
           tmux-open-nvim = pkgs.callPackage ./packages/tmux-open-nvim { };
           tmux-mouse-swipe = pkgs.callPackage ./packages/tmux-mouse-swipe { };
           tmux-nerd-font-window-name = pkgs.callPackage ./packages/tmux-nerd-font-window-name { };
