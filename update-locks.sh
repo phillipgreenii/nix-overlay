@@ -117,6 +117,10 @@ ul_run_step "update-beads-web" \
   "update-locks: update beads-web" \
   nix run .#update-beads-web -- "${SCRIPT_DIR}"
 
+ul_run_step "update-gascity" \
+  "update-locks: update gascity" \
+  nix run .#update-gascity -- "${SCRIPT_DIR}"
+
 ul_run_step "tmux-open-nvim" \
   "update-locks: update tmux-open-nvim" \
   update_tmux_plugin "tmux-open-nvim" "trevarj" "tmux-open-nvim" "master"
