@@ -42,10 +42,6 @@ pkgs.stdenv.mkDerivation {
     license = licenses.mit;
     maintainers = [ ];
     mainProgram = "beads-web";
-    platforms = [
-      "aarch64-darwin"
-      "x86_64-darwin"
-      "x86_64-linux"
-    ];
+    platforms = platforms.unix;
   };
 }
