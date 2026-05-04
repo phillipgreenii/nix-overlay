@@ -43,7 +43,7 @@ jobs:
 
       - name: Check formatting with treefmt
         run: |
-          nix fmt -- --check .
+          nix fmt -- --ci
 
       - name: Run nix flake check
-        run: nix flake check --show-trace
+        run: nix flake check --show-trace -L
