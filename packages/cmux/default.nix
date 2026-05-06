@@ -1,11 +1,11 @@
 { lib, pkgs }:
 pkgs.stdenvNoCC.mkDerivation rec {
   pname = "cmux";
-  version = "0.64.1";
+  version = "0.64.3";
 
   src = pkgs.fetchurl {
     url = "https://github.com/manaflow-ai/cmux/releases/download/v${version}/cmux-macos.dmg";
-    hash = "sha256-4b4oLb91irb8Jnl7n2xZ4xNUt8zY74+1n6prjoLpW3s=";
+    hash = "sha256-ZyYHwx/kXa4jQJqseVO61cfki1/2TKSYGLsfj82SVy8=";
   };
 
   nativeBuildInputs = [ ];
