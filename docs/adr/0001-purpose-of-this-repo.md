@@ -11,8 +11,7 @@ Personal and work Nix configurations required custom derivations for tools that 
 - (a) have no existing Nix flake upstream, or
 - (b) exist in nixpkgs but at a version too outdated to be useful
 
-These derivations were scattered across `phillipgreenii-nix-personal` (cmux,
-c9watch, tmux plugins, bat syntax) and `phillipg-nix-ziprecruiter` (beads-web).
+These derivations were scattered across multiple Nix configuration repositories.
 Each repo ran its own update scripts to keep hashes current, and changes to
 these packages caused noise in the downstream repos' commit history.
 
@@ -25,7 +24,7 @@ repository `phillipgreenii/nix-overlay`.
 - The repo exposes `packages.${system}.*` and `overlays.default`
 - The repo owns all per-package hash update logic in `update-locks.sh`
 - A nightly GitHub Actions workflow (daily at `0 11 * * *`, 6 AM EST) keeps all packages current
-- Downstream repos (personal, ZR) consume via flake input and `overlays.default`
+- Downstream repos consume via flake input and `overlays.default`
 - Downstream `update-locks.sh` scripts simplify to `nix flake update` only
 
 ## Consequences
@@ -39,7 +38,7 @@ repository `phillipgreenii/nix-overlay`.
 
 ### Negative
 
-- One more repo in the workspace `flakeProjects` list; one more step in the update sequence
+- One more flake input and one more update step per consuming repo
 - Package changes require two PRs: one in this repo, one in each consuming repo
 
 ### Neutral
@@ -61,5 +60,4 @@ overlay pattern is simpler and already established in the workspace.
 
 ## Related Decisions
 
-See also: phillipg-nix-ziprecruiter docs/adr/0013-update-sequence-np-then-sa-then-zr-via-flakeprojects-order.md
 See also: phillipgreenii-nix-personal docs/adr/0000-use-architecture-decision-records.md

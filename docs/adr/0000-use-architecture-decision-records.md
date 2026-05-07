@@ -6,9 +6,7 @@
 
 ## Context
 
-Across the Nix configuration repositories (phillipgreenii-nix-personal,
-phillipg-nix-ziprecruiter, phillipgreenii-nix-support-apps,
-phillipgreenii-nix-overlay), architectural decisions accumulate over time —
+Across Nix configuration repositories, architectural decisions accumulate over time —
 technology choices, structural patterns, cross-cutting conventions — but live
 only in commit history and tribal knowledge. As AI agents increasingly drive
 development in these repos, the problem intensifies: agents lose conversation
@@ -81,9 +79,3 @@ When a decision in one repo relates to a decision in another, the "Related Decis
 ### Inline Code Comments
 
 **Rejected**: Not discoverable without knowing where to look. Cannot capture cross-cutting context. Poor fit for decisions that span multiple files.
-
-## Related Decisions
-
-See also: phillipgreenii-nix-personal docs/adr/0000-use-architecture-decision-records.md
-See also: phillipg-nix-ziprecruiter docs/adr/0000-use-architecture-decision-records.md
-See also: phillipgreenii-nix-support-apps docs/adr/0000-use-architecture-decision-records.md
