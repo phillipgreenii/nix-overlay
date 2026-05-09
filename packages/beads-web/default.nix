@@ -1,7 +1,7 @@
 { lib, pkgs }:
 
 let
-  version = "0.10.1";
+  version = "0.11.0";
 
   platform =
     {
@@ -13,7 +13,7 @@ let
       or (throw "beads-web: unsupported system ${pkgs.stdenv.hostPlatform.system}");
 
   hashes = {
-    darwin-arm64 = "sha256-r6IMAWAz8CZA77VTrjwCSqMjalacuIZRAuFh70mGbb0=";
+    darwin-arm64 = "sha256-7zIS49xybyS1S3E/+cWoS7+IV41eZoUsJ6Qnk9cn0n8=";
     darwin-x64 = lib.fakeHash;
     linux-x64 = lib.fakeHash;
   };
