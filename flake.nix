@@ -52,6 +52,11 @@
         devShells.default = phillipgreenii-nix-base.lib.mkDevShell {
           inherit pkgs;
           pre-commit-shellHook = pre-commit.shellHook;
+          extraInputs = [
+            pkgs.jq
+            pkgs.curl
+            pkgs.gnused
+          ];
         };
 
         packages = {
