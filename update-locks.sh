@@ -24,6 +24,7 @@ esac
 
 # shellcheck disable=SC1091
 source "${SCRIPT_DIR}/lib/scripts/update-locks-lib.bash"
+ul_reexec_in_dev_shell "$@"
 ul_setup "phillipgreenii-nix-overlay" "${SCRIPT_DIR}"
 
 # Update a tmux plugin's sha256 and version in sync with its branch tip.
