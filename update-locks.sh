@@ -3,6 +3,7 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+WORKSPACE_ROOT="${SCRIPT_DIR}/.."
 
 case "${1:-}" in
 --ci)
@@ -23,7 +24,7 @@ case "${1:-}" in
 esac
 
 # shellcheck disable=SC1091
-source "${SCRIPT_DIR}/lib/scripts/update-locks-lib.bash"
+source "${WORKSPACE_ROOT}/phillipg-nix-repo-base/lib/scripts/update-locks-lib.bash"
 ul_reexec_in_dev_shell "$@"
 ul_setup "phillipgreenii-nix-overlay" "${SCRIPT_DIR}"
 
