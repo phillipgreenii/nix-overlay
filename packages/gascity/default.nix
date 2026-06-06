@@ -1,7 +1,7 @@
 { lib, pkgs }:
 
 let
-  version = "1.0.0";
+  version = "1.2.1";
 
   platform =
     {
@@ -14,8 +14,8 @@ let
       or (throw "gascity: unsupported system ${pkgs.stdenv.hostPlatform.system}");
 
   hashes = {
-    darwin_arm64 = "sha256-S2zb/9UotLKYUQj82OIS0m3s7uzHjkso+VoJx+MJFFk=";
-    linux_amd64 = "sha256-zEXmvlTGuwD+aRWCn4vquyWlhbYEpHhGhFqnuacDcNM=";
+    darwin_arm64 = "sha256-xJ82ow1PdV0VSRI/ufx5NNwApf7BeffUBI0UF2pfD6s=";
+    linux_amd64 = "sha256-erwm2CaIHTghlgDiXnigo2gC7d+ebtdwRidfXsnnIXI=";
     darwin_amd64 = lib.fakeHash;
     linux_arm64 = lib.fakeHash;
   };
