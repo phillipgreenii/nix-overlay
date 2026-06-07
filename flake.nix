@@ -40,6 +40,7 @@
           src = ./.;
           treefmtWrapper = treefmtEval.config.build.wrapper;
         };
+        yaziPluginSet = pkgs.callPackage ./packages/yaziPlugins { };
       in
       {
         formatter = treefmtEval.config.build.wrapper;
@@ -66,6 +67,10 @@
           tmux-mouse-swipe = pkgs.callPackage ./packages/tmux-mouse-swipe { };
           tmux-nerd-font-window-name = pkgs.callPackage ./packages/tmux-nerd-font-window-name { };
           bat-gherkin-syntax = pkgs.callPackage ./packages/bat-gherkin-syntax { };
+
+          yaziPlugins = {
+            inherit (yaziPluginSet) icons-brew bunny;
+          };
 
           fix-lint = pkgs.writeShellScriptBin "fix-lint" ''
             ${lib.getExe pkgs.statix} fix ${./.}
@@ -119,6 +124,9 @@
               tmux-mouse-swipe
               tmux-nerd-font-window-name
               ;
+          };
+          yaziPlugins = prev.yaziPlugins // {
+            inherit (ownPackages.yaziPlugins) icons-brew bunny;
           };
         }
         // prev.lib.optionalAttrs prev.stdenv.isDarwin {
