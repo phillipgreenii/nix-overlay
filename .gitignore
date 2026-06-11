@@ -19,3 +19,6 @@ CLAUDE.local.md
 .beads/*
 !.beads/config.yaml
 !.beads/metadata.json
+
+# Claude Code per-session worktrees (runtime state, created by EnterWorktree)
+.claude/worktrees/
