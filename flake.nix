@@ -68,9 +68,8 @@
           tmux-nerd-font-window-name = pkgs.callPackage ./packages/tmux-nerd-font-window-name { };
           bat-gherkin-syntax = pkgs.callPackage ./packages/bat-gherkin-syntax { };
 
-          yaziPlugins = {
-            inherit (yaziPluginSet) icons-brew bunny;
-          };
+          yaziPlugins-icons-brew = yaziPluginSet.icons-brew;
+          yaziPlugins-bunny = yaziPluginSet.bunny;
 
           fix-lint = pkgs.writeShellScriptBin "fix-lint" ''
             ${lib.getExe pkgs.statix} fix ${./.}
@@ -86,6 +85,12 @@
           cmux = pkgs.callPackage ./packages/cmux { };
           c9watch-gui = pkgs.callPackage ./packages/c9watch/gui.nix { };
           c9watch-cli = pkgs.callPackage ./packages/c9watch/cli.nix { };
+        };
+
+        legacyPackages = {
+          yaziPlugins = {
+            inherit (yaziPluginSet) icons-brew bunny;
+          };
         };
 
         apps =
@@ -112,7 +117,7 @@
       overlays.firefox-binary-wrapper = import ./overlays/firefox-binary-wrapper.nix;
 
       overlays.default =
-        _final: prev:
+        final: prev:
         let
           ownPackages = self.packages.${prev.stdenv.hostPlatform.system};
         in
@@ -125,9 +130,16 @@
               tmux-nerd-font-window-name
               ;
           };
-          yaziPlugins = prev.yaziPlugins // {
-            inherit (ownPackages.yaziPlugins) icons-brew bunny;
-          };
+          yaziPlugins =
+            prev.yaziPlugins
+            // (
+              let
+                ours = final.callPackage ./packages/yaziPlugins { };
+              in
+              {
+                inherit (ours) icons-brew bunny;
+              }
+            );
         }
         // prev.lib.optionalAttrs prev.stdenv.isDarwin {
           inherit (ownPackages) cmux c9watch-gui c9watch-cli;
