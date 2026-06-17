@@ -75,32 +75,37 @@
           ];
         };
 
-        packages = {
-          beads-web = pkgs.callPackage ./packages/beads-web { };
-          gascity = pkgs.callPackage ./packages/gascity { };
-          tmux-open-nvim = pkgs.callPackage ./packages/tmux-open-nvim { };
-          tmux-mouse-swipe = pkgs.callPackage ./packages/tmux-mouse-swipe { };
-          tmux-nerd-font-window-name = pkgs.callPackage ./packages/tmux-nerd-font-window-name { };
-          bat-gherkin-syntax = pkgs.callPackage ./packages/bat-gherkin-syntax { };
+        packages =
+          let
+            extended = pkgs.extend self.overlays.default;
+          in
+          {
+            inherit (extended)
+              beads-web
+              bat-gherkin-syntax
+              gascity
+              ;
+            inherit (extended.tmuxPlugins)
+              tmux-open-nvim
+              tmux-mouse-swipe
+              tmux-nerd-font-window-name
+              ;
+            yaziPlugins-icons-brew = extended.yaziPlugins.icons-brew;
+            yaziPlugins-bunny = extended.yaziPlugins.bunny;
 
-          yaziPlugins-icons-brew = yaziPluginSet.icons-brew;
-          yaziPlugins-bunny = yaziPluginSet.bunny;
+            fix-lint = pkgs.writeShellScriptBin "fix-lint" ''
+              ${lib.getExe pkgs.statix} fix ${./.}
+            '';
 
-          fix-lint = pkgs.writeShellScriptBin "fix-lint" ''
-            ${lib.getExe pkgs.statix} fix ${./.}
-          '';
-
-          install-pre-commit-hooks = pkgs.writeShellScriptBin "install-pre-commit-hooks" ''
-            ${pre-commit.shellHook}
-            echo "Pre-commit hooks installed successfully!"
-            echo "Run 'pre-commit run --all-files' to test them."
-          '';
-        }
-        // lib.optionalAttrs pkgs.stdenv.isDarwin {
-          cmux = pkgs.callPackage ./packages/cmux { };
-          c9watch-gui = pkgs.callPackage ./packages/c9watch/gui.nix { };
-          c9watch-cli = pkgs.callPackage ./packages/c9watch/cli.nix { };
-        };
+            install-pre-commit-hooks = pkgs.writeShellScriptBin "install-pre-commit-hooks" ''
+              ${pre-commit.shellHook}
+              echo "Pre-commit hooks installed successfully!"
+              echo "Run 'pre-commit run --all-files' to test them."
+            '';
+          }
+          // lib.optionalAttrs pkgs.stdenv.hostPlatform.isDarwin {
+            inherit (extended) cmux c9watch-gui c9watch-cli;
+          };
 
         legacyPackages = {
           yaziPlugins = {
@@ -133,17 +138,14 @@
 
       overlays.default =
         final: prev:
-        let
-          ownPackages = self.packages.${prev.stdenv.hostPlatform.system};
-        in
         {
-          inherit (ownPackages) beads-web bat-gherkin-syntax gascity;
+          beads-web = final.callPackage ./packages/beads-web { };
+          bat-gherkin-syntax = final.callPackage ./packages/bat-gherkin-syntax { };
+          gascity = final.callPackage ./packages/gascity { };
           tmuxPlugins = prev.tmuxPlugins // {
-            inherit (ownPackages)
-              tmux-open-nvim
-              tmux-mouse-swipe
-              tmux-nerd-font-window-name
-              ;
+            tmux-open-nvim = final.callPackage ./packages/tmux-open-nvim { };
+            tmux-mouse-swipe = final.callPackage ./packages/tmux-mouse-swipe { };
+            tmux-nerd-font-window-name = final.callPackage ./packages/tmux-nerd-font-window-name { };
           };
           yaziPlugins =
             prev.yaziPlugins
@@ -156,8 +158,10 @@
               }
             );
         }
-        // prev.lib.optionalAttrs prev.stdenv.isDarwin {
-          inherit (ownPackages) cmux c9watch-gui c9watch-cli;
+        // prev.lib.optionalAttrs prev.stdenv.hostPlatform.isDarwin {
+          cmux = final.callPackage ./packages/cmux { };
+          c9watch-gui = final.callPackage ./packages/c9watch/gui.nix { };
+          c9watch-cli = final.callPackage ./packages/c9watch/cli.nix { };
         };
     };
 }
