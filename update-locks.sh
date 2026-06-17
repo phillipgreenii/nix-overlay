@@ -67,6 +67,7 @@ update_tmux_plugin() {
 
   sed -i "s|version = \"unstable-[^\"]*\";|version = \"unstable-${new_date}\";|" "$nix_file"
   sed -i "s|sha256 = \"sha256-[^\"]*\";|sha256 = \"${new_hash}\";|" "$nix_file"
+  sed -i "s|rev = \"[^\"]*\";|rev = \"${new_rev}\";|" "$nix_file"
 }
 
 # Update a bat syntax definition's sha256 and date comment in sync with branch tip.
@@ -103,6 +104,7 @@ update_bat_syntax() {
 
   sed -i "s|# last updated: unstable-[0-9-]*|# last updated: unstable-${new_date}|" "$nix_file"
   sed -i "s|sha256 = \"sha256-[^\"]*\";|sha256 = \"${new_hash}\";|" "$nix_file"
+  sed -i "s|rev = \"[^\"]*\";|rev = \"${new_rev}\";|" "$nix_file"
 }
 
 ul_run_step "update-cmux" \
