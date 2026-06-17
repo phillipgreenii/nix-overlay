@@ -1,9 +1,12 @@
+#!/usr/bin/env bash
 # shellcheck shell=bash
 # Update cmux package to latest GitHub release
 # Called from update-locks.sh before nix flake update
 #
 # Checks GitHub for latest release, downloads DMG to get hash,
 # and updates version/hash in packages/cmux/default.nix if newer.
+
+set -euo pipefail
 
 REPO_ROOT="${1:-.}"
 TARGET="${REPO_ROOT}/packages/cmux/default.nix"
@@ -57,8 +60,13 @@ if [[ -z $LATEST_HASH ]]; then
   exit 1
 fi
 
-# Convert to SRI hash format (sha256-...)
-LATEST_HASH_SRI=$(nix hash convert --hash-algo sha256 --to sri "$LATEST_HASH" 2>/dev/null || echo "sha256-$LATEST_HASH")
+# Convert to SRI hash format (sha256-...). Fail hard rather than write an
+# invalid SRI string (deepdive S5).
+LATEST_HASH_SRI=$(nix hash convert --hash-algo sha256 --to sri "$LATEST_HASH")
+if [[ -z $LATEST_HASH_SRI ]]; then
+  echo "  Error: nix hash convert failed for $LATEST_HASH" >&2
+  exit 1
+fi
 
 echo "  Updating packages/cmux/default.nix..."
 

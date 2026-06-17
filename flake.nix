@@ -84,7 +84,7 @@
             yaziPlugins-bunny = extended.yaziPlugins.bunny;
 
             fix-lint = pkgs.writeShellScriptBin "fix-lint" ''
-              ${lib.getExe pkgs.statix} fix ${./.}
+              exec ${lib.getExe pkgs.statix} fix "''${@:-.}"
             '';
 
             install-pre-commit-hooks = pkgs.writeShellScriptBin "install-pre-commit-hooks" ''
