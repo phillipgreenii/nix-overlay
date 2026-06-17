@@ -2,6 +2,7 @@
   lib,
   stdenvNoCC,
   fetchurl,
+  undmg,
 }:
 stdenvNoCC.mkDerivation rec {
   pname = "cmux";
@@ -12,13 +13,12 @@ stdenvNoCC.mkDerivation rec {
     hash = "sha256-QB/2emBrAzqkcKaLrVUZanK4qXHSma4CeJM2PwGhmXI=";
   };
 
-  nativeBuildInputs = [ ];
+  nativeBuildInputs = [ undmg ];
 
   unpackPhase = ''
-    mnt=$(mktemp -d)
-    /usr/bin/hdiutil attach -readonly -nobrowse -mountpoint "$mnt" "$src"
-    cp -r "$mnt"/*.app .
-    /usr/bin/hdiutil detach "$mnt"
+    runHook preUnpack
+    undmg "$src"
+    runHook postUnpack
   '';
 
   sourceRoot = ".";
