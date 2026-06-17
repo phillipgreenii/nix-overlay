@@ -48,7 +48,22 @@
         checks = {
           formatting = treefmtEval.config.build.check self;
           linting = checks-lib.linting ./.;
-        };
+        }
+        # Build every package in self.packages.${system} so CI exercises the
+        # derivations, not just lint/format. On linux, exclude beads-web and
+        # gascity until deepdive B5/B6 land (Chunk 3) — those packages ship
+        # lib.fakeHash for linux and would always fail.
+        # NOTE: if a future package name collides with "formatting" or
+        # "linting", it will silently shadow the check.
+        // (
+          if pkgs.stdenv.hostPlatform.isLinux then
+            removeAttrs self.packages.${system} [
+              "beads-web"
+              "gascity"
+            ]
+          else
+            self.packages.${system}
+        );
 
         devShells.default = phillipgreenii-nix-base.lib.mkDevShell {
           inherit pkgs;
