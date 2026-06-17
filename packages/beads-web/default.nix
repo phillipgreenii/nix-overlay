@@ -28,7 +28,7 @@ stdenv.mkDerivation {
 
   src = fetchurl {
     url = "https://github.com/weselow/beads-web/releases/download/v${version}/beads-web-${current.artifact}";
-    hash = current.hash;
+    inherit (current) hash;
   };
 
   dontUnpack = true;

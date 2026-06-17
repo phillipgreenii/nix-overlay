@@ -29,7 +29,7 @@ stdenvNoCC.mkDerivation {
 
   src = fetchurl {
     url = "https://github.com/gastownhall/gascity/releases/download/v${version}/gascity_${version}_${current.artifact}.tar.gz";
-    hash = current.hash;
+    inherit (current) hash;
   };
 
   sourceRoot = ".";
