@@ -39,6 +39,7 @@ B5 + B6
 - **B1 first** because it removes c9watch (eliminating one of the two `/usr/bin/codesign` users B2 would otherwise have to touch) and because B5/B6 drops the Chunk-1-Task-3 linux-exclusion filter — both ground-clearing moves.
 - **B2 second** is the structural host-tool replacement work; depends on B1's c9watch removal to keep its scope tight.
 - **B3 last** because B2 might surface unrelated issues (undmg/dmg compatibility) the implementer should resolve before B3's misc work piles on.
+- **B2 and B3 may be executed in either order after B1** if wall-clock parallelism is preferred — they touch disjoint files (B2: `packages/cmux/default.nix`, `overlays/firefox-binary-wrapper.nix`; B3: `flake.nix` fix-lint block, the 3 updater scripts). The serial chain reduces merge-skew risk only.
 
 ---
 
@@ -80,7 +81,7 @@ let
     };
     x86_64-linux = {
       artifact = "linux-x64";
-      hash = "<real-hash-computed-in-branch>";
+      hash = "sha256-eDL5aAwQ41XK58YFirf7HLvImxR5PJeFr6WIzmS5IRE=";
     };
   };
 
@@ -123,13 +124,13 @@ Honesty wins (over the current state):
 
 The throw still fires on `nix eval .#beads-web.drvPath` on an unsupported system — that's identical to nixpkgs convention for prebuilt-binary packages (`pkgs.terraform`, `pkgs.kubectl`). Build attempts via `nix build`, `nix-env -i`, or home-manager all consult `meta.platforms` first and reject cleanly before forcing the throw.
 
-Compute the `linux-x64` real hash via:
+The `sha256-eDL5aAwQ41XK58YFirf7HLvImxR5PJeFr6WIzmS5IRE=` value above was computed against the current release at the time this spec was written. If the upstream version bumps between spec and implementation, re-derive with:
 ```bash
-nix-prefetch-url --type sha256 \
-  "https://github.com/weselow/beads-web/releases/download/v0.11.2/beads-web-linux-x64" \
-  | xargs -I {} nix hash convert --hash-algo sha256 --to sri "sha256:{}"
+nix store prefetch-file --json --hash-type sha256 \
+  "https://github.com/weselow/beads-web/releases/download/v<NEW-VERSION>/beads-web-linux-x64" \
+  | jq -r .hash
 ```
-Replace `<real-hash-computed-in-branch>` placeholder accordingly.
+(Use `nix store prefetch-file` rather than `nix-prefetch-url | xargs nix hash convert` — it emits SRI directly and avoids the stderr "path is …" noise.)
 
 **gascity honest platforms (`packages/gascity/default.nix`):**
 
@@ -150,14 +151,31 @@ Drop `darwin_amd64` and `linux_arm64` entirely. `meta.platforms = builtins.attrN
 
 **Updater script reflows (B6):**
 
+**Critical: the `supportedPlatforms` entries must be written as one-line attrset literals so sed can target each platform's hash unambiguously.** The multi-line form (shown above for spec readability) becomes one line per platform when actually written to file:
+
+```nix
+supportedPlatforms = {
+  aarch64-darwin = { artifact = "darwin-arm64"; hash = "sha256-6+4ddKilgMHFfSBSNCQNPl2jZDmNtWpQ99zKn2bWnkc="; };
+  x86_64-linux   = { artifact = "linux-x64";    hash = "sha256-eDL5aAwQ41XK58YFirf7HLvImxR5PJeFr6WIzmS5IRE="; };
+};
+```
+
+This shape lets each platform's hash be rewritten with a single anchored sed (one per platform), no cross-contamination.
+
 `nix/update-beads-web.sh`:
 - Drop the `DARWIN_X64_URL` prefetch + hash computation (lines 48, 56-60, 68, 74).
 - Update lines 47-75 to handle only the two supported platforms.
+- Update the seds at lines 73-75 to target the new one-line attrset shape. For each platform, anchor on the system-name key:
+  ```bash
+  sed -i "s|aarch64-darwin = { artifact = \"darwin-arm64\"; hash = \"[^\"]*\"; };|aarch64-darwin = { artifact = \"darwin-arm64\"; hash = \"$HASH_DARWIN_ARM64\"; };|" "$TARGET"
+  sed -i "s|x86_64-linux\s*= { artifact = \"linux-x64\"; hash = \"[^\"]*\"; };|x86_64-linux   = { artifact = \"linux-x64\"; hash = \"$HASH_LINUX_X64\"; };|" "$TARGET"
+  ```
 
 `nix/update-gascity.sh`:
-- Drop the `DARWIN_AMD64_URL` and `LINUX_ARM64_URL` prefetches + hash computations.
-- Update remaining sed targets to match the new attribute shape (e.g. `aarch64-darwin.hash = "..."` instead of `darwin_arm64 = "..."`).
-- This is the bigger reflow — the attribute path changed shape (`supportedPlatforms.aarch64-darwin.hash`), so the sed patterns from the previous scripts won't match the new file. The implementer rewrites the sed to target the new `hash = "...";` lines indexed by system name (one sed per supported platform).
+- Drop the `DARWIN_AMD64_URL` and `LINUX_ARM64_URL` prefetches + hash computations (lines 53-55, 62-66, 72-76, 79, 81, 86, 88).
+- Update remaining seds to target the same one-line attrset shape (artifacts `darwin_arm64` / `linux_amd64`).
+
+**Why one-line over multi-line + range-addressed sed:** range-addressed sed (`sed -i "/aarch64-darwin = {/,/};/ s|hash = ...|...|"`) works but is brittler — `nix fmt` may reformat across runs, breaking the address pattern. One-line entries are nixfmt-stable.
 
 **flake.nix cleanup:**
 
@@ -175,7 +193,7 @@ checks = {
 2. `nix build .#beads-web --no-link` on linux succeeds (was hash-mismatch before).
 3. `nix build .#gascity --no-link` on linux succeeds.
 4. `nix build .#beads-web .#gascity --system aarch64-darwin --dry-run` on linux: emits the expected darwin builds without throw.
-5. On linux: `nix eval .#packages.aarch64-linux.beads-web` returns the standard "not supported on this platform" error from `meta.platforms`, NOT a `throw`.
+5. On linux: `nix eval .#packages.aarch64-linux.beads-web` *throws* with the "not supported; build platforms: ..." message (the standard nixpkgs pattern for prebuilt-binary packages — `pkgs.terraform`, `pkgs.kubectl`, `pkgs.obsidian` all do the same). `nix-build`/`nix build`/home-manager consult `meta.platforms` before forcing the throw, so user-facing install attempts get a clean rejection. The throw only surfaces on direct eval-time access to the derivation (e.g. `nix flake show --json` across all systems).
 6. `grep c9watch flake.nix update-locks.sh nix/ packages/` returns no matches.
 7. After merge, the post-merge CI on `main` exercises every package on its declared platforms with no exclusion filter.
 
@@ -218,6 +236,8 @@ unpackPhase = ''
 ```
 Signature change: `{ lib, stdenvNoCC, fetchurl, undmg }`.
 
+**Alternative (simpler):** `undmg` ships a setup-hook (`pkgs/by-name/un/undmg/setup-hook.sh`) that auto-fires on `*.dmg` sources. Just adding `undmg` to `nativeBuildInputs` lets stdenv's default `unpackPhase` invoke the hook. The manual `unpackPhase` block above is only needed if the implementer wants to keep it explicit (matches repo style) or if `sourceRoot` doesn't land where `installPhase` expects. **Verify against the actual dmg empirically:** if the existing `sourceRoot = ".";` and `installPhase`'s `cp -r *.app $out/Applications/` find the `.app` after extraction, the manual unpackPhase can be dropped; otherwise keep it.
+
 `undmg` is in nixpkgs-26.05-darwin for darwin systems; cmux is gated to darwin so no linux-eval concern. If undmg fails on this specific dmg (APFS image), the implementer falls back to `pkgs._7zz`:
 ```nix
 nativeBuildInputs = [ _7zz ];
@@ -253,7 +273,7 @@ prev.lib.optionalAttrs prev.stdenv.hostPlatform.isDarwin {
     {
       nativeBuildInputs = oldAttrs.nativeBuildInputs ++ [
         prev.makeBinaryWrapper
-        prev.sigtool
+        prev.darwin.sigtool
       ];
       buildCommand =
         builtins.replaceStrings [ sentinel ] [ ''makeBinaryWrapper "$oldExe"'' ]
@@ -275,7 +295,7 @@ prev.lib.optionalAttrs prev.stdenv.hostPlatform.isDarwin {
 ```
 
 Changes:
-- Add `prev.sigtool` to `nativeBuildInputs`.
+- Add `prev.darwin.sigtool` to `nativeBuildInputs`. **Important:** the attribute path is `pkgs.darwin.sigtool`, not `pkgs.sigtool` (which doesn't exist in nixpkgs-26.05-darwin). The package realises a `codesign` shim into `$out/bin/codesign`.
 - `/usr/bin/codesign --force --sign -` → `codesign --force --sign -` (PATH-resolved via `nativeBuildInputs`).
 - Add `assert prev.lib.assertMsg (prev.lib.hasInfix sentinel oldAttrs.buildCommand) "..."` so an upstream nixpkgs change to firefox's `buildCommand` shape fails the overlay at eval rather than silently producing a no-op.
 - Sentinel hoisted to a let-binding to keep the assert message and the replaceStrings input in sync.
@@ -308,14 +328,19 @@ Changes:
 
 ```nix
 fix-lint = pkgs.writeShellScriptBin "fix-lint" ''
-  exec ${lib.getExe pkgs.statix} fix "''${1:-.}"
+  exec ${lib.getExe pkgs.statix} fix "''${@:-.}"
 '';
 ```
 
 Changes:
-- `${./.}` → `"''${1:-.}"` — accepts a target dir as `$1` or defaults to `$PWD` (the user's actual checkout, writable).
+- `${./.}` → `"''${@:-.}"` — accepts any number of target paths as positional args, or defaults to `$PWD` if none. `statix fix` accepts multiple positional targets.
 - Add `exec` to avoid an extra shell process.
 - Drop the repo-as-build-input dependency (the script's hash depends only on `pkgs.statix`).
+
+Examples after fix:
+- `nix run .#fix-lint` → `statix fix .`
+- `nix run .#fix-lint -- packages/cmux` → `statix fix packages/cmux`
+- `nix run .#fix-lint -- packages/cmux flake.nix` → `statix fix packages/cmux flake.nix`
 
 **S5 fallback removal in updater scripts (`nix/update-beads-web.sh`, `nix/update-cmux.sh`, `nix/update-gascity.sh`):**
 
@@ -323,15 +348,20 @@ Replace every:
 ```bash
 HASH_X=$(nix hash convert --hash-algo sha256 --to sri "$RAW_X" 2>/dev/null || echo "sha256-$RAW_X")
 ```
-With:
+With (two-statement form — see "Why two statements" below):
 ```bash
-HASH_X=$(nix hash convert --hash-algo sha256 --to sri "$RAW_X") || {
+HASH_X=$(nix hash convert --hash-algo sha256 --to sri "$RAW_X")
+if [[ -z $HASH_X ]]; then
   echo "Error: nix hash convert failed for $RAW_X" >&2
   exit 1
-}
+fi
 ```
 
 Drop the `2>/dev/null` so stderr surfaces, and drop the `|| echo "sha256-$RAW"` so we fail hard instead of writing an invalid SRI.
+
+**Why two statements (avoiding the `local` gotcha):** in bash, `local HASH_X=$(false) || exit 1` does NOT exit — `local` itself is a command, and its exit status (always 0 if `local` succeeded) is what `||` tests. The same trap applies to `declare`, `readonly`, `export`. Today's updaters declare these at top level (not inside functions, so no `local`), but if a future refactor moves them into functions, the one-liner `HASH_X=$(...) || { exit 1; }` form silently degrades. The two-statement form is robust to that.
+
+**Also confirm `set -euo pipefail` is in scope.** Check the top of each updater script — if missing, `nix hash convert` failing produces an empty `HASH_X` without exiting; the `if [[ -z $HASH_X ]]` test is what actually catches it. Add `set -euo pipefail` if it isn't already present (most scripts already have this from `update-locks.sh`).
 
 cmux is single-platform so the script has only one such call. beads-web (after Branch 1) has two calls (down from three). gascity (after Branch 1) has two (down from four).
 
@@ -376,8 +406,8 @@ After all three branches are merged:
 1. No `lib.fakeHash` in any `packages/` file.
 2. `meta.platforms` on every package equals the set of platforms with real hashes — no overclaiming.
 3. No `/usr/bin/` references in `packages/` or `overlays/`.
-4. The firefox overlay's `assert` is in place and would fire if upstream changed the sentinel string.
-5. `nix run .#fix-lint` operates on `$PWD` (or `$1`) at runtime.
+4. The firefox overlay's `assert` is in place and would fire if upstream changed the sentinel string. The codesign call uses `pkgs.darwin.sigtool`'s shim, not the host's `/usr/bin/codesign`.
+5. `nix run .#fix-lint` operates on `$PWD` (or all positional args via `$@`) at runtime.
 6. The 3 updater scripts fail hard on hash-conversion errors (no `|| echo "sha256-$RAW"` fallback).
 7. `nix flake check` green; the post-Chunk-1-Task-3 linux-exclusion filter is gone.
 8. `grep -RE 'c9watch' .` returns no matches.
