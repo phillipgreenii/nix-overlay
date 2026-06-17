@@ -50,20 +50,10 @@
           linting = checks-lib.linting ./.;
         }
         # Build every package in self.packages.${system} so CI exercises the
-        # derivations, not just lint/format. On linux, exclude beads-web and
-        # gascity until deepdive B5/B6 land (Chunk 3) — those packages ship
-        # lib.fakeHash for linux and would always fail.
+        # derivations, not just lint/format.
         # NOTE: if a future package name collides with "formatting" or
         # "linting", it will silently shadow the check.
-        // (
-          if pkgs.stdenv.hostPlatform.isLinux then
-            removeAttrs self.packages.${system} [
-              "beads-web"
-              "gascity"
-            ]
-          else
-            self.packages.${system}
-        );
+        // self.packages.${system};
 
         devShells.default = phillipgreenii-nix-base.lib.mkDevShell {
           inherit pkgs;
@@ -104,7 +94,7 @@
             '';
           }
           // lib.optionalAttrs pkgs.stdenv.hostPlatform.isDarwin {
-            inherit (extended) cmux c9watch-gui c9watch-cli;
+            inherit (extended) cmux;
           };
 
         legacyPackages = {
@@ -122,7 +112,6 @@
           in
           {
             update-cmux = mkApp (pkgs.callPackage ./nix/update-cmux.nix { });
-            update-c9watch = mkApp (pkgs.callPackage ./nix/update-c9watch.nix { });
             update-beads-web = mkApp (pkgs.callPackage ./nix/update-beads-web.nix { });
             update-gascity = mkApp (pkgs.callPackage ./nix/update-gascity.nix { });
           };
@@ -160,8 +149,6 @@
         }
         // prev.lib.optionalAttrs prev.stdenv.hostPlatform.isDarwin {
           cmux = final.callPackage ./packages/cmux { };
-          c9watch-gui = final.callPackage ./packages/c9watch/gui.nix { };
-          c9watch-cli = final.callPackage ./packages/c9watch/cli.nix { };
         };
     };
 }

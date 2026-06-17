@@ -133,10 +133,6 @@ ul_run_step "update-cmux" \
   "update-locks: update cmux" \
   nix run .#update-cmux -- "${SCRIPT_DIR}"
 
-ul_run_step "update-c9watch" \
-  "update-locks: update c9watch" \
-  nix run .#update-c9watch -- "${SCRIPT_DIR}"
-
 ul_run_step "update-beads-web" \
   "update-locks: update beads-web" \
   nix run .#update-beads-web -- "${SCRIPT_DIR}"

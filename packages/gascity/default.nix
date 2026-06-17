@@ -8,32 +8,28 @@
 let
   version = "1.2.1";
 
-  platform =
-    {
-      aarch64-darwin = "darwin_arm64";
-      x86_64-darwin = "darwin_amd64";
-      x86_64-linux = "linux_amd64";
-      aarch64-linux = "linux_arm64";
-    }
-    .${stdenv.hostPlatform.system}
-      or (throw "gascity: unsupported system ${stdenv.hostPlatform.system}");
-
-  hashes = {
-    darwin_arm64 = "sha256-xJ82ow1PdV0VSRI/ufx5NNwApf7BeffUBI0UF2pfD6s=";
-    linux_amd64 = "sha256-erwm2CaIHTghlgDiXnigo2gC7d+ebtdwRidfXsnnIXI=";
-    darwin_amd64 = lib.fakeHash;
-    linux_arm64 = lib.fakeHash;
+  supportedPlatforms = {
+    aarch64-darwin = {
+      artifact = "darwin_arm64";
+      hash = "sha256-xJ82ow1PdV0VSRI/ufx5NNwApf7BeffUBI0UF2pfD6s=";
+    };
+    x86_64-linux = {
+      artifact = "linux_amd64";
+      hash = "sha256-erwm2CaIHTghlgDiXnigo2gC7d+ebtdwRidfXsnnIXI=";
+    };
   };
+
+  current =
+    supportedPlatforms.${stdenv.hostPlatform.system}
+      or (throw "gascity: ${stdenv.hostPlatform.system} not supported; build platforms: ${toString (builtins.attrNames supportedPlatforms)}");
 in
 stdenvNoCC.mkDerivation {
   pname = "gascity";
   inherit version;
 
   src = fetchurl {
-    url = "https://github.com/gastownhall/gascity/releases/download/v${version}/gascity_${version}_${platform}.tar.gz";
-    hash =
-      hashes.${platform}
-        or (throw "gascity: no hash for ${platform}; run nix-prefetch-url on that platform");
+    url = "https://github.com/gastownhall/gascity/releases/download/v${version}/gascity_${version}_${current.artifact}.tar.gz";
+    hash = current.hash;
   };
 
   sourceRoot = ".";
@@ -49,11 +45,6 @@ stdenvNoCC.mkDerivation {
     homepage = "https://github.com/gastownhall/gascity";
     license = licenses.mit;
     mainProgram = "gc";
-    platforms = [
-      "aarch64-darwin"
-      "x86_64-darwin"
-      "x86_64-linux"
-      "aarch64-linux"
-    ];
+    platforms = builtins.attrNames supportedPlatforms;
   };
 }

@@ -2,9 +2,11 @@
 # Update beads-web package to latest GitHub release.
 # Called from update-locks.sh before nix flake update.
 #
-# Checks GitHub for latest release, downloads all three artifacts to get
-# hashes, and updates version and hashes in packages/beads-web/default.nix
-# if a newer release is available.
+# Downloads both supported-platform artifacts to get hashes, and updates
+# version and hashes in packages/beads-web/default.nix if a newer release
+# is available. Supported platforms: aarch64-darwin, x86_64-linux.
+
+set -euo pipefail
 
 REPO_ROOT="${1:-.}"
 TARGET="${REPO_ROOT}/packages/beads-web/default.nix"
@@ -42,36 +44,40 @@ if [[ $CURRENT_VERSION == "$LATEST_VERSION" ]]; then
 fi
 
 echo "  New beads-web release detected: $CURRENT_VERSION -> $LATEST_VERSION"
-echo "  Fetching artifact hashes (downloading ~10 MB per artifact)..."
+echo "  Fetching artifact hashes..."
 
 DARWIN_ARM64_URL="https://github.com/weselow/beads-web/releases/download/v${LATEST_VERSION}/beads-web-darwin-arm64"
-DARWIN_X64_URL="https://github.com/weselow/beads-web/releases/download/v${LATEST_VERSION}/beads-web-darwin-x64"
 LINUX_X64_URL="https://github.com/weselow/beads-web/releases/download/v${LATEST_VERSION}/beads-web-linux-x64"
 
 RAW_DARWIN_ARM64=$(nix-prefetch-url "$DARWIN_ARM64_URL" 2>/dev/null)
-[[ -z $RAW_DARWIN_ARM64 ]] && {
+if [[ -z $RAW_DARWIN_ARM64 ]]; then
   echo "  Error: Could not prefetch $DARWIN_ARM64_URL" >&2
   exit 1
-}
-RAW_DARWIN_X64=$(nix-prefetch-url "$DARWIN_X64_URL" 2>/dev/null)
-[[ -z $RAW_DARWIN_X64 ]] && {
-  echo "  Error: Could not prefetch $DARWIN_X64_URL" >&2
-  exit 1
-}
+fi
 RAW_LINUX_X64=$(nix-prefetch-url "$LINUX_X64_URL" 2>/dev/null)
-[[ -z $RAW_LINUX_X64 ]] && {
+if [[ -z $RAW_LINUX_X64 ]]; then
   echo "  Error: Could not prefetch $LINUX_X64_URL" >&2
   exit 1
-}
+fi
 
-HASH_DARWIN_ARM64=$(nix hash convert --hash-algo sha256 --to sri "$RAW_DARWIN_ARM64" 2>/dev/null || echo "sha256-$RAW_DARWIN_ARM64")
-HASH_DARWIN_X64=$(nix hash convert --hash-algo sha256 --to sri "$RAW_DARWIN_X64" 2>/dev/null || echo "sha256-$RAW_DARWIN_X64")
-HASH_LINUX_X64=$(nix hash convert --hash-algo sha256 --to sri "$RAW_LINUX_X64" 2>/dev/null || echo "sha256-$RAW_LINUX_X64")
+HASH_DARWIN_ARM64=$(nix hash convert --hash-algo sha256 --to sri "$RAW_DARWIN_ARM64")
+if [[ -z $HASH_DARWIN_ARM64 ]]; then
+  echo "  Error: nix hash convert failed for $RAW_DARWIN_ARM64" >&2
+  exit 1
+fi
+HASH_LINUX_X64=$(nix hash convert --hash-algo sha256 --to sri "$RAW_LINUX_X64")
+if [[ -z $HASH_LINUX_X64 ]]; then
+  echo "  Error: nix hash convert failed for $RAW_LINUX_X64" >&2
+  exit 1
+fi
 
 echo "  Updating packages/beads-web/default.nix..."
 sed -i "s/version = \"$CURRENT_VERSION\";/version = \"$LATEST_VERSION\";/" "$TARGET"
-sed -i "s|darwin-arm64 = \"[^\"]*\";|darwin-arm64 = \"$HASH_DARWIN_ARM64\";|" "$TARGET"
-sed -i "s|darwin-x64 = \"[^\"]*\";|darwin-x64 = \"$HASH_DARWIN_X64\";|" "$TARGET"
-sed -i "s|linux-x64 = \"[^\"]*\";|linux-x64 = \"$HASH_LINUX_X64\";|" "$TARGET"
+# Each platform's hash is rewritten via a sed range anchored on its unique
+# `artifact = "..."` line up to the next `};`. This works regardless of
+# whether nixfmt has kept the attrset entry on one line or split it across
+# multiple lines.
+sed -i "/artifact = \"darwin-arm64\";/,/};/ s|hash = \"[^\"]*\";|hash = \"$HASH_DARWIN_ARM64\";|" "$TARGET"
+sed -i "/artifact = \"linux-x64\";/,/};/ s|hash = \"[^\"]*\";|hash = \"$HASH_LINUX_X64\";|" "$TARGET"
 
 echo "  ✓ beads-web updated to $LATEST_VERSION"
