@@ -86,9 +86,9 @@ jobs:
             ```
 
             ### Verification
-            - CI checks will run automatically
-            - If all checks pass, this PR will be auto-merged
-            - Review the changes and close this PR if updates should not be applied
+            - Required CI checks must pass before merge (enforced by branch protection on `main`).
+            - `gh pr merge --auto` will merge this PR once the required checks turn green.
+            - Close this PR to abort the merge if the updates should not be applied.
 
             ---
             *This PR was created automatically by the update-flakes workflow*
