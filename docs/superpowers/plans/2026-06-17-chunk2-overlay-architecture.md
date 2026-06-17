@@ -65,6 +65,8 @@ git log --oneline origin/main -1
 
 Expected: clean checkout, last commit on origin/main is at or after `649f2f1` (post-Chunk-1).
 
+**Note on Steps 1.2–1.10:** The nine file edits are independent — each touches one file with no cross-references. They may be done in any order. (Subagent-driven workflows could even parallelize them, but verification Step 1.11 only makes sense once all nine are done.)
+
 - [ ] **Step 1.2: Edit `packages/bat-gherkin-syntax/default.nix`**
 
 Replace line 1:
@@ -87,15 +89,15 @@ Then substitute occurrences in the body: replace `pkgs.fetchFromGitHub` with `fe
 fetchFromGitHub {
   owner = "keith-hall";
   repo = "SublimeGherkinSyntax";
-  rev = "<existing-sha-keep-as-is>";
-  sha256 = "<existing-hash-keep-as-is>";
+  rev = "ec3fae90209136a89a5027f61167e04790c83382";
+  sha256 = "sha256-yYIMfzAiKdQsl3OPSevENsrs4TkNe+eVVPSRbtHagNY=";
   meta = {
     platforms = lib.platforms.unix;
   };
 }
 ```
 
-(Preserve the existing `rev` and `sha256` lines — those were pinned in Chunk 1 Task 2; do not touch them.)
+(The `rev` and `sha256` were pinned in Chunk 1 Task 2 — if those values differ from what's currently in the file, the file has been updated by the nightly bot since this plan was written; preserve the *current* values in the file rather than the ones shown here. Use Edit with targeted substitutions; do NOT pass the full block to Write.)
 
 - [ ] **Step 1.3: Edit `packages/beads-web/default.nix`**
 
@@ -339,8 +341,8 @@ tmuxPlugins.mkTmuxPlugin {
   src = fetchFromGitHub {
     owner = "trevarj";
     repo = "tmux-open-nvim";
-    rev = "<existing-sha-keep-as-is>";
-    sha256 = "<existing-hash-keep-as-is>";
+    rev = "d140ac66e24f1cd26b68638da01a82717a1921bd";
+    sha256 = "sha256-lftDhRERenGVDTWFP1o/bfZIk0RsHh2PxoYY8j8/9CQ=";
   };
   meta = {
     platforms = lib.platforms.unix;
@@ -348,7 +350,7 @@ tmuxPlugins.mkTmuxPlugin {
 }
 ```
 
-(Preserve the existing `rev` and `sha256` lines from Chunk 1 Task 2.)
+(If the file's current `rev`/`sha256` differ from what's shown — e.g. the nightly bot ran since this plan was written — preserve the file's current values rather than the values shown here. Use Edit with targeted substitutions; do NOT pass the full block to Write.)
 
 - [ ] **Step 1.7: Edit `packages/tmux-mouse-swipe/default.nix`**
 
@@ -364,14 +366,16 @@ tmuxPlugins.mkTmuxPlugin {
   src = fetchFromGitHub {
     owner = "jaclu";
     repo = "tmux-mouse-swipe";
-    rev = "<existing-sha-keep-as-is>";
-    sha256 = "<existing-hash-keep-as-is>";
+    rev = "8667851876c7591c668f29df6a142271051a3e2d";
+    sha256 = "sha256-0Mh0sQm3GP1V/KlYi6VjD3Zx2ssLwVI5uOnOp67trYk=";
   };
   meta = {
     platforms = lib.platforms.unix;
   };
 }
 ```
+
+(Preserve the file's current `rev`/`sha256` if they've drifted from these via nightly bot updates. Use Edit, not Write.)
 
 - [ ] **Step 1.8: Edit `packages/tmux-nerd-font-window-name/default.nix`**
 
@@ -385,14 +389,16 @@ tmuxPlugins.mkTmuxPlugin {
   src = fetchFromGitHub {
     owner = "joshmedeski";
     repo = "tmux-nerd-font-window-name";
-    rev = "<existing-sha-keep-as-is>";
-    sha256 = "<existing-hash-keep-as-is>";
+    rev = "0af812a228e1b9f538b8d220c6c59d82d7228973";
+    sha256 = "sha256-b6CQdN33hU5li/0LUOHMs7oN8ffVRVQlSf17Twhz2e8=";
   };
   meta = {
     platforms = lib.platforms.unix;
   };
 }
 ```
+
+(Preserve the file's current `rev`/`sha256` if drifted from these. Use Edit, not Write.)
 
 - [ ] **Step 1.9: Edit `packages/c9watch/cli.nix`**
 
@@ -682,6 +688,8 @@ Changes:
 - The yaziPlugins clause is unchanged (Chunk 1 Task 1 already did it right).
 - `prev.stdenv.isDarwin` (deprecated) is replaced with `prev.stdenv.hostPlatform.isDarwin` (the same incidental B9 nit Chunk 1 already used for top-level `pkgs.stdenv.isDarwin` in the `packages =` block — keep them consistent).
 
+**Critical:** the overlay function body must NOT reference `self` or `self.packages` anywhere. Step 2.3 derives `packages.${system}` from `pkgs.extend self.overlays.default` — if the overlay reaches back to `self.packages`, the cycle becomes `packages → extended → overlay → self.packages → packages` and Step 2.4 fails with "infinite recursion encountered." If your edit accidentally reintroduces any `self.X` reference inside the overlay function body, remove it.
+
 - [ ] **Step 2.3: Re-derive `packages.${system}` from `pkgs.extend self.overlays.default`**
 
 Edit `flake.nix:63-89`. Replace the entire `packages = { ... };` block:
@@ -760,6 +768,8 @@ Changes:
 - `fix-lint` and `install-pre-commit-hooks` stay sourced from `pkgs` — they're dev tooling, not overlay packages.
 - The `// lib.optionalAttrs pkgs.stdenv.isDarwin { ... }` becomes `// lib.optionalAttrs pkgs.stdenv.hostPlatform.isDarwin { inherit (extended) cmux c9watch-gui c9watch-cli; };` — both the deprecation fix and the sourcing change.
 
+**Note (`yaziPluginSet` double-eval, accepted):** after this change, `yaziPluginSet` (defined at `flake.nix:43`) is still referenced by `legacyPackages.yaziPlugins` (at `flake.nix:105-109`, written by Chunk 1 Task 1). That means the yaziPlugins set is evaluated twice — once for `yaziPluginSet`, once via the overlay. Spec marks `legacyPackages` as out of scope for Chunk 2, so this is *accepted* as a minor cost. A future chunk can rewire `legacyPackages.yaziPlugins` to source from `extended` and delete the `yaziPluginSet` binding.
+
 - [ ] **Step 2.4: Run `nix flake check --no-build` to verify eval succeeds**
 
 ```bash
@@ -771,13 +781,19 @@ Expected: `all checks passed!`. If you see "infinite recursion encountered" — 
 - [ ] **Step 2.5: Build representative packages locally**
 
 ```bash
-nix build .#beads-web --no-link 2>&1 | tail -5 || echo "(beads-web may fail on linux due to fakeHash — that's expected; see Step 2.6)"
 nix build .#bat-gherkin-syntax --no-link
 nix build .#tmux-open-nvim --no-link
 nix build .#yaziPlugins-icons-brew --no-link
 ```
 
-`bat-gherkin-syntax`, `tmux-open-nvim`, `yaziPlugins-icons-brew` must succeed. `beads-web` on linux fails with `hash mismatch` (fakeHash) — that's pre-existing B5/B6 behavior, not a regression.
+All three must succeed. Do NOT build `beads-web` / `gascity` on linux here — they're already excluded from CI by the Chunk 1 Task 3 filter (Step 2.8 verifies the exclusion). Eval-check them instead to prove the overlay wires them at least:
+
+```bash
+nix eval --raw .#beads-web.drvPath 2>&1 | head -2
+nix eval --raw .#gascity.drvPath  2>&1 | head -2
+```
+
+Each should print a `/nix/store/...drv` path. If you see "attribute missing" or "function called without required argument", the overlay wiring is broken — re-check Step 2.2.
 
 - [ ] **Step 2.6: Consumer-side overlay test (proves A1 took effect)**
 
@@ -813,6 +829,16 @@ Expected: a `/nix/store/...` path. Confirms the `prev.tmuxPlugins //` merge work
 
 - [ ] **Step 2.7: Override-granularity check (proves A1 + A2 together)**
 
+Two checks. First the signature check on the raw file (proves A2 took effect — the granular signature is in place):
+
+```bash
+nix eval --json --expr 'builtins.attrNames (builtins.functionArgs (import ./packages/bat-gherkin-syntax/default.nix))'
+```
+
+Expected: `["fetchFromGitHub","lib"]`. (No `--impure` needed; pure Nix eval against a fixed file path.)
+
+Then the overlay-flow check (proves A1 plumbs the granular signature through the consumer's pkgs — `.override` is a `makeOverridable`-flavored function whose `functionArgs` matches the package's signature):
+
 ```bash
 nix eval --json --impure --expr '
   let
@@ -822,28 +848,11 @@ nix eval --json --impure --expr '
       system = builtins.currentSystem;
       overlays = [ flake.overlays.default ];
     };
-  in builtins.functionArgs pkgs.bat-gherkin-syntax.override.__functor
+  in builtins.functionArgs pkgs.bat-gherkin-syntax.override
 '
 ```
 
-Expected: a JSON object like `{"fetchFromGitHub": false, "lib": false}`. Confirms `.override` is plumbed and accepts granular swaps.
-
-If the `__functor` access is awkward, fall back to:
-
-```bash
-nix eval --json --impure --expr '
-  let
-    flake = builtins.getFlake (toString ./.);
-    nixpkgs = builtins.getFlake "github:NixOS/nixpkgs/nixpkgs-26.05-darwin";
-    pkgs = import nixpkgs.outPath {
-      system = builtins.currentSystem;
-      overlays = [ flake.overlays.default ];
-    };
-  in builtins.attrNames (builtins.functionArgs (import ./packages/bat-gherkin-syntax/default.nix))
-'
-```
-
-Expected: `["fetchFromGitHub","lib"]`.
+Expected: a JSON object whose keys include `lib` and `fetchFromGitHub`. If `pkgs.bat-gherkin-syntax.override` doesn't exist (some fetchers don't carry `.override`), substitute `pkgs.tmux-open-nvim.override` or `pkgs.beads-web.override` — those go through `stdenv.mkDerivation` which always gets `makeOverridable`.
 
 - [ ] **Step 2.8: Verify Chunk 1 Task 3 linux exclusions still work**
 
