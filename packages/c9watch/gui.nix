@@ -1,4 +1,9 @@
-{ lib, pkgs }:
+{
+  lib,
+  stdenv,
+  stdenvNoCC,
+  fetchurl,
+}:
 let
   version = "0.8.1";
 
@@ -7,8 +12,8 @@ let
       aarch64-darwin = "aarch64";
       x86_64-darwin = "x86_64";
     }
-    .${pkgs.stdenv.hostPlatform.system}
-      or (throw "c9watch: unsupported system ${pkgs.stdenv.hostPlatform.system}");
+    .${stdenv.hostPlatform.system}
+      or (throw "c9watch: unsupported system ${stdenv.hostPlatform.system}");
 
   guiHashAarch64 = "sha256-o++hhIR5LeWcuFH34twVcQTVfWdrtqtHiZpN7g1hBnI=";
   guiHashX86_64 = "sha256-Zy/ggj9l+Cf3MC0kVa732lKD/7sZRhIjmulZLFOfo80=";
@@ -18,11 +23,11 @@ let
     x86_64 = guiHashX86_64;
   };
 in
-pkgs.stdenvNoCC.mkDerivation {
+stdenvNoCC.mkDerivation {
   pname = "c9watch";
   inherit version;
 
-  src = pkgs.fetchurl {
+  src = fetchurl {
     url = "https://github.com/minchenlee/c9watch/releases/download/v${version}/c9watch_v${version}_${arch}.app.tar.gz";
     hash = guiHashes.${arch};
   };

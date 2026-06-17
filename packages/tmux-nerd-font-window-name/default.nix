@@ -1,8 +1,12 @@
-{ lib, pkgs }:
-pkgs.tmuxPlugins.mkTmuxPlugin {
+{
+  lib,
+  tmuxPlugins,
+  fetchFromGitHub,
+}:
+tmuxPlugins.mkTmuxPlugin {
   pluginName = "tmux-nerd-font-window-name";
   version = "unstable-2026-04-10";
-  src = pkgs.fetchFromGitHub {
+  src = fetchFromGitHub {
     owner = "joshmedeski";
     repo = "tmux-nerd-font-window-name";
     rev = "0af812a228e1b9f538b8d220c6c59d82d7228973";

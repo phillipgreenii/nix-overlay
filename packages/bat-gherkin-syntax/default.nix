@@ -1,6 +1,6 @@
-{ lib, pkgs }:
+{ lib, fetchFromGitHub }:
 # last updated: unstable-2024-10-12
-pkgs.fetchFromGitHub {
+fetchFromGitHub {
   owner = "keith-hall";
   repo = "SublimeGherkinSyntax";
   rev = "ec3fae90209136a89a5027f61167e04790c83382";

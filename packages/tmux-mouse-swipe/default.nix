@@ -1,8 +1,12 @@
-{ lib, pkgs }:
-pkgs.tmuxPlugins.mkTmuxPlugin {
+{
+  lib,
+  tmuxPlugins,
+  fetchFromGitHub,
+}:
+tmuxPlugins.mkTmuxPlugin {
   pluginName = "tmux-mouse-swipe";
   version = "unstable-2025-12-29";
-  src = pkgs.fetchFromGitHub {
+  src = fetchFromGitHub {
     owner = "jaclu";
     repo = "tmux-mouse-swipe";
     rev = "8667851876c7591c668f29df6a142271051a3e2d";

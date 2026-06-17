@@ -1,4 +1,9 @@
-{ lib, pkgs }:
+{
+  lib,
+  stdenv,
+  stdenvNoCC,
+  fetchurl,
+}:
 
 let
   version = "1.2.1";
@@ -10,8 +15,8 @@ let
       x86_64-linux = "linux_amd64";
       aarch64-linux = "linux_arm64";
     }
-    .${pkgs.stdenv.hostPlatform.system}
-      or (throw "gascity: unsupported system ${pkgs.stdenv.hostPlatform.system}");
+    .${stdenv.hostPlatform.system}
+      or (throw "gascity: unsupported system ${stdenv.hostPlatform.system}");
 
   hashes = {
     darwin_arm64 = "sha256-xJ82ow1PdV0VSRI/ufx5NNwApf7BeffUBI0UF2pfD6s=";
@@ -20,11 +25,11 @@ let
     linux_arm64 = lib.fakeHash;
   };
 in
-pkgs.stdenvNoCC.mkDerivation {
+stdenvNoCC.mkDerivation {
   pname = "gascity";
   inherit version;
 
-  src = pkgs.fetchurl {
+  src = fetchurl {
     url = "https://github.com/gastownhall/gascity/releases/download/v${version}/gascity_${version}_${platform}.tar.gz";
     hash =
       hashes.${platform}
