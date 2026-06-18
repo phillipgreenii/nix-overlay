@@ -13,7 +13,6 @@ concurrency:
 permissions:
   contents: write
   pull-requests: write
-  id-token: write # required for FlakeHub Cache OIDC auth
 
 jobs:
   update-flakes:

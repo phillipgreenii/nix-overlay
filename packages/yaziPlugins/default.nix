@@ -2,7 +2,6 @@
   lib,
   stdenvNoCC,
   callPackage,
-  fetchFromGitHub,
 }:
 let
   mkYaziPlugin =
@@ -32,7 +31,7 @@ let
       }
     );
 
-  callPlugin = path: callPackage path { inherit mkYaziPlugin fetchFromGitHub; };
+  callPlugin = path: callPackage path { inherit mkYaziPlugin; };
 in
 {
   inherit mkYaziPlugin;
