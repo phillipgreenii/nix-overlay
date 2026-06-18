@@ -65,36 +65,6 @@
         },
         "version": "0.64.16"
     },
-    "gascity-darwin-arm64": {
-        "cargoLock": null,
-        "date": null,
-        "extract": null,
-        "name": "gascity-darwin-arm64",
-        "passthru": null,
-        "pinned": false,
-        "src": {
-            "name": null,
-            "sha256": "sha256-xJ82ow1PdV0VSRI/ufx5NNwApf7BeffUBI0UF2pfD6s=",
-            "type": "url",
-            "url": "https://github.com/gastownhall/gascity/releases/download/v1.2.1/gascity_1.2.1_darwin_arm64.tar.gz"
-        },
-        "version": "1.2.1"
-    },
-    "gascity-linux-amd64": {
-        "cargoLock": null,
-        "date": null,
-        "extract": null,
-        "name": "gascity-linux-amd64",
-        "passthru": null,
-        "pinned": false,
-        "src": {
-            "name": null,
-            "sha256": "sha256-erwm2CaIHTghlgDiXnigo2gC7d+ebtdwRidfXsnnIXI=",
-            "type": "url",
-            "url": "https://github.com/gastownhall/gascity/releases/download/v1.2.1/gascity_1.2.1_linux_amd64.tar.gz"
-        },
-        "version": "1.2.1"
-    },
     "tmux-mouse-swipe": {
         "cargoLock": null,
         "date": "2025-12-29",

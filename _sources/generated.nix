@@ -42,22 +42,6 @@
       sha256 = "sha256-QB/2emBrAzqkcKaLrVUZanK4qXHSma4CeJM2PwGhmXI=";
     };
   };
-  gascity-darwin-arm64 = {
-    pname = "gascity-darwin-arm64";
-    version = "1.2.1";
-    src = fetchurl {
-      url = "https://github.com/gastownhall/gascity/releases/download/v1.2.1/gascity_1.2.1_darwin_arm64.tar.gz";
-      sha256 = "sha256-xJ82ow1PdV0VSRI/ufx5NNwApf7BeffUBI0UF2pfD6s=";
-    };
-  };
-  gascity-linux-amd64 = {
-    pname = "gascity-linux-amd64";
-    version = "1.2.1";
-    src = fetchurl {
-      url = "https://github.com/gastownhall/gascity/releases/download/v1.2.1/gascity_1.2.1_linux_amd64.tar.gz";
-      sha256 = "sha256-erwm2CaIHTghlgDiXnigo2gC7d+ebtdwRidfXsnnIXI=";
-    };
-  };
   tmux-mouse-swipe = {
     pname = "tmux-mouse-swipe";
     version = "8667851876c7591c668f29df6a142271051a3e2d";

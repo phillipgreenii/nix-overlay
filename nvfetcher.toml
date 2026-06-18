@@ -8,16 +8,6 @@ src.github = "weselow/beads-web"
 src.prefix = "v"
 fetch.url = "https://github.com/weselow/beads-web/releases/download/v$ver/beads-web-linux-x64"
 
-[gascity-darwin-arm64]
-src.github = "gastownhall/gascity"
-src.prefix = "v"
-fetch.url = "https://github.com/gastownhall/gascity/releases/download/v$ver/gascity_$ver_darwin_arm64.tar.gz"
-
-[gascity-linux-amd64]
-src.github = "gastownhall/gascity"
-src.prefix = "v"
-fetch.url = "https://github.com/gastownhall/gascity/releases/download/v$ver/gascity_$ver_linux_amd64.tar.gz"
-
 [cmux]
 src.github = "manaflow-ai/cmux"
 src.prefix = "v"

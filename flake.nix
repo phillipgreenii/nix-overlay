@@ -74,7 +74,6 @@
             inherit (extended)
               beads-web
               bat-gherkin-syntax
-              gascity
               ;
             inherit (extended.tmuxPlugins)
               tmux-open-nvim
@@ -122,7 +121,6 @@
         {
           beads-web = final.callPackage ./packages/beads-web { inherit sources; };
           bat-gherkin-syntax = final.callPackage ./packages/bat-gherkin-syntax { inherit sources; };
-          gascity = final.callPackage ./packages/gascity { inherit sources; };
           tmuxPlugins = prev.tmuxPlugins // {
             tmux-open-nvim = final.callPackage ./packages/tmux-open-nvim { inherit sources; };
             tmux-mouse-swipe = final.callPackage ./packages/tmux-mouse-swipe { inherit sources; };
