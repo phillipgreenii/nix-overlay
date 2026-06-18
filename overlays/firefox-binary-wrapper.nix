@@ -17,7 +17,6 @@ prev.lib.optionalAttrs prev.stdenv.hostPlatform.isDarwin {
     {
       nativeBuildInputs = oldAttrs.nativeBuildInputs ++ [
         prev.makeBinaryWrapper
-        prev.darwin.sigtool
       ];
       buildCommand =
         builtins.replaceStrings [ sentinel ] [ ''makeBinaryWrapper "$oldExe"'' ] oldAttrs.buildCommand
@@ -31,7 +30,13 @@ prev.lib.optionalAttrs prev.stdenv.hostPlatform.isDarwin {
             rm -f "$appDir/Info.plist"
             cp -f "$target" "$appDir/Info.plist"
           fi
-          codesign --force --sign - "$out/Applications/Firefox.app"
+          # Use the system codesign: sigtool's codesign (c7cb263) only signs
+          # individual Mach-O files, so signing the .app *bundle* throws
+          # SigTool::NotAMachOFileException. Real /usr/bin/codesign signs
+          # bundles and is available here (nix sandbox = false). This re-impurifies
+          # the build (the deepdive flagged hardcoded /usr/bin/codesign); the
+          # proper sandbox-safe fix belongs to the overlay-rework initiative.
+          /usr/bin/codesign --force --sign - "$out/Applications/Firefox.app"
         '';
     }
   );
