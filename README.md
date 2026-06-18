@@ -22,21 +22,20 @@ pkgs = import nixpkgs {
 };
 ```
 
-After that, `pkgs.beads-web`, `pkgs.tmuxPlugins.tmux-open-nvim`, etc. resolve normally.
+After that, `pkgs.phillipgreenii.beads-web`, `pkgs.tmuxPlugins.tmux-open-nvim`, etc. resolve normally.
 
 ## Packages
 
 | Name | Platforms | Source |
 | --- | --- | --- |
-| `beads-web` | aarch64-darwin, x86_64-linux | [weselow/beads-web](https://github.com/weselow/beads-web) |
-| `gascity` | aarch64-darwin, x86_64-linux | [gastownhall/gascity](https://github.com/gastownhall/gascity) |
-| `bat-gherkin-syntax` | unix | [keith-hall/SublimeGherkinSyntax](https://github.com/keith-hall/SublimeGherkinSyntax) |
+| `phillipgreenii.beads-web` | aarch64-darwin, x86_64-linux | [weselow/beads-web](https://github.com/weselow/beads-web) |
+| `phillipgreenii.bat-gherkin-syntax` | unix | [keith-hall/SublimeGherkinSyntax](https://github.com/keith-hall/SublimeGherkinSyntax) |
+| `phillipgreenii.cmux` | aarch64-darwin | [manaflow-ai/cmux](https://github.com/manaflow-ai/cmux) |
 | `tmuxPlugins.tmux-open-nvim` | unix | [trevarj/tmux-open-nvim](https://github.com/trevarj/tmux-open-nvim) |
 | `tmuxPlugins.tmux-mouse-swipe` | unix | [jaclu/tmux-mouse-swipe](https://github.com/jaclu/tmux-mouse-swipe) |
 | `tmuxPlugins.tmux-nerd-font-window-name` | unix | [joshmedeski/tmux-nerd-font-window-name](https://github.com/joshmedeski/tmux-nerd-font-window-name) |
 | `yaziPlugins.icons-brew` | all | (in this repo, `packages/yaziPlugins/icons-brew`) |
 | `yaziPlugins.bunny` | all | (in this repo, `packages/yaziPlugins/bunny`) |
-| `cmux` | darwin (aarch64-darwin verified) | [manaflow-ai/cmux](https://github.com/manaflow-ai/cmux) |
 
 `legacyPackages.${system}.yaziPlugins` exposes the structured `{ icons-brew, bunny }` set.
 
@@ -44,11 +43,23 @@ After that, `pkgs.beads-web`, `pkgs.tmuxPlugins.tmux-open-nvim`, etc. resolve no
 
 - `overlays.firefox-binary-wrapper` — opt-in: replaces nixpkgs' Firefox `makeWrapper` with `makeBinaryWrapper` so macOS attributes TCC permissions to `firefox` (not `bash`).
 - `homeModules.install-metadata` — emits a marker file describing the overlay revision into the user's profile (consumed by personal home-manager configs).
-- `apps.update-{cmux,beads-web,gascity}` — internal updater apps invoked by `update-locks.sh`.
 
 ## Update automation
 
-`update-locks.sh` (run by `.github/workflows/update-flakes.yml` nightly) bumps package versions and hashes; the workflow opens a PR which auto-merges after CI passes on the gated `main` branch.
+`update-locks.sh` (run by `.github/workflows/update-flakes.yml` nightly) bumps package sources via `nvfetcher`, verifies provenance, then bumps `flake.lock`. The workflow opens a PR which auto-merges after CI passes on the gated `main` branch.
+
+### Provenance verification
+
+The nightly updater (`verify-provenance.sh`, invoked between `nvfetcher` and `nix flake update` in `update-locks.sh`) verifies every binary upstream's release artifact against published provenance. Per-upstream method assignment (audit **2026-06-18**):
+
+| Upstream | Method | Notes |
+| --- | --- | --- |
+| `weselow/beads-web` | `none-no-provenance-published` | Releases ship bare binaries: no `gh attestation verify`, no `checksums.txt`, no `.sig`. Helper logs the gap and continues; re-audit when upstream changes their release pipeline. |
+| `manaflow-ai/cmux` | `none-no-provenance-published` | `cmux-macos.dmg` has no attestation and no `.dmg.sig`. The `cmuxd-remote-checksums.txt` published alongside covers a *different* product (cmuxd-remote), not the cmux Electron app. Helper logs the gap and continues. |
+
+Git-source plugins (`tmux-*`, `bat-gherkin-syntax`) are not verified separately — the nvfetcher-pinned commit SHA is the integrity proof.
+
+When an upstream's release pipeline changes (publishes/withdraws attestation or checksums), the per-upstream `METHODS` table at the top of `verify-provenance.sh` must be re-audited. Search for "audit 2026-06-18" in that file to find the config block.
 
 ## ADRs
 

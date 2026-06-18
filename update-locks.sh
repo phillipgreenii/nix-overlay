@@ -68,6 +68,10 @@ ul_run_step "nvfetcher" \
   "update-locks: update sources via nvfetcher" \
   nix run nixpkgs#nvfetcher -- --build-dir _sources --config nvfetcher.toml
 
+ul_run_step "verify-provenance" \
+  "update-locks: verify provenance of nvfetcher source updates" \
+  "$SCRIPT_DIR/verify-provenance.sh"
+
 ul_run_step "nix-flake-update" \
   "update-locks: update nix flake.lock" \
   nix flake update
