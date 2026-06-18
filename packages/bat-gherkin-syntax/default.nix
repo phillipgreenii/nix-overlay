@@ -1,17 +1,22 @@
 {
   lib,
+  stdenvNoCC,
   sources,
 }:
-# Bare fetchFromGitHub result with smuggled meta (deepdive B8 — deferred).
-# The // merge re-applies meta on top of the source derivation. If
-# `nix build .#bat-gherkin-syntax` fails because the // drops derivation
-# markers, swap to:
-#   sources.bat-gherkin-syntax.src.overrideAttrs (_: {
-#     meta = { platforms = lib.platforms.unix; };
-#   })
-sources.bat-gherkin-syntax.src
-// {
+stdenvNoCC.mkDerivation {
+  pname = "bat-gherkin-syntax";
+  inherit (sources.bat-gherkin-syntax) version;
+  src = sources.bat-gherkin-syntax.src;
+  dontBuild = true;
+  installPhase = ''
+    runHook preInstall
+    mkdir -p $out
+    cp -r . $out/
+    runHook postInstall
+  '';
   meta = {
+    description = "Gherkin syntax for SublimeText, consumable by bat";
+    homepage = "https://github.com/keith-hall/SublimeGherkinSyntax";
     platforms = lib.platforms.unix;
   };
 }
