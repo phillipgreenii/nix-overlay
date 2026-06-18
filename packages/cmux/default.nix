@@ -30,6 +30,6 @@ stdenvNoCC.mkDerivation {
     description = "Ghostty-based macOS terminal with vertical tabs and notifications for AI coding agents";
     homepage = "https://github.com/manaflow-ai/cmux";
     license = licenses.agpl3Plus;
-    platforms = platforms.darwin;
+    platforms = [ "aarch64-darwin" ];
   };
 }

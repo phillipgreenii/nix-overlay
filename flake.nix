@@ -93,7 +93,7 @@
               echo "Run 'pre-commit run --all-files' to test them."
             '';
           }
-          // lib.optionalAttrs pkgs.stdenv.hostPlatform.isDarwin {
+          // lib.optionalAttrs (pkgs.stdenv.hostPlatform.system == "aarch64-darwin") {
             inherit (extended.phillipgreenii) cmux;
           };
 
@@ -123,7 +123,7 @@
             beads-web = final.callPackage ./packages/beads-web { inherit sources; };
             bat-gherkin-syntax = final.callPackage ./packages/bat-gherkin-syntax { inherit sources; };
           }
-          // prev.lib.optionalAttrs prev.stdenv.hostPlatform.isDarwin {
+          // prev.lib.optionalAttrs (prev.stdenv.hostPlatform.system == "aarch64-darwin") {
             cmux = final.callPackage ./packages/cmux { inherit sources; };
           };
           tmuxPlugins = prev.tmuxPlugins // {
