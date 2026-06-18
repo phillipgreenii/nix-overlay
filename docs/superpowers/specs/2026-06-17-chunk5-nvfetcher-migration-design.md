@@ -7,7 +7,7 @@
 
 ## Goal
 
-Replace the four bespoke updater scripts (`nix/update-{cmux,beads-web,gascity}.sh` + the two inline `update_tmux_plugin`/`update_bat_syntax` functions in `update-locks.sh`) with a single `nvfetcher.toml` manifest plus committed `_sources/generated.nix`. Package files consume from a `sources` set instead of carrying inline hashes. `update-locks.sh` shrinks to one `ul_run_step "nvfetcher"` call (plus the existing `nix-flake-update` step). Net: ~400 lines of shell deleted, the sed/grep fragility class (B7) eliminated, and every source pinning lives in one declarative manifest.
+Replace the three bespoke updater scripts (`nix/update-{cmux,beads-web,gascity}.sh`) plus the two inline `update_tmux_plugin`/`update_bat_syntax` functions in `update-locks.sh` with a single `nvfetcher.toml` manifest plus committed `_sources/generated.nix`. Package files consume from a `sources` set instead of carrying inline hashes. `update-locks.sh` shrinks to one `ul_run_step "nvfetcher"` call (plus the existing `nix-flake-update` step). Net: ~400 lines of shell deleted, the sed/grep fragility class (B7) eliminated, and every source pinning lives in one declarative manifest.
 
 ## Non-Goals
 
@@ -27,11 +27,11 @@ Work in the worktree at `/home/tcadmin/workspace/nix-overlay-chunk1`. Branch dir
 
 | nvfetcher entry | Type | Tracks | Fetches |
 |---|---|---|---|
-| `beads-web-darwin-arm64` | github_release + url | weselow/beads-web | `beads-web-darwin-arm64` asset |
-| `beads-web-linux-x64` | github_release + url | weselow/beads-web | `beads-web-linux-x64` asset |
-| `gascity-darwin-arm64` | github_release + url | gastownhall/gascity | `gascity_${ver}_darwin_arm64.tar.gz` |
-| `gascity-linux-amd64` | github_release + url | gastownhall/gascity | `gascity_${ver}_linux_amd64.tar.gz` |
-| `cmux` | github_release + url | manaflow-ai/cmux | `cmux-macos.dmg` |
+| `beads-web-darwin-arm64` | github_tag + url | weselow/beads-web (latest tag) | `beads-web-darwin-arm64` asset |
+| `beads-web-linux-x64` | github_tag + url | weselow/beads-web (latest tag) | `beads-web-linux-x64` asset |
+| `gascity-darwin-arm64` | github_tag + url | gastownhall/gascity (latest tag) | `gascity_${ver}_darwin_arm64.tar.gz` |
+| `gascity-linux-amd64` | github_tag + url | gastownhall/gascity (latest tag) | `gascity_${ver}_linux_amd64.tar.gz` |
+| `cmux` | github_tag + url | manaflow-ai/cmux (latest tag) | `cmux-macos.dmg` |
 | `tmux-open-nvim` | git branch tip | trevarj/tmux-open-nvim (master) | fetchFromGitHub at resolved rev |
 | `tmux-mouse-swipe` | git branch tip | jaclu/tmux-mouse-swipe (main) | fetchFromGitHub at resolved rev |
 | `tmux-nerd-font-window-name` | git branch tip | joshmedeski/tmux-nerd-font-window-name (main) | fetchFromGitHub at resolved rev |
@@ -39,27 +39,34 @@ Work in the worktree at `/home/tcadmin/workspace/nix-overlay-chunk1`. Branch dir
 
 That's 9 entries (4 multi-arch binaries split into 2 each + 5 single-source). The multi-arch packages (beads-web, gascity) each get one entry per supported platform — nvfetcher's URL templating uses `$ver` from src's detected version, so per-platform asset URLs need their own entries.
 
+Note on `src.github_tag` vs `src.github`: `src.github` tracks the latest GitHub *release* (the Releases API), `src.github_tag` tracks the maximum tag (the Git tags API). For these projects the two normally agree, but tag-based tracking is the convention used across nvfetcher real-world configs (see iynaix/dotfiles). We pair it with `src.prefix = "v"` so `$ver` is the bare semver (e.g. `0.11.2`), matching the `v$ver` form in the existing release URLs.
+
 ## `nvfetcher.toml`
 
 ```toml
 [beads-web-darwin-arm64]
-src.github_release = "weselow/beads-web"
+src.github_tag = "weselow/beads-web"
+src.prefix = "v"
 fetch.url = "https://github.com/weselow/beads-web/releases/download/v$ver/beads-web-darwin-arm64"
 
 [beads-web-linux-x64]
-src.github_release = "weselow/beads-web"
+src.github_tag = "weselow/beads-web"
+src.prefix = "v"
 fetch.url = "https://github.com/weselow/beads-web/releases/download/v$ver/beads-web-linux-x64"
 
 [gascity-darwin-arm64]
-src.github_release = "gastownhall/gascity"
-fetch.url = "https://github.com/gastownhall/gascity/releases/download/v$ver/gascity_${ver}_darwin_arm64.tar.gz"
+src.github_tag = "gastownhall/gascity"
+src.prefix = "v"
+fetch.url = "https://github.com/gastownhall/gascity/releases/download/v$ver/gascity_$ver_darwin_arm64.tar.gz"
 
 [gascity-linux-amd64]
-src.github_release = "gastownhall/gascity"
-fetch.url = "https://github.com/gastownhall/gascity/releases/download/v$ver/gascity_${ver}_linux_amd64.tar.gz"
+src.github_tag = "gastownhall/gascity"
+src.prefix = "v"
+fetch.url = "https://github.com/gastownhall/gascity/releases/download/v$ver/gascity_$ver_linux_amd64.tar.gz"
 
 [cmux]
-src.github_release = "manaflow-ai/cmux"
+src.github_tag = "manaflow-ai/cmux"
+src.prefix = "v"
 fetch.url = "https://github.com/manaflow-ai/cmux/releases/download/v$ver/cmux-macos.dmg"
 
 [tmux-open-nvim]
@@ -83,13 +90,20 @@ src.branch = "master"
 fetch.github = "keith-hall/SublimeGherkinSyntax"
 ```
 
+All URLs use the bare `$ver` form (no `${ver}`) — that is the documented substitution token. Multiple occurrences in a single URL work cleanly: see the iynaix/dotfiles `helium` entry (`helium-$ver-x86_64.AppImage` with a `v$ver` segment before it).
+
 ## `_sources/generated.nix` (committed; regenerated by `nvfetcher`)
 
 After the implementer writes `nvfetcher.toml` and runs `nvfetcher` once, this file is produced and committed. Shape:
 
 ```nix
 # This file was generated by nvfetcher, please do not modify it manually.
-{ fetchgit, fetchurl, fetchFromGitHub, dockerTools }:
+{
+  fetchgit,
+  fetchurl,
+  fetchFromGitHub,
+  dockerTools,
+}:
 {
   beads-web-darwin-arm64 = {
     pname = "beads-web-darwin-arm64";
@@ -107,7 +121,23 @@ After the implementer writes `nvfetcher.toml` and runs `nvfetcher` once, this fi
       sha256 = "sha256-eDL5aAwQ41XK58YFirf7HLvImxR5PJeFr6WIzmS5IRE=";
     };
   };
-  # ... 7 more entries
+  # ... binary entries above use fetchurl, no date field.
+  # Git entries below (3 tmux plugins + bat-gherkin-syntax) use fetchFromGitHub
+  # and include a `date` field formatted as YYYY-MM-DD (nvfetcher's git source
+  # default; confirmed against real-world generated.nix from iynaix/dotfiles).
+  tmux-open-nvim = {
+    pname = "tmux-open-nvim";
+    version = "<40-char-sha>";
+    src = fetchFromGitHub {
+      owner = "trevarj";
+      repo = "tmux-open-nvim";
+      rev = "<40-char-sha>";
+      fetchSubmodules = false;
+      sha256 = "sha256-...=";
+    };
+    date = "2026-04-20";
+  };
+  # ... rest similar
 }
 ```
 
@@ -158,7 +188,12 @@ Net change vs. post-Chunk-3 version: signature gains `sources`, loses `fetchurl`
 
 ### `packages/gascity/default.nix`
 
-Same shape; `current.src` is the tarball; `sourceRoot = ".";` and `installPhase` install the `gc` binary as before.
+Same shape as beads-web, with three differences carried forward from the current file:
+- signature is `{ lib, stdenvNoCC, sources }:` (current gascity uses `stdenvNoCC` because the tarball contains a prebuilt static binary — preserve that).
+- `sourceRoot = ".";` and `dontFixup = true;` (carry over).
+- `installPhase` installs `gc` (not `gascity`) — the binary inside the tarball is named `gc`. `mainProgram = "gc"`.
+
+The `meta.platforms = [ "aarch64-darwin" "x86_64-linux" ];` is now a literal list (was derived from `supportedPlatforms` keys in Chunk 3) — minor regression of Chunk 3's no-drift property, but the source-of-truth is now `nvfetcher.toml` which has one entry per platform, so divergence would surface there.
 
 ### `packages/cmux/default.nix`
 
@@ -207,7 +242,7 @@ stdenvNoCC.mkDerivation {
 
 tmuxPlugins.mkTmuxPlugin {
   pluginName = "tmux-open-nvim";
-  version = "unstable-${sources.tmux-open-nvim.date or sources.tmux-open-nvim.version}";
+  version = "unstable-${sources.tmux-open-nvim.date}";
   src = sources.tmux-open-nvim.src;
   meta = {
     platforms = lib.platforms.unix;
@@ -217,12 +252,12 @@ tmuxPlugins.mkTmuxPlugin {
 
 Same shape for `tmux-mouse-swipe` and `tmux-nerd-font-window-name` (substitute name + plugin name).
 
-The `${sources.X.date or sources.X.version}` handling: nvfetcher's git source produces `version` as the resolved rev (40-char sha) by default. To get a date, the manifest may need `passthru.date = "<resolved-date>"` — verified by implementer empirically. If nvfetcher's git source emits a `.date` attribute (it does, via `commit_date`), use that; otherwise the implementer can fall back to formatting from `version` substring or just use `version` directly (a long sha — uglier but still valid).
+The `.date` field is emitted automatically by nvfetcher for `src.git` sources (default format `%Y-%m-%d`), so `version = "unstable-${sources.X.date}"` preserves the existing `unstable-YYYY-MM-DD` convention without any `passthru` plumbing. Confirmed against the iynaix/dotfiles real-world `_sources/generated.nix` output (`mpv-deletefile.date = "2025-12-06"` etc.).
 
 ### `packages/bat-gherkin-syntax/default.nix`
 
 ```nix
-{ lib, fetchFromGitHub, sources }:
+{ lib, sources }:
 # last updated: derived from sources.bat-gherkin-syntax at nvfetcher time
 sources.bat-gherkin-syntax.src // {
   meta = {
@@ -231,7 +266,7 @@ sources.bat-gherkin-syntax.src // {
 }
 ```
 
-Hmm — the current bat-gherkin-syntax is a bare `fetchFromGitHub` result with `meta` smuggled in (deepdive B8 flagged this). nvfetcher's `src` is also a `fetchFromGitHub` result. The simplest: just expose `sources.bat-gherkin-syntax.src` directly (with the smuggled `meta` preserved via `//` merge). Alternatively the implementer can wrap in `runCommand` to give it a proper pname/version — but that's B8 territory; defer for now.
+The current bat-gherkin-syntax is a bare `fetchFromGitHub` result with `meta` smuggled in (deepdive B8 flagged this). nvfetcher's `src` is also a `fetchFromGitHub` result. The simplest: expose `sources.bat-gherkin-syntax.src` directly with the smuggled `meta` re-applied via `//` merge — the result is an attrset that retains the derivation's evaluable shape (`type = "derivation"`, `outPath`, `drvPath`, ...) while letting nix tools read `meta.platforms` off the merged attrset. Wrapping in `runCommand` would give it a proper pname/version, but that's B8 territory — defer for now. (Implementer: if `nix build .#bat-gherkin-syntax` fails because the `//` discards the derivation marker, switch to `sources.bat-gherkin-syntax.src.overrideAttrs (_: { meta = { platforms = lib.platforms.unix; }; })` which preserves derivation-ness explicitly.)
 
 ## `flake.nix` changes
 
@@ -319,7 +354,7 @@ Expected `update-locks.sh` final size: ~50 lines (from current ~164).
 
 ## `.update-locks/steps/` cleanup
 
-Delete the 6 stale per-step stamps:
+Delete the 7 stale per-step stamps:
 - `bat-gherkin-syntax`
 - `tmux-mouse-swipe`
 - `tmux-nerd-font-window-name`
@@ -374,7 +409,7 @@ Delete the 6 stale per-step stamps:
 6. `nix build .#bat-gherkin-syntax --no-link` succeeds on linux.
 7. On darwin (or via eval-check): `nix build .#cmux --no-link` or `nix eval --raw .#cmux.drvPath`.
 8. `meta.platforms` still matches Chunk 3's claims (`["aarch64-darwin", "x86_64-linux"]` for beads-web/gascity; `platforms.unix` for bat-gherkin/tmux; `platforms.darwin` for cmux).
-9. The four nix/update-*.sh and three nix/update-*.nix files are gone (`ls nix/` should fail or show empty).
+9. The three nix/update-*.sh and three nix/update-*.nix files are gone (`ls nix/` should fail or show empty — and the `nix/` directory itself is removed).
 10. `update-locks.sh` size ~50 lines; only two `ul_run_step` calls.
 11. `git grep update_tmux_plugin update-locks.sh` returns nothing.
 12. CI on `main` is green after merge.
@@ -409,7 +444,7 @@ Delete the 6 stale per-step stamps:
 
 After the branch is merged:
 1. `nvfetcher.toml` and `_sources/generated.nix` exist at repo root and `_sources/` respectively.
-2. The four `nix/update-*.sh` and three `nix/update-*.nix` files are deleted.
+2. The three `nix/update-*.sh` and three `nix/update-*.nix` files are deleted (six files total, leaving `nix/` empty — delete the directory too).
 3. `update-locks.sh` has only two `ul_run_step` calls (nvfetcher + nix-flake-update); the two inline functions are gone.
 4. All 8 packages still build successfully on their declared platforms (post-merge CI exercises them).
 5. `git grep -E '(update_tmux_plugin|update_bat_syntax|update-cmux\.sh|update-beads-web\.sh|update-gascity\.sh)' --` returns nothing.
