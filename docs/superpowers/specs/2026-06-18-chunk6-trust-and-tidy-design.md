@@ -207,20 +207,22 @@ If audit determines an upstream publishes *neither* attestations nor checksums, 
 **Helper script contract:**
 
 ```
-verify-provenance.sh <upstream-key>...
-  upstream-key = nvfetcher source key (e.g. "beads-web-darwin-arm64")
+verify-provenance.sh   (no arguments)
 
-For each key:
+For every configured key in the helper's hard-coded METHODS table:
   1. Read _sources/generated.nix to get the artifact URL and recorded hash.
-  2. Look up the per-upstream verification method (table, hardcoded in the script).
-  3. Download the artifact + provenance side-channel (attestation or checksums.txt).
-  4. Verify per method:
-     - attestation: `gh attestation verify <file> --repo <owner/repo>`
-     - checksums: locate filename line in checksums.txt, compare hashes
-  5. Exit non-zero on any failure; print which upstream/key/method/reason.
+  2. Look up the per-upstream verification method (METHODS table, audit-time
+     assignment).
+  3. For binary methods (attestation/checksums/sigstore): download artifact
+     and/or provenance side-channel; verify.
+     For git-source method: explicit no-op (the nvfetcher-pinned commit SHA
+     is the integrity proof; no separate provenance artifact exists).
+  4. Exit non-zero on any failure; print which upstream/key/method/reason.
 
-Determines which keys to verify by reading the git diff of _sources/generated.nix
-since HEAD~1 — only re-verifies what nvfetcher actually changed in this run.
+Verify-all-every-run (rather than diff-driven) is an intentional simplification:
+binary verification cost is small (~3 small artifacts), nvfetcher source-output
+format drift can't cause "stale state" to go un-rechecked, and the helper has
+no edge cases around git diff parsing. The verification is idempotent.
 ```
 
 If verification fails, `ul_run_step` exits non-zero, which fails `update-locks.sh`, which fails the workflow's `Run update-locks.sh` step, which prevents the `Create Pull Request` step from firing. **No PR opens on bad provenance.** The next nightly retries from clean state (the corrupted `_sources/generated.nix` change is uncommitted — it lives only in the workflow runner's checkout).

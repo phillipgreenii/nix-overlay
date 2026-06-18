@@ -359,25 +359,19 @@ packages =
 
 Only two changes from prior: `extended` → `extended.phillipgreenii` in the first `inherit` and in the cmux gate. Everything else (tmuxPlugins, yaziPlugins-*, fix-lint, install-pre-commit-hooks) is unchanged.
 
-- [ ] **Step 3: Verify the overlay and flat outputs**
+- [ ] **Step 3: Verify the flat outputs**
 
 ```bash
-# Overlay exposes phillipgreenii subset
-nix eval --raw .#packages.aarch64-darwin.beads-web.pname || \
+# Overlay-derived flat packages output still resolves
+nix eval --raw .#packages.aarch64-darwin.beads-web.pname 2>/dev/null || \
   nix eval --raw .#packages.x86_64-linux.beads-web.pname
 # Expected: "beads-web"
 
-# Confirm phillipgreenii namespace is in the overlay output
-nix eval --json '.#legacyPackages' 2>/dev/null || true
-nix eval --impure --expr \
-  'let f = builtins.getFlake "git+file:///home/tcadmin/workspace/nix-overlay-chunk6"; in builtins.attrNames (f.outputs.overlays.default { stdenv.hostPlatform = { isDarwin = false; system = "x86_64-linux"; }; lib = (import f.inputs.nixpkgs { system = "x86_64-linux"; }).lib; } {})'
-# Expected: list including "phillipgreenii", "tmuxPlugins", "yaziPlugins"
-# (NO top-level "beads-web", "bat-gherkin-syntax", "cmux")
-
 nix flake show 2>&1 | head -40
 # Expected: packages.<sys>.beads-web is still present (flat output mirror).
-# No top-level overlay re-export in the flake outputs schema is visible here.
 ```
+
+(The Step 4 consumer-shape eval test below is the authoritative check for the namespace move — it exercises the overlay through the same code path consumers use. Avoid hand-constructing fake `prev` attrsets to introspect the overlay directly; the overlay's `prev.lib.optionalAttrs` access depends on `prev` being a real pkgs, which a fake attrset can't satisfy.)
 
 - [ ] **Step 4: Consumer-shape eval test (spec verification step 5)**
 
@@ -638,7 +632,7 @@ grep -nE '\bstdenv\.isDarwin\b' flake.nix packages/ overlays/ || echo "OK: no de
 
 Expected: prints `OK: no deprecated alias`. (The spec's deepdive B9 finding for the alias was already addressed in a prior chunk. If this grep finds matches, stop and reconcile.)
 
-- [ ] **Step 2: `treefmt.nix` — drop redundant `package = pkgs.nixfmt;`**
+- [ ] **Step 2: `treefmt.nix` — drop redundant `package = pkgs.nixfmt;` AND now-unused `pkgs` arg**
 
 Open `treefmt.nix`. Find the `nixfmt` block (lines 5-8):
 
@@ -649,16 +643,12 @@ nixfmt = {
 };
 ```
 
-Reduce to:
-
-```nix
-nixfmt.enable = true;
-```
+Reduce to `nixfmt.enable = true;`. Removing `package = pkgs.nixfmt;` also makes the `pkgs` arg unused — drop it from the function signature too, otherwise `statix` will flag the unused destructure (W04) and `nix flake check` (no `--no-build`) will fail the linting check.
 
 Final file:
 
 ```nix
-{ pkgs, ... }:
+{ ... }:
 {
   projectRootFile = "flake.nix";
   programs = {
@@ -669,7 +659,7 @@ Final file:
 }
 ```
 
-(The `{ pkgs, ... }` argument is now unused, but removing it would touch the module's interface — leave it.)
+(treefmt-nix's `evalModule pkgs ./treefmt.nix` still passes pkgs through module-eval machinery; the `{ ... }:` rest-pattern absorbs it without declaring an explicit binding.)
 
 - [ ] **Step 3: `packages/yaziPlugins/default.nix` — drop redundant `fetchFromGitHub` from callPlugin**
 
@@ -785,14 +775,13 @@ EOF
 
 - [ ] **Step 1: Insert the guard**
 
-Open `update-locks.sh`. Immediately after the `case "${1:-}" in ... esac` block ends (around line 24) and before the `# Resolve which update-locks-lib.bash` comment (current line 26), insert:
+Open `update-locks.sh`. Find the insertion point by content (line numbers may shift between revisions): immediately after the `case "${1:-}" in ... esac` arg-parsing block ends, and before the `# Resolve which update-locks-lib.bash to source via the canonical flake resolver.` comment that precedes the `NRB_REV=` block. Insert:
 
 ```bash
 # Guard: distinguish missing flake.lock (legitimate bootstrap) from corrupt
-# flake.lock (operator must restore). The self-repair path below at line ~38
-# tolerates an unresolvable `phillipgreenii-nix-base.locked.rev` by falling
-# back to unpinned HEAD; corruption should not be absorbed by that fallback.
-# tc-0ixb2.
+# flake.lock (operator must restore). The self-repair path below tolerates an
+# unresolvable `phillipgreenii-nix-base.locked.rev` by falling back to unpinned
+# HEAD; corruption should not be absorbed by that fallback. tc-0ixb2.
 if [ -e flake.lock ]; then
   if ! jq -e '.nodes.root' flake.lock >/dev/null 2>&1; then
     echo "update-locks.sh: flake.lock is present but corrupt (not valid JSON or missing .nodes.root)." >&2
@@ -971,6 +960,14 @@ Path: `/home/tcadmin/workspace/nix-overlay-chunk6/verify-provenance.sh`. Replace
 # open a PR on bad provenance.
 set -euo pipefail
 
+# Refuse to run on a dirty tree — rollback uses `git reset --hard HEAD~1`
+# which would silently destroy uncommitted edits if any existed.
+if ! git diff --quiet || ! git diff --cached --quiet; then
+  echo "verify-provenance: refusing to run on a dirty working tree (uncommitted changes present)" >&2
+  echo "  commit or stash before retrying." >&2
+  exit 1
+fi
+
 # --- per-upstream method config (audit-time decision) ---
 declare -A METHODS=(
   [beads-web-darwin-arm64]="<BEADS_WEB_METHOD>"
@@ -1061,7 +1058,8 @@ verify_checksums() {
   fi
   # Convert upstream's hex sha256 to SRI form and compare to nvfetcher record.
   local upstream_sri
-  upstream_sri="sha256-$(printf '%s' "$upstream_hex" | xxd -r -p | base64 -w0)"
+  # Portable base64 (Linux `base64 -w0` ≠ macOS `base64`): pipe to `tr -d '\n'`
+  upstream_sri="sha256-$(printf '%s' "$upstream_hex" | xxd -r -p | base64 | tr -d '\n')"
   if [ "$upstream_sri" != "$recorded_sri" ]; then
     echo "verify-provenance: $key: hash mismatch — nvfetcher recorded '$recorded_sri', upstream checksums.txt says '$upstream_sri' (hex: $upstream_hex)" >&2
     return 1
@@ -1154,7 +1152,7 @@ ul_run_step "verify-provenance" \
 echo "Exit: $?"
 ```
 
-Expected: exits 0. The script prints `verify-provenance: all changed upstreams verified.` (or, if the current state has no changes vs the prior commit, the helper detects no changed keys and finishes silently). If the nvfetcher step produces no source changes, the verify step has nothing to verify — that is a pass.
+Expected: exits 0. The script prints `verify-provenance: all configured upstreams verified.` (the helper verifies every configured key every run — intentional simplification over diff-driven selection; see spec update committed alongside this plan).
 
 - [ ] **Step 4: Hard-fail test (spec verification step 7) + rollback verification (spec step 8)**
 
@@ -1211,10 +1209,31 @@ echo "Helper exit: $rc; HEAD now: $(git rev-parse HEAD)"
 
 Expected: `rc=1`, output mentions `cmux: download failed (https://github.com/.../cmux-macos-INVALID.dmg)`, HEAD reverted to `$PRE_COMMIT`, working tree clean.
 
-- [ ] **Step 5: Commit**
+- [ ] **Step 5: Add provenance state table to README**
+
+Open `README.md`. After the existing usage/overlay sections (locate by content — likely after the "Provided packages" or "Consumer setup" section), add a new section:
+
+```markdown
+## Provenance verification
+
+The nightly updater (`update-locks.sh`) verifies every binary upstream's release artifact against published provenance before allowing the update PR to open. Per-upstream method assignment (audit 2026-06-18):
+
+| Upstream | Method | Notes |
+|---|---|---|
+| weselow/beads-web | `<BEADS_WEB_METHOD>` | <one-line description: e.g. "GitHub artifact attestations published since vX.Y.Z" or "checksums.txt published per release" or "no provenance; nightly bot will stall on this upstream until that changes"> |
+| manaflow-ai/cmux | `<CMUX_METHOD>` | <one-line description> |
+
+Git-source plugins (tmux-*, bat-gherkin-syntax) are not verified separately — the nvfetcher-pinned commit SHA is the integrity proof.
+
+If an upstream's release pipeline changes (publishes/withdraws attestation or checksums), the helper at `verify-provenance.sh` must be re-audited. Search for "audit 2026-06-18" in that file to find the per-upstream config block.
+```
+
+Replace `<BEADS_WEB_METHOD>` / `<CMUX_METHOD>` with the Task 8 audit findings — same values as in the helper script.
+
+- [ ] **Step 6: Commit**
 
 ```bash
-git add verify-provenance.sh update-locks.sh
+git add verify-provenance.sh update-locks.sh README.md
 git commit -m "$(cat <<'EOF'
 feat: provenance verification for binary upstreams (S3/M6)
 
