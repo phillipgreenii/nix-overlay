@@ -143,6 +143,19 @@
                 inherit (ours) icons-brew bunny;
               }
             );
+
+          # TEMPORARY back-compat bridge for the A5 namespacing migration
+          # (commit 1b17129 moved overlay packages under `phillipgreenii.*`).
+          # Unmigrated consumers (nix-personal, agent-support) still reference
+          # the old top-level names, so re-expose aliases to keep them building
+          # until the consumer-side ADR-0047 migration lands. Remove then.
+          # NOTE: c9watch was genuinely dropped (not just moved) and so cannot
+          # be aliased here — it is disabled at the consumer instead.
+          inherit (final.phillipgreenii) beads-web bat-gherkin-syntax;
+        }
+        // prev.lib.optionalAttrs (prev.stdenv.hostPlatform.system == "aarch64-darwin") {
+          # cmux only exists under phillipgreenii.* on aarch64-darwin (see above).
+          inherit (final.phillipgreenii) cmux;
         };
     };
 }
