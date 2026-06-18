@@ -71,7 +71,7 @@
             extended = pkgs.extend self.overlays.default;
           in
           {
-            inherit (extended)
+            inherit (extended.phillipgreenii)
               beads-web
               bat-gherkin-syntax
               ;
@@ -94,7 +94,7 @@
             '';
           }
           // lib.optionalAttrs pkgs.stdenv.hostPlatform.isDarwin {
-            inherit (extended) cmux;
+            inherit (extended.phillipgreenii) cmux;
           };
 
         legacyPackages = {
@@ -119,8 +119,13 @@
           sources = final.callPackage ./_sources/generated.nix { };
         in
         {
-          beads-web = final.callPackage ./packages/beads-web { inherit sources; };
-          bat-gherkin-syntax = final.callPackage ./packages/bat-gherkin-syntax { inherit sources; };
+          phillipgreenii = {
+            beads-web = final.callPackage ./packages/beads-web { inherit sources; };
+            bat-gherkin-syntax = final.callPackage ./packages/bat-gherkin-syntax { inherit sources; };
+          }
+          // prev.lib.optionalAttrs prev.stdenv.hostPlatform.isDarwin {
+            cmux = final.callPackage ./packages/cmux { inherit sources; };
+          };
           tmuxPlugins = prev.tmuxPlugins // {
             tmux-open-nvim = final.callPackage ./packages/tmux-open-nvim { inherit sources; };
             tmux-mouse-swipe = final.callPackage ./packages/tmux-mouse-swipe { inherit sources; };
@@ -138,9 +143,6 @@
                 inherit (ours) icons-brew bunny;
               }
             );
-        }
-        // prev.lib.optionalAttrs prev.stdenv.hostPlatform.isDarwin {
-          cmux = final.callPackage ./packages/cmux { inherit sources; };
         };
     };
 }
