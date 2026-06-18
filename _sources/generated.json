@@ -1,0 +1,161 @@
+{
+    "bat-gherkin-syntax": {
+        "cargoLock": null,
+        "date": "2024-10-12",
+        "extract": null,
+        "name": "bat-gherkin-syntax",
+        "passthru": null,
+        "pinned": false,
+        "src": {
+            "deepClone": false,
+            "fetchSubmodules": false,
+            "leaveDotGit": false,
+            "name": null,
+            "owner": "keith-hall",
+            "repo": "SublimeGherkinSyntax",
+            "rev": "ec3fae90209136a89a5027f61167e04790c83382",
+            "sha256": "sha256-yYIMfzAiKdQsl3OPSevENsrs4TkNe+eVVPSRbtHagNY=",
+            "sparseCheckout": [],
+            "type": "github"
+        },
+        "version": "ec3fae90209136a89a5027f61167e04790c83382"
+    },
+    "beads-web-darwin-arm64": {
+        "cargoLock": null,
+        "date": null,
+        "extract": null,
+        "name": "beads-web-darwin-arm64",
+        "passthru": null,
+        "pinned": false,
+        "src": {
+            "name": null,
+            "sha256": "sha256-6+4ddKilgMHFfSBSNCQNPl2jZDmNtWpQ99zKn2bWnkc=",
+            "type": "url",
+            "url": "https://github.com/weselow/beads-web/releases/download/v0.11.2/beads-web-darwin-arm64"
+        },
+        "version": "0.11.2"
+    },
+    "beads-web-linux-x64": {
+        "cargoLock": null,
+        "date": null,
+        "extract": null,
+        "name": "beads-web-linux-x64",
+        "passthru": null,
+        "pinned": false,
+        "src": {
+            "name": null,
+            "sha256": "sha256-eDL5aAwQ41XK58YFirf7HLvImxR5PJeFr6WIzmS5IRE=",
+            "type": "url",
+            "url": "https://github.com/weselow/beads-web/releases/download/v0.11.2/beads-web-linux-x64"
+        },
+        "version": "0.11.2"
+    },
+    "cmux": {
+        "cargoLock": null,
+        "date": null,
+        "extract": null,
+        "name": "cmux",
+        "passthru": null,
+        "pinned": false,
+        "src": {
+            "name": null,
+            "sha256": "sha256-QB/2emBrAzqkcKaLrVUZanK4qXHSma4CeJM2PwGhmXI=",
+            "type": "url",
+            "url": "https://github.com/manaflow-ai/cmux/releases/download/v0.64.16/cmux-macos.dmg"
+        },
+        "version": "0.64.16"
+    },
+    "gascity-darwin-arm64": {
+        "cargoLock": null,
+        "date": null,
+        "extract": null,
+        "name": "gascity-darwin-arm64",
+        "passthru": null,
+        "pinned": false,
+        "src": {
+            "name": null,
+            "sha256": "sha256-xJ82ow1PdV0VSRI/ufx5NNwApf7BeffUBI0UF2pfD6s=",
+            "type": "url",
+            "url": "https://github.com/gastownhall/gascity/releases/download/v1.2.1/gascity_1.2.1_darwin_arm64.tar.gz"
+        },
+        "version": "1.2.1"
+    },
+    "gascity-linux-amd64": {
+        "cargoLock": null,
+        "date": null,
+        "extract": null,
+        "name": "gascity-linux-amd64",
+        "passthru": null,
+        "pinned": false,
+        "src": {
+            "name": null,
+            "sha256": "sha256-erwm2CaIHTghlgDiXnigo2gC7d+ebtdwRidfXsnnIXI=",
+            "type": "url",
+            "url": "https://github.com/gastownhall/gascity/releases/download/v1.2.1/gascity_1.2.1_linux_amd64.tar.gz"
+        },
+        "version": "1.2.1"
+    },
+    "tmux-mouse-swipe": {
+        "cargoLock": null,
+        "date": "2025-12-29",
+        "extract": null,
+        "name": "tmux-mouse-swipe",
+        "passthru": null,
+        "pinned": false,
+        "src": {
+            "deepClone": false,
+            "fetchSubmodules": false,
+            "leaveDotGit": false,
+            "name": null,
+            "owner": "jaclu",
+            "repo": "tmux-mouse-swipe",
+            "rev": "8667851876c7591c668f29df6a142271051a3e2d",
+            "sha256": "sha256-0Mh0sQm3GP1V/KlYi6VjD3Zx2ssLwVI5uOnOp67trYk=",
+            "sparseCheckout": [],
+            "type": "github"
+        },
+        "version": "8667851876c7591c668f29df6a142271051a3e2d"
+    },
+    "tmux-nerd-font-window-name": {
+        "cargoLock": null,
+        "date": "2026-04-10",
+        "extract": null,
+        "name": "tmux-nerd-font-window-name",
+        "passthru": null,
+        "pinned": false,
+        "src": {
+            "deepClone": false,
+            "fetchSubmodules": false,
+            "leaveDotGit": false,
+            "name": null,
+            "owner": "joshmedeski",
+            "repo": "tmux-nerd-font-window-name",
+            "rev": "0af812a228e1b9f538b8d220c6c59d82d7228973",
+            "sha256": "sha256-b6CQdN33hU5li/0LUOHMs7oN8ffVRVQlSf17Twhz2e8=",
+            "sparseCheckout": [],
+            "type": "github"
+        },
+        "version": "0af812a228e1b9f538b8d220c6c59d82d7228973"
+    },
+    "tmux-open-nvim": {
+        "cargoLock": null,
+        "date": "2026-04-20",
+        "extract": null,
+        "name": "tmux-open-nvim",
+        "passthru": null,
+        "pinned": false,
+        "src": {
+            "deepClone": false,
+            "fetchSubmodules": false,
+            "leaveDotGit": false,
+            "name": null,
+            "owner": "trevarj",
+            "repo": "tmux-open-nvim",
+            "rev": "d140ac66e24f1cd26b68638da01a82717a1921bd",
+            "sha256": "sha256-lftDhRERenGVDTWFP1o/bfZIk0RsHh2PxoYY8j8/9CQ=",
+            "sparseCheckout": [],
+            "type": "github"
+        },
+        "version": "d140ac66e24f1cd26b68638da01a82717a1921bd"
+    }
+}

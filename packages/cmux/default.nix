@@ -1,17 +1,12 @@
 {
   lib,
   stdenvNoCC,
-  fetchurl,
   undmg,
+  sources,
 }:
-stdenvNoCC.mkDerivation rec {
+stdenvNoCC.mkDerivation {
   pname = "cmux";
-  version = "0.64.16";
-
-  src = fetchurl {
-    url = "https://github.com/manaflow-ai/cmux/releases/download/v${version}/cmux-macos.dmg";
-    hash = "sha256-QB/2emBrAzqkcKaLrVUZanK4qXHSma4CeJM2PwGhmXI=";
-  };
+  inherit (sources.cmux) version src;
 
   nativeBuildInputs = [ undmg ];
 

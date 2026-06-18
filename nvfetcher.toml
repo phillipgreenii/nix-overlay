@@ -1,0 +1,44 @@
+[beads-web-darwin-arm64]
+src.github = "weselow/beads-web"
+src.prefix = "v"
+fetch.url = "https://github.com/weselow/beads-web/releases/download/v$ver/beads-web-darwin-arm64"
+
+[beads-web-linux-x64]
+src.github = "weselow/beads-web"
+src.prefix = "v"
+fetch.url = "https://github.com/weselow/beads-web/releases/download/v$ver/beads-web-linux-x64"
+
+[gascity-darwin-arm64]
+src.github = "gastownhall/gascity"
+src.prefix = "v"
+fetch.url = "https://github.com/gastownhall/gascity/releases/download/v$ver/gascity_$ver_darwin_arm64.tar.gz"
+
+[gascity-linux-amd64]
+src.github = "gastownhall/gascity"
+src.prefix = "v"
+fetch.url = "https://github.com/gastownhall/gascity/releases/download/v$ver/gascity_$ver_linux_amd64.tar.gz"
+
+[cmux]
+src.github = "manaflow-ai/cmux"
+src.prefix = "v"
+fetch.url = "https://github.com/manaflow-ai/cmux/releases/download/v$ver/cmux-macos.dmg"
+
+[tmux-open-nvim]
+src.git = "https://github.com/trevarj/tmux-open-nvim"
+src.branch = "master"
+fetch.github = "trevarj/tmux-open-nvim"
+
+[tmux-mouse-swipe]
+src.git = "https://github.com/jaclu/tmux-mouse-swipe"
+src.branch = "main"
+fetch.github = "jaclu/tmux-mouse-swipe"
+
+[tmux-nerd-font-window-name]
+src.git = "https://github.com/joshmedeski/tmux-nerd-font-window-name"
+src.branch = "main"
+fetch.github = "joshmedeski/tmux-nerd-font-window-name"
+
+[bat-gherkin-syntax]
+src.git = "https://github.com/keith-hall/SublimeGherkinSyntax"
+src.branch = "master"
+fetch.github = "keith-hall/SublimeGherkinSyntax"

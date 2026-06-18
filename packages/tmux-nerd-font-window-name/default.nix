@@ -1,17 +1,12 @@
 {
   lib,
   tmuxPlugins,
-  fetchFromGitHub,
+  sources,
 }:
 tmuxPlugins.mkTmuxPlugin {
   pluginName = "tmux-nerd-font-window-name";
-  version = "unstable-2026-04-10";
-  src = fetchFromGitHub {
-    owner = "joshmedeski";
-    repo = "tmux-nerd-font-window-name";
-    rev = "0af812a228e1b9f538b8d220c6c59d82d7228973";
-    sha256 = "sha256-b6CQdN33hU5li/0LUOHMs7oN8ffVRVQlSf17Twhz2e8=";
-  };
+  version = "unstable-${sources.tmux-nerd-font-window-name.date}";
+  src = sources.tmux-nerd-font-window-name.src;
   meta = {
     platforms = lib.platforms.unix;
   };

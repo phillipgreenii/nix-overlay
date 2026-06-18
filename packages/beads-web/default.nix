@@ -1,35 +1,22 @@
 {
   lib,
   stdenv,
-  fetchurl,
+  sources,
 }:
 
 let
-  version = "0.11.2";
-
-  supportedPlatforms = {
-    aarch64-darwin = {
-      artifact = "darwin-arm64";
-      hash = "sha256-6+4ddKilgMHFfSBSNCQNPl2jZDmNtWpQ99zKn2bWnkc=";
-    };
-    x86_64-linux = {
-      artifact = "linux-x64";
-      hash = "sha256-eDL5aAwQ41XK58YFirf7HLvImxR5PJeFr6WIzmS5IRE=";
-    };
-  };
-
   current =
-    supportedPlatforms.${stdenv.hostPlatform.system}
-      or (throw "beads-web: ${stdenv.hostPlatform.system} not supported; build platforms: ${toString (builtins.attrNames supportedPlatforms)}");
+    {
+      aarch64-darwin = sources.beads-web-darwin-arm64;
+      x86_64-linux = sources.beads-web-linux-x64;
+    }
+    .${stdenv.hostPlatform.system}
+      or (throw "beads-web: ${stdenv.hostPlatform.system} not supported; build platforms: aarch64-darwin, x86_64-linux");
 in
 stdenv.mkDerivation {
   pname = "beads-web";
-  inherit version;
-
-  src = fetchurl {
-    url = "https://github.com/weselow/beads-web/releases/download/v${version}/beads-web-${current.artifact}";
-    inherit (current) hash;
-  };
+  inherit (current) version;
+  inherit (current) src;
 
   dontUnpack = true;
 
@@ -44,6 +31,9 @@ stdenv.mkDerivation {
     license = licenses.mit;
     maintainers = [ ];
     mainProgram = "beads-web";
-    platforms = builtins.attrNames supportedPlatforms;
+    platforms = [
+      "aarch64-darwin"
+      "x86_64-linux"
+    ];
   };
 }

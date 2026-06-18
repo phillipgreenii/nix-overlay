@@ -1,36 +1,22 @@
 {
   lib,
-  stdenv,
   stdenvNoCC,
-  fetchurl,
+  sources,
 }:
 
 let
-  version = "1.2.1";
-
-  supportedPlatforms = {
-    aarch64-darwin = {
-      artifact = "darwin_arm64";
-      hash = "sha256-xJ82ow1PdV0VSRI/ufx5NNwApf7BeffUBI0UF2pfD6s=";
-    };
-    x86_64-linux = {
-      artifact = "linux_amd64";
-      hash = "sha256-erwm2CaIHTghlgDiXnigo2gC7d+ebtdwRidfXsnnIXI=";
-    };
-  };
-
   current =
-    supportedPlatforms.${stdenv.hostPlatform.system}
-      or (throw "gascity: ${stdenv.hostPlatform.system} not supported; build platforms: ${toString (builtins.attrNames supportedPlatforms)}");
+    {
+      aarch64-darwin = sources.gascity-darwin-arm64;
+      x86_64-linux = sources.gascity-linux-amd64;
+    }
+    .${stdenvNoCC.hostPlatform.system}
+      or (throw "gascity: ${stdenvNoCC.hostPlatform.system} not supported; build platforms: aarch64-darwin, x86_64-linux");
 in
 stdenvNoCC.mkDerivation {
   pname = "gascity";
-  inherit version;
-
-  src = fetchurl {
-    url = "https://github.com/gastownhall/gascity/releases/download/v${version}/gascity_${version}_${current.artifact}.tar.gz";
-    inherit (current) hash;
-  };
+  inherit (current) version;
+  inherit (current) src;
 
   sourceRoot = ".";
   dontFixup = true;
@@ -45,6 +31,9 @@ stdenvNoCC.mkDerivation {
     homepage = "https://github.com/gastownhall/gascity";
     license = licenses.mit;
     mainProgram = "gc";
-    platforms = builtins.attrNames supportedPlatforms;
+    platforms = [
+      "aarch64-darwin"
+      "x86_64-linux"
+    ];
   };
 }

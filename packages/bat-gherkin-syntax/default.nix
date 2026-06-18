@@ -1,10 +1,16 @@
-{ lib, fetchFromGitHub }:
-# last updated: unstable-2024-10-12
-fetchFromGitHub {
-  owner = "keith-hall";
-  repo = "SublimeGherkinSyntax";
-  rev = "ec3fae90209136a89a5027f61167e04790c83382";
-  sha256 = "sha256-yYIMfzAiKdQsl3OPSevENsrs4TkNe+eVVPSRbtHagNY=";
+{
+  lib,
+  sources,
+}:
+# Bare fetchFromGitHub result with smuggled meta (deepdive B8 — deferred).
+# The // merge re-applies meta on top of the source derivation. If
+# `nix build .#bat-gherkin-syntax` fails because the // drops derivation
+# markers, swap to:
+#   sources.bat-gherkin-syntax.src.overrideAttrs (_: {
+#     meta = { platforms = lib.platforms.unix; };
+#   })
+sources.bat-gherkin-syntax.src
+// {
   meta = {
     platforms = lib.platforms.unix;
   };

@@ -62,6 +62,7 @@
             pkgs.jq
             pkgs.curl
             pkgs.gnused
+            pkgs.nvfetcher
           ];
         };
 
@@ -103,18 +104,6 @@
           };
         };
 
-        apps =
-          let
-            mkApp = drv: {
-              type = "app";
-              program = "${drv}/bin/${drv.meta.mainProgram or drv.name}";
-            };
-          in
-          {
-            update-cmux = mkApp (pkgs.callPackage ./nix/update-cmux.nix { });
-            update-beads-web = mkApp (pkgs.callPackage ./nix/update-beads-web.nix { });
-            update-gascity = mkApp (pkgs.callPackage ./nix/update-gascity.nix { });
-          };
       }
     )
     // {
@@ -127,14 +116,19 @@
 
       overlays.default =
         final: prev:
+        let
+          sources = final.callPackage ./_sources/generated.nix { };
+        in
         {
-          beads-web = final.callPackage ./packages/beads-web { };
-          bat-gherkin-syntax = final.callPackage ./packages/bat-gherkin-syntax { };
-          gascity = final.callPackage ./packages/gascity { };
+          beads-web = final.callPackage ./packages/beads-web { inherit sources; };
+          bat-gherkin-syntax = final.callPackage ./packages/bat-gherkin-syntax { inherit sources; };
+          gascity = final.callPackage ./packages/gascity { inherit sources; };
           tmuxPlugins = prev.tmuxPlugins // {
-            tmux-open-nvim = final.callPackage ./packages/tmux-open-nvim { };
-            tmux-mouse-swipe = final.callPackage ./packages/tmux-mouse-swipe { };
-            tmux-nerd-font-window-name = final.callPackage ./packages/tmux-nerd-font-window-name { };
+            tmux-open-nvim = final.callPackage ./packages/tmux-open-nvim { inherit sources; };
+            tmux-mouse-swipe = final.callPackage ./packages/tmux-mouse-swipe { inherit sources; };
+            tmux-nerd-font-window-name = final.callPackage ./packages/tmux-nerd-font-window-name {
+              inherit sources;
+            };
           };
           yaziPlugins =
             prev.yaziPlugins
@@ -148,7 +142,7 @@
             );
         }
         // prev.lib.optionalAttrs prev.stdenv.hostPlatform.isDarwin {
-          cmux = final.callPackage ./packages/cmux { };
+          cmux = final.callPackage ./packages/cmux { inherit sources; };
         };
     };
 }
