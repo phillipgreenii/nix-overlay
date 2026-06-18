@@ -23,6 +23,20 @@ case "${1:-}" in
   ;;
 esac
 
+# Guard: distinguish missing flake.lock (legitimate bootstrap) from corrupt
+# flake.lock (operator must restore). The self-repair path below tolerates an
+# unresolvable `phillipgreenii-nix-base.locked.rev` by falling back to unpinned
+# HEAD; corruption should not be absorbed by that fallback. tc-0ixb2.
+if [ -e flake.lock ]; then
+  if ! jq -e '.nodes.root' flake.lock >/dev/null 2>&1; then
+    echo "update-locks.sh: flake.lock is present but corrupt (not valid JSON or missing .nodes.root)." >&2
+    echo "  Restore from git: git checkout HEAD -- flake.lock" >&2
+    exit 1
+  fi
+else
+  echo "update-locks.sh: flake.lock is missing; nix flake update will bootstrap it." >&2
+fi
+
 # Resolve which update-locks-lib.bash to source via the canonical flake resolver.
 # Pin nix-repo-base to the locked rev (closes the unpinned-HEAD code-execution
 # hole that GH_TOKEN-bearing CI would otherwise expose). Fall back to unpinned
