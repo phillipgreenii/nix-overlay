@@ -16,6 +16,18 @@ stdenvNoCC.mkDerivation {
   unpackPhase = ''
     runHook preUnpack
     7zz x "$src"
+
+    # 7zz cannot restore macOS extended attributes, so it materializes each
+    # one as a sidecar file named `<file>:<xattr>`. cmux signs its non-Mach-O
+    # helper scripts (Contents/Resources/bin/{cmux-claude-wrapper,grok,open})
+    # by storing the signature in `com.apple.cs.*` xattrs, which 7zz turns into
+    # stray files. Those files are not part of the notarized CodeResources
+    # seal, so Gatekeeper rejects the bundle ("a sealed resource is missing or
+    # invalid" -> "cmux.app is damaged and can't be opened"). Drop them so the
+    # bundle matches its original seal again; the scripts stay sealed by their
+    # content hash in CodeResources.
+    find . -name '*:com.apple.cs.*' -delete
+
     runHook postUnpack
   '';
 
