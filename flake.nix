@@ -33,26 +33,40 @@
         inputs.phillipgreenii-nix-base.flakeModules.checks
       ];
 
-      # Top-level option — see nix-repo-base/flake-modules/devshell.nix:7.
-      # KNOWN LIMITATION: this option is a flat `listOf package` evaluated once;
-      # hardcoding x86_64-linux means the devshell only works correctly on
-      # x86_64-linux. nix-overlay's primary dev host is Linux. Track a
-      # producer-side follow-up bead to make this option per-system-aware.
-      phillipgreenii.devshell.extraInputs = with nixpkgs.legacyPackages.x86_64-linux; [
-        jq
-        curl
-        gnused
-        nvfetcher
-      ];
+      # Single phillipgreenii block (statix: no repeated top-level keys).
+      phillipgreenii = {
+        # devshell.extraInputs — see nix-repo-base/flake-modules/devshell.nix:7.
+        # KNOWN LIMITATION: a flat `listOf package` evaluated once; hardcoding
+        # x86_64-linux means the devshell only works correctly there. nix-overlay's
+        # primary dev host is Linux. Track a producer-side follow-up to make this
+        # option per-system-aware.
+        devshell.extraInputs = with nixpkgs.legacyPackages.x86_64-linux; [
+          jq
+          curl
+          gnused
+          nvfetcher
+        ];
 
-      # nvfetcher's _sources/ is generated (not hand-written); deadnix flags its
-      # unused fetcher args. The producer merges extraHooks over its hook set, so
-      # override the deadnix hook to exclude the generated tree. (treefmt excludes
-      # it via settings.global.excludes in perSystem.) Surfaced post-migration; tc-xbxex.
-      phillipgreenii.pre-commit.extraHooks.deadnix = {
-        enable = true;
-        name = "deadnix";
-        excludes = [ "^_sources/" ];
+        # nvfetcher's _sources/ is generated (not hand-written). The producer's
+        # lint/whitespace hooks have no generated-paths exclude, so override them
+        # to skip the generated tree (the producer merges extraHooks over its hook
+        # set). treefmt is excluded separately via settings.global.excludes in
+        # perSystem. Surfaced post-migration; tc-xbxex. A producer-side global
+        # `excludes` option (tracked separately) would replace these per-hook overrides.
+        pre-commit.extraHooks = {
+          deadnix = {
+            enable = true;
+            name = "deadnix";
+            excludes = [ "^_sources/" ];
+          };
+          # generated.json has no trailing newline; end-of-file-fixer would
+          # rewrite it every run.
+          end-of-file-fixer = {
+            enable = true;
+            entry = "${nixpkgs.legacyPackages.x86_64-linux.python3Packages.pre-commit-hooks}/bin/end-of-file-fixer";
+            excludes = [ "^_sources/" ];
+          };
+        };
       };
 
       perSystem =
