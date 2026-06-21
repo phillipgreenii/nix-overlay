@@ -3,159 +3,160 @@
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-26.05-darwin";
-    flake-utils.url = "github:numtide/flake-utils";
-    treefmt-nix.url = "github:numtide/treefmt-nix";
-    treefmt-nix.inputs.nixpkgs.follows = "nixpkgs";
-    git-hooks.url = "github:cachix/git-hooks.nix";
-    git-hooks.inputs.nixpkgs.follows = "nixpkgs";
+    flake-parts.url = "github:hercules-ci/flake-parts";
     phillipgreenii-nix-base = {
       url = "github:phillipgreenii/nix-repo-base";
-      inputs = {
-        nixpkgs.follows = "nixpkgs";
-        flake-utils.follows = "flake-utils";
-        treefmt-nix.follows = "treefmt-nix";
-        git-hooks.follows = "git-hooks";
-      };
+      inputs.nixpkgs.follows = "nixpkgs";
     };
   };
 
   outputs =
-    {
+    inputs@{
       self,
       nixpkgs,
-      flake-utils,
-      treefmt-nix,
+      flake-parts,
       phillipgreenii-nix-base,
       ...
     }:
-    flake-utils.lib.eachDefaultSystem (
-      system:
-      let
-        pkgs = nixpkgs.legacyPackages.${system};
-        inherit (pkgs) lib;
-        treefmtEval = treefmt-nix.lib.evalModule pkgs ./treefmt.nix;
-        checks-lib = phillipgreenii-nix-base.lib.mkChecks pkgs;
-        pre-commit = phillipgreenii-nix-base.lib.mkPreCommitHooks {
-          inherit system;
-          src = ./.;
-          treefmtWrapper = treefmtEval.config.build.wrapper;
-        };
-        yaziPluginSet = pkgs.callPackage ./packages/yaziPlugins { };
-      in
-      {
-        formatter = treefmtEval.config.build.wrapper;
+    flake-parts.lib.mkFlake { inherit inputs; } {
+      # Mirror flake-utils.lib.defaultSystems verbatim — do NOT drop x86_64-darwin.
+      systems = [
+        "aarch64-darwin"
+        "aarch64-linux"
+        "x86_64-darwin"
+        "x86_64-linux"
+      ];
 
-        checks = {
-          formatting = treefmtEval.config.build.check self;
-          linting = checks-lib.linting ./.;
-        }
-        # Build every package in self.packages.${system} so CI exercises the
-        # derivations, not just lint/format.
-        # NOTE: if a future package name collides with "formatting" or
-        # "linting", it will silently shadow the check.
-        // self.packages.${system};
+      imports = [
+        # pre-commit transitively imports treefmt
+        inputs.phillipgreenii-nix-base.flakeModules.pre-commit
+        inputs.phillipgreenii-nix-base.flakeModules.devshell
+        inputs.phillipgreenii-nix-base.flakeModules.checks
+      ];
 
-        devShells.default = phillipgreenii-nix-base.lib.mkDevShell {
-          inherit pkgs;
-          pre-commit-shellHook = pre-commit.shellHook;
-          extraInputs = [
-            pkgs.jq
-            pkgs.curl
-            pkgs.gnused
-            pkgs.nvfetcher
-          ];
-        };
+      # Top-level option — see nix-repo-base/flake-modules/devshell.nix:7.
+      # KNOWN LIMITATION: this option is a flat `listOf package` evaluated once;
+      # hardcoding x86_64-linux means the devshell only works correctly on
+      # x86_64-linux. nix-overlay's primary dev host is Linux. Track a
+      # producer-side follow-up bead to make this option per-system-aware.
+      phillipgreenii.devshell.extraInputs = with nixpkgs.legacyPackages.x86_64-linux; [
+        jq
+        curl
+        gnused
+        nvfetcher
+      ];
 
-        packages =
-          let
-            extended = pkgs.extend self.overlays.default;
-          in
-          {
-            inherit (extended.phillipgreenii)
-              beads-web
-              bat-gherkin-syntax
-              ;
-            inherit (extended.tmuxPlugins)
-              tmux-open-nvim
-              tmux-mouse-swipe
-              tmux-nerd-font-window-name
-              ;
-            yaziPlugins-icons-brew = extended.yaziPlugins.icons-brew;
-            yaziPlugins-bunny = extended.yaziPlugins.bunny;
-
-            fix-lint = pkgs.writeShellScriptBin "fix-lint" ''
-              exec ${lib.getExe pkgs.statix} fix "''${@:-.}"
-            '';
-
-            install-pre-commit-hooks = pkgs.writeShellScriptBin "install-pre-commit-hooks" ''
-              ${pre-commit.shellHook}
-              echo "Pre-commit hooks installed successfully!"
-              echo "Run 'pre-commit run --all-files' to test them."
-            '';
-          }
-          // lib.optionalAttrs (pkgs.stdenv.hostPlatform.system == "aarch64-darwin") {
-            inherit (extended.phillipgreenii) cmux;
-          };
-
-        legacyPackages = {
-          yaziPlugins = {
-            inherit (yaziPluginSet) icons-brew bunny;
-          };
-        };
-
-      }
-    )
-    // {
-      homeModules.install-metadata = phillipgreenii-nix-base.lib.mkInstallMetadata {
-        flakeSelf = self;
-        name = "phillipgreenii-nix-overlay";
-      };
-
-      overlays.firefox-binary-wrapper = import ./overlays/firefox-binary-wrapper.nix;
-
-      overlays.default =
-        final: prev:
+      perSystem =
+        {
+          self',
+          inputs',
+          pkgs,
+          system,
+          config,
+          ...
+        }:
         let
-          sources = final.callPackage ./_sources/generated.nix { };
+          yaziPluginSet = pkgs.callPackage ./packages/yaziPlugins { };
         in
         {
-          phillipgreenii = {
-            beads-web = final.callPackage ./packages/beads-web { inherit sources; };
-            bat-gherkin-syntax = final.callPackage ./packages/bat-gherkin-syntax { inherit sources; };
+          # formatter, devShells.default, packages.install-pre-commit-hooks,
+          # checks.{formatting, linting, pre-commit, consumer-input-alignment}
+          # — all auto-contributed.
+
+          # Build every package as a check. Use config.packages (same-perSystem
+          # scope) rather than self.packages.${system} which forces an eval
+          # cycle through flake-parts' mkPerSystemFile.
+          checks = config.packages;
+
+          packages =
+            let
+              extended = pkgs.extend self.overlays.default;
+            in
+            {
+              inherit (extended.phillipgreenii)
+                beads-web
+                bat-gherkin-syntax
+                ;
+              inherit (extended.tmuxPlugins)
+                tmux-open-nvim
+                tmux-mouse-swipe
+                tmux-nerd-font-window-name
+                ;
+              yaziPlugins-icons-brew = extended.yaziPlugins.icons-brew;
+              yaziPlugins-bunny = extended.yaziPlugins.bunny;
+
+              fix-lint = pkgs.writeShellScriptBin "fix-lint" ''
+                exec ${pkgs.lib.getExe pkgs.statix} fix "''${@:-.}"
+              '';
+              # install-pre-commit-hooks REMOVED — pre-commit module auto-contributes it.
+            }
+            // pkgs.lib.optionalAttrs (pkgs.stdenv.hostPlatform.system == "aarch64-darwin") {
+              inherit (extended.phillipgreenii) cmux;
+            };
+
+          legacyPackages = {
+            yaziPlugins = { inherit (yaziPluginSet) icons-brew bunny; };
+          };
+        };
+
+      flake = {
+        # Shape-B wrapper: imports the producer's HM module and sets options
+        # with this flake's self + name. Downstream consumers see the configured
+        # module shape (no further options to set).
+        homeModules.install-metadata = { ... }: {
+          imports = [ inputs.phillipgreenii-nix-base.homeModules.install-metadata ];
+          phillipgreenii.install-metadata = {
+            flakeSelf = self;
+            name = "phillipgreenii-nix-overlay";
+          };
+        };
+
+        overlays.firefox-binary-wrapper = import ./overlays/firefox-binary-wrapper.nix;
+
+        overlays.default =
+          final: prev:
+          let
+            sources = final.callPackage ./_sources/generated.nix { };
+          in
+          {
+            phillipgreenii = {
+              beads-web = final.callPackage ./packages/beads-web { inherit sources; };
+              bat-gherkin-syntax = final.callPackage ./packages/bat-gherkin-syntax { inherit sources; };
+            }
+            // prev.lib.optionalAttrs (prev.stdenv.hostPlatform.system == "aarch64-darwin") {
+              cmux = final.callPackage ./packages/cmux { inherit sources; };
+            };
+            tmuxPlugins = prev.tmuxPlugins // {
+              tmux-open-nvim = final.callPackage ./packages/tmux-open-nvim { inherit sources; };
+              tmux-mouse-swipe = final.callPackage ./packages/tmux-mouse-swipe { inherit sources; };
+              tmux-nerd-font-window-name = final.callPackage ./packages/tmux-nerd-font-window-name {
+                inherit sources;
+              };
+            };
+            yaziPlugins =
+              prev.yaziPlugins
+              // (
+                let
+                  ours = final.callPackage ./packages/yaziPlugins { };
+                in
+                {
+                  inherit (ours) icons-brew bunny;
+                }
+              );
+
+            # TEMPORARY back-compat bridge for the A5 namespacing migration
+            # (commit 1b17129 moved overlay packages under `phillipgreenii.*`).
+            # Unmigrated consumers (nix-personal, agent-support) still reference
+            # the old top-level names, so re-expose aliases to keep them building
+            # until the consumer-side ADR-0047 migration lands. Remove then.
+            # NOTE: c9watch was genuinely dropped (not just moved) and so cannot
+            # be aliased here — it is disabled at the consumer instead.
+            inherit (final.phillipgreenii) beads-web bat-gherkin-syntax;
           }
           // prev.lib.optionalAttrs (prev.stdenv.hostPlatform.system == "aarch64-darwin") {
-            cmux = final.callPackage ./packages/cmux { inherit sources; };
+            # cmux only exists under phillipgreenii.* on aarch64-darwin (see above).
+            inherit (final.phillipgreenii) cmux;
           };
-          tmuxPlugins = prev.tmuxPlugins // {
-            tmux-open-nvim = final.callPackage ./packages/tmux-open-nvim { inherit sources; };
-            tmux-mouse-swipe = final.callPackage ./packages/tmux-mouse-swipe { inherit sources; };
-            tmux-nerd-font-window-name = final.callPackage ./packages/tmux-nerd-font-window-name {
-              inherit sources;
-            };
-          };
-          yaziPlugins =
-            prev.yaziPlugins
-            // (
-              let
-                ours = final.callPackage ./packages/yaziPlugins { };
-              in
-              {
-                inherit (ours) icons-brew bunny;
-              }
-            );
-
-          # TEMPORARY back-compat bridge for the A5 namespacing migration
-          # (commit 1b17129 moved overlay packages under `phillipgreenii.*`).
-          # Unmigrated consumers (nix-personal, agent-support) still reference
-          # the old top-level names, so re-expose aliases to keep them building
-          # until the consumer-side ADR-0047 migration lands. Remove then.
-          # NOTE: c9watch was genuinely dropped (not just moved) and so cannot
-          # be aliased here — it is disabled at the consumer instead.
-          inherit (final.phillipgreenii) beads-web bat-gherkin-syntax;
-        }
-        // prev.lib.optionalAttrs (prev.stdenv.hostPlatform.system == "aarch64-darwin") {
-          # cmux only exists under phillipgreenii.* on aarch64-darwin (see above).
-          inherit (final.phillipgreenii) cmux;
-        };
+      };
     };
 }
