@@ -46,6 +46,7 @@ B5 + B6
 ## Branch 1 — `fix/drop-c9watch-and-honest-platforms` (B5 + B6 + c9watch removal)
 
 ### Problem
+
 - **c9watch unused:** User dropped it locally; the overlay still packages it, exports it, downloads its release artifacts nightly. Dead weight + dead supply-chain surface.
 - **B5 (dishonest meta.platforms):** `packages/beads-web/default.nix:45` and `packages/gascity/default.nix:47-52` claim platforms they can't actually build. Forcing the derivation on those platforms throws at eval (`throw "beads-web: unsupported system ..."`) instead of giving a clean "not available on this platform" error.
 - **B6 (updaters don't write fakeHash):** `nix/update-beads-web.sh:73-75` and `nix/update-gascity.sh:85-88` sed-substitute only quoted hash values (`<key> = "..."`). `lib.fakeHash` is unquoted (`darwin-x64 = lib.fakeHash;`), so the seds never match and the placeholder lingers forever. The updaters downloaded those platforms (~10-20 MB each) and threw the resulting hash away.
@@ -54,6 +55,7 @@ B5 + B6
 ### Change
 
 **c9watch removal:**
+
 - Delete: `packages/c9watch/cli.nix`, `packages/c9watch/gui.nix`, `packages/c9watch/` (the directory should be empty after removing both files).
 - Delete: `nix/update-c9watch.sh`, `nix/update-c9watch.nix`.
 - `flake.nix`:
@@ -117,6 +119,7 @@ stdenv.mkDerivation {
 ```
 
 Honesty wins (over the current state):
+
 - `meta.platforms` is `[ "aarch64-darwin" "x86_64-linux" ]` — exactly the platforms that build. No more `platforms.unix` overclaim.
 - `lib.fakeHash` is gone.
 - `meta.platforms` is derived from `supportedPlatforms` keys — they cannot drift.
@@ -125,16 +128,19 @@ Honesty wins (over the current state):
 The throw still fires on `nix eval .#beads-web.drvPath` on an unsupported system — that's identical to nixpkgs convention for prebuilt-binary packages (`pkgs.terraform`, `pkgs.kubectl`). Build attempts via `nix build`, `nix-env -i`, or home-manager all consult `meta.platforms` first and reject cleanly before forcing the throw.
 
 The `sha256-eDL5aAwQ41XK58YFirf7HLvImxR5PJeFr6WIzmS5IRE=` value above was computed against the current release at the time this spec was written. If the upstream version bumps between spec and implementation, re-derive with:
+
 ```bash
 nix store prefetch-file --json --hash-type sha256 \
   "https://github.com/weselow/beads-web/releases/download/v<NEW-VERSION>/beads-web-linux-x64" \
   | jq -r .hash
 ```
+
 (Use `nix store prefetch-file` rather than `nix-prefetch-url | xargs nix hash convert` — it emits SRI directly and avoids the stderr "path is …" noise.)
 
 **gascity honest platforms (`packages/gascity/default.nix`):**
 
 Same restructure pattern. Final state:
+
 ```nix
 supportedPlatforms = {
   aarch64-darwin = {
@@ -147,6 +153,7 @@ supportedPlatforms = {
   };
 };
 ```
+
 Drop `darwin_amd64` and `linux_arm64` entirely. `meta.platforms = builtins.attrNames supportedPlatforms;` instead of the hand-rolled 4-element list.
 
 **Updater script reflows (B6):**
@@ -163,6 +170,7 @@ supportedPlatforms = {
 This shape lets each platform's hash be rewritten with a single anchored sed (one per platform), no cross-contamination.
 
 `nix/update-beads-web.sh`:
+
 - Drop the `DARWIN_X64_URL` prefetch + hash computation (lines 48, 56-60, 68, 74).
 - Update lines 47-75 to handle only the two supported platforms.
 - Update the seds at lines 73-75 to target the new one-line attrset shape. For each platform, anchor on the system-name key:
@@ -172,6 +180,7 @@ This shape lets each platform's hash be rewritten with a single anchored sed (on
   ```
 
 `nix/update-gascity.sh`:
+
 - Drop the `DARWIN_AMD64_URL` and `LINUX_ARM64_URL` prefetches + hash computations (lines 53-55, 62-66, 72-76, 79, 81, 86, 88).
 - Update remaining seds to target the same one-line attrset shape (artifacts `darwin_arm64` / `linux_amd64`).
 
@@ -180,6 +189,7 @@ This shape lets each platform's hash be rewritten with a single anchored sed (on
 **flake.nix cleanup:**
 
 Remove the `// (if pkgs.stdenv.hostPlatform.isLinux then removeAttrs ... else ...)` filter at `flake.nix:58-66`. After honest platforms, `checks` simplifies to:
+
 ```nix
 checks = {
   formatting = treefmtEval.config.build.check self;
@@ -193,7 +203,7 @@ checks = {
 2. `nix build .#beads-web --no-link` on linux succeeds (was hash-mismatch before).
 3. `nix build .#gascity --no-link` on linux succeeds.
 4. `nix build .#beads-web .#gascity --system aarch64-darwin --dry-run` on linux: emits the expected darwin builds without throw.
-5. On linux: `nix eval .#packages.aarch64-linux.beads-web` *throws* with the "not supported; build platforms: ..." message (the standard nixpkgs pattern for prebuilt-binary packages — `pkgs.terraform`, `pkgs.kubectl`, `pkgs.obsidian` all do the same). `nix-build`/`nix build`/home-manager consult `meta.platforms` before forcing the throw, so user-facing install attempts get a clean rejection. The throw only surfaces on direct eval-time access to the derivation (e.g. `nix flake show --json` across all systems).
+5. On linux: `nix eval .#packages.aarch64-linux.beads-web` _throws_ with the "not supported; build platforms: ..." message (the standard nixpkgs pattern for prebuilt-binary packages — `pkgs.terraform`, `pkgs.kubectl`, `pkgs.obsidian` all do the same). `nix-build`/`nix build`/home-manager consult `meta.platforms` before forcing the throw, so user-facing install attempts get a clean rejection. The throw only surfaces on direct eval-time access to the derivation (e.g. `nix flake show --json` across all systems).
 6. `grep c9watch flake.nix update-locks.sh nix/ packages/` returns no matches.
 7. After merge, the post-merge CI on `main` exercises every package on its declared platforms with no exclusion filter.
 
@@ -208,6 +218,7 @@ checks = {
 ## Branch 2 — `fix/host-tool-replacements` (S4 + B10)
 
 ### Problem
+
 - `packages/cmux/default.nix:15, 17` call `/usr/bin/hdiutil attach/detach` — works on darwin only because the darwin sandbox is commonly off. With `sandbox = true` (Determinate Nix's stricter defaults), it fails. Mount leaks on `cp` failure (no trap).
 - `overlays/firefox-binary-wrapper.nix:21` calls `/usr/bin/codesign`. Same impurity story.
 - B10: `overlays/firefox-binary-wrapper.nix:9` uses `builtins.replaceStrings [ ''makeWrapper "$oldExe"'' ] ...` against `oldAttrs.buildCommand`. If nixpkgs ever stops emitting that exact string, `replaceStrings` silently substitutes nothing and the entire overlay becomes a no-op — Firefox loses its TCC permission fix invisibly.
@@ -217,6 +228,7 @@ checks = {
 **cmux (`packages/cmux/default.nix`):**
 
 Replace the `/usr/bin/hdiutil` dance:
+
 ```nix
 unpackPhase = ''
   mnt=$(mktemp -d)
@@ -225,7 +237,9 @@ unpackPhase = ''
   /usr/bin/hdiutil detach "$mnt"
 '';
 ```
+
 With `undmg`:
+
 ```nix
 nativeBuildInputs = [ undmg ];
 unpackPhase = ''
@@ -234,11 +248,13 @@ unpackPhase = ''
   runHook postUnpack
 '';
 ```
+
 Signature change: `{ lib, stdenvNoCC, fetchurl, undmg }`.
 
 **Alternative (simpler):** `undmg` ships a setup-hook (`pkgs/by-name/un/undmg/setup-hook.sh`) that auto-fires on `*.dmg` sources. Just adding `undmg` to `nativeBuildInputs` lets stdenv's default `unpackPhase` invoke the hook. The manual `unpackPhase` block above is only needed if the implementer wants to keep it explicit (matches repo style) or if `sourceRoot` doesn't land where `installPhase` expects. **Verify against the actual dmg empirically:** if the existing `sourceRoot = ".";` and `installPhase`'s `cp -r *.app $out/Applications/` find the `.app` after extraction, the manual unpackPhase can be dropped; otherwise keep it.
 
 `undmg` is in nixpkgs-26.05-darwin for darwin systems; cmux is gated to darwin so no linux-eval concern. If undmg fails on this specific dmg (APFS image), the implementer falls back to `pkgs._7zz`:
+
 ```nix
 nativeBuildInputs = [ _7zz ];
 unpackPhase = ''
@@ -247,11 +263,13 @@ unpackPhase = ''
   runHook postUnpack
 '';
 ```
+
 Signature would be `{ lib, stdenvNoCC, fetchurl, _7zz }` in that fallback. Decision made empirically by trying `undmg` first.
 
 **firefox-binary-wrapper (`overlays/firefox-binary-wrapper.nix`):**
 
 Final shape:
+
 ```nix
 # Fix Firefox TCC permissions on macOS: use makeBinaryWrapper (compiled binary)
 # instead of makeWrapper (bash script) so macOS attributes camera/mic
@@ -295,6 +313,7 @@ prev.lib.optionalAttrs prev.stdenv.hostPlatform.isDarwin {
 ```
 
 Changes:
+
 - Add `prev.darwin.sigtool` to `nativeBuildInputs`. **Important:** the attribute path is `pkgs.darwin.sigtool`, not `pkgs.sigtool` (which doesn't exist in nixpkgs-26.05-darwin). The package realises a `codesign` shim into `$out/bin/codesign`.
 - `/usr/bin/codesign --force --sign -` → `codesign --force --sign -` (PATH-resolved via `nativeBuildInputs`).
 - Add `assert prev.lib.assertMsg (prev.lib.hasInfix sentinel oldAttrs.buildCommand) "..."` so an upstream nixpkgs change to firefox's `buildCommand` shape fails the overlay at eval rather than silently producing a no-op.
@@ -319,7 +338,8 @@ Changes:
 ## Branch 3 — `fix/misc-correctness` (B2 + S5)
 
 ### Problem
-- **B2 (`fix-lint` broken):** `flake.nix:96-98` defines `fix-lint = pkgs.writeShellScriptBin "fix-lint" '' ${lib.getExe pkgs.statix} fix ${./.} '';`. `${./.}` interpolates the flake source *into the store*; `statix fix` cannot write there. Every file change in the repo also rebuilds the trivial script (the whole repo is its build input).
+
+- **B2 (`fix-lint` broken):** `flake.nix:96-98` defines `fix-lint = pkgs.writeShellScriptBin "fix-lint" '' ${lib.getExe pkgs.statix} fix ${./.} '';`. `${./.}` interpolates the flake source _into the store_; `statix fix` cannot write there. Every file change in the repo also rebuilds the trivial script (the whole repo is its build input).
 - **S5 (invalid-hash fallback):** `nix/update-{beads-web,cmux,gascity}.sh` have `nix hash convert ... 2>/dev/null || echo "sha256-$RAW"`. If `nix hash convert` ever fails (older nix, PATH issue), the fallback writes `sha256-<base32>` — a syntactically plausible SRI string but actually invalid base64. Gets committed; the next build fails opaquely.
 
 ### Change
@@ -333,11 +353,13 @@ fix-lint = pkgs.writeShellScriptBin "fix-lint" ''
 ```
 
 Changes:
+
 - `${./.}` → `"''${@:-.}"` — accepts any number of target paths as positional args, or defaults to `$PWD` if none. `statix fix` accepts multiple positional targets.
 - Add `exec` to avoid an extra shell process.
 - Drop the repo-as-build-input dependency (the script's hash depends only on `pkgs.statix`).
 
 Examples after fix:
+
 - `nix run .#fix-lint` → `statix fix .`
 - `nix run .#fix-lint -- packages/cmux` → `statix fix packages/cmux`
 - `nix run .#fix-lint -- packages/cmux flake.nix` → `statix fix packages/cmux flake.nix`
@@ -345,10 +367,13 @@ Examples after fix:
 **S5 fallback removal in updater scripts (`nix/update-beads-web.sh`, `nix/update-cmux.sh`, `nix/update-gascity.sh`):**
 
 Replace every:
+
 ```bash
 HASH_X=$(nix hash convert --hash-algo sha256 --to sri "$RAW_X" 2>/dev/null || echo "sha256-$RAW_X")
 ```
+
 With (two-statement form — see "Why two statements" below):
+
 ```bash
 HASH_X=$(nix hash convert --hash-algo sha256 --to sri "$RAW_X")
 if [[ -z $HASH_X ]]; then
@@ -384,16 +409,20 @@ cmux is single-platform so the script has only one such call. beads-web (after B
 ## Cross-Cutting
 
 ### Implementer prompt hygiene
+
 Same lessons as Chunk 1 / 2 (apply to all three Chunk 3 implementers):
+
 - **No PRs.** Push the branch; human merges.
 - **CI doesn't trigger on feature branches.** Verification is local.
 - Work in the worktree; can't `git checkout main` (sibling worktree owns it).
 - Vault key infra: `nix fmt --builders '' --max-jobs 4` if remote builder errors on `/run/vault-secrets/nix-signing-key.sec`.
 
 ### Beads tracking
+
 None. Per-branch progress is implicit in git log.
 
 ### Out-of-scope adjacent items intentionally NOT touched
+
 - The `nix run nixpkgs#nix-prefetch-github` calls in `update-locks.sh` — Chunk 1 Task 4 explicitly kept these unpinned for bootstrap. Don't touch.
 - Chunk 2's overlay or granular-deps wiring.
 - Branch protection on main.
@@ -403,6 +432,7 @@ None. Per-branch progress is implicit in git log.
 ## Success Criteria
 
 After all three branches are merged:
+
 1. No `lib.fakeHash` in any `packages/` file.
 2. `meta.platforms` on every package equals the set of platforms with real hashes — no overclaiming.
 3. No `/usr/bin/` references in `packages/` or `overlays/`.
@@ -416,6 +446,7 @@ After all three branches are merged:
 ## Open Questions
 
 None pending. All decisions resolved in dialogue:
+
 - Platform support: match-current-usage-only (aarch64-darwin + x86_64-linux).
 - Branch granularity: 3 branches.
 - Codesign: `sigtool` (Branch 2).

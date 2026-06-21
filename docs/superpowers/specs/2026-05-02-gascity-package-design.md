@@ -42,12 +42,12 @@ Modeled directly on `packages/beads-web/default.nix`.
 - `pname = "gascity"`, `version` set to the latest release at commit time (`1.0.0` initially).
 - `platform` is selected via attrset lookup keyed on `pkgs.stdenv.hostPlatform.system`, mapping to the suffix used in upstream release asset names:
 
-  | Nix system          | Upstream asset suffix |
-  |---------------------|----------------------|
-  | `aarch64-darwin`    | `darwin_arm64`       |
-  | `x86_64-darwin`     | `darwin_amd64`       |
-  | `x86_64-linux`      | `linux_amd64`        |
-  | `aarch64-linux`     | `linux_arm64`        |
+  | Nix system       | Upstream asset suffix |
+  | ---------------- | --------------------- |
+  | `aarch64-darwin` | `darwin_arm64`        |
+  | `x86_64-darwin`  | `darwin_amd64`        |
+  | `x86_64-linux`   | `linux_amd64`         |
+  | `aarch64-linux`  | `linux_arm64`         |
 
   Unsupported systems `throw` with an explanatory message, matching `beads-web`.
 
@@ -62,6 +62,7 @@ Modeled directly on `packages/beads-web/default.nix`.
 - Builder: `pkgs.stdenvNoCC.mkDerivation` (no compile step). `sourceRoot = "."`, `dontFixup = true` — same idiom as `c9watch-cli` for tarballed pre-built binaries.
 
 - `installPhase`:
+
   ```sh
   mkdir -p $out/bin
   install -m755 gc $out/bin/gc
@@ -108,7 +109,7 @@ Modeled on `update-beads-web.sh`. Behavior:
   - `sed`-replaces the corresponding line in the package file using the pattern `<suffix> = "[^"]*";`.
 - Updates the top-level `version` field with `sed`.
 
-**Skipping `fakeHash` placeholders comes for free**: the `sed` regex requires a *quoted* hash value (`"[^"]*"`). Lines like `darwin_amd64 = lib.fakeHash;` are unquoted and never match the substitution, so they remain untouched without any explicit detection logic. This matches the existing behavior of `update-beads-web.sh` against the current `beads-web` file, which has two `lib.fakeHash` placeholders.
+**Skipping `fakeHash` placeholders comes for free**: the `sed` regex requires a _quoted_ hash value (`"[^"]*"`). Lines like `darwin_amd64 = lib.fakeHash;` are unquoted and never match the substitution, so they remain untouched without any explicit detection logic. This matches the existing behavior of `update-beads-web.sh` against the current `beads-web` file, which has two `lib.fakeHash` placeholders.
 
 The updater still calls `nix-prefetch-url` for every platform's tarball (uniform behavior, matches `update-beads-web.sh`), even though the resulting hash for `fakeHash`-flagged platforms goes unused. If those tarballs are missing from the release, the script fails fast — same failure mode as `beads-web`. (If this becomes a problem later, the script can be tightened to skip prefetching for `fakeHash` platforms; out of scope for now.)
 
@@ -117,11 +118,13 @@ The updater still calls `nix-prefetch-url` for every platform's tarball (uniform
 Three additions, each one line:
 
 1. In the always-on `packages` attrset (alongside `beads-web`, before the `lib.optionalAttrs pkgs.stdenv.isDarwin` block):
+
    ```nix
    gascity = pkgs.callPackage ./packages/gascity { };
    ```
 
 2. In the `apps` attrset:
+
    ```nix
    update-gascity = mkApp (pkgs.callPackage ./nix/update-gascity.nix { });
    ```

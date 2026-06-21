@@ -29,6 +29,7 @@ If any precondition is unmet, stop and resolve before starting Task 1.
 **Why first:** `nix flake check` has hard-failed on every push since 2026-06-07 because `packages.<system>.yaziPlugins` is a nested attrset. Nothing else can land while CI is red.
 
 **Files:**
+
 - Modify: `flake.nix:71-73` (replace nested attrset with flat names)
 - Modify: `flake.nix` between lines 89 and 91 (add `legacyPackages` per-system output)
 - Modify: `flake.nix:114-134` (rewire `overlays.default` to use `final.callPackage`)
@@ -221,6 +222,7 @@ Wait for confirmation before proceeding to Task 2.
 **Why next:** Defuse the `rev = "master"` / `rev = "main"` time bombs before Task 3 builds these packages in CI. Otherwise an upstream push between local hash compute and CI run reds the next branch spuriously.
 
 **Files:**
+
 - Modify: `packages/tmux-open-nvim/default.nix:8`
 - Modify: `packages/tmux-mouse-swipe/default.nix:8`
 - Modify: `packages/tmux-nerd-font-window-name/default.nix:8`
@@ -251,7 +253,7 @@ nix run nixpkgs#nix-prefetch-github -- --json --rev master keith-hall SublimeGhe
 
 Record the 4 SHAs (40-char hex strings). Call them `$REV1` through `$REV4` for the next steps.
 
-**Important:** the existing `sha256` values in the 4 files match these resolved revs *only if no upstream push happened since the last `update-locks.sh` run*. If the hash and rev don't match, the next build will fail. To be safe, also capture the `.hash` field:
+**Important:** the existing `sha256` values in the 4 files match these resolved revs _only if no upstream push happened since the last `update-locks.sh` run_. If the hash and rev don't match, the next build will fail. To be safe, also capture the `.hash` field:
 
 ```bash
 nix run nixpkgs#nix-prefetch-github -- --json --rev master trevarj tmux-open-nvim     | jq -r '.hash + " " + .rev'
@@ -303,6 +305,7 @@ Each must succeed. If any fails with "hash mismatch", the sha256 was stale and S
 Edit `update-locks.sh`. Inside `update_tmux_plugin` (currently lines 38-70), after the existing `sed` for `sha256` (line 69), add one more sed line:
 
 Find:
+
 ```bash
   sed -i "s|version = \"unstable-[^\"]*\";|version = \"unstable-${new_date}\";|" "$nix_file"
   sed -i "s|sha256 = \"sha256-[^\"]*\";|sha256 = \"${new_hash}\";|" "$nix_file"
@@ -310,6 +313,7 @@ Find:
 ```
 
 Replace with:
+
 ```bash
   sed -i "s|version = \"unstable-[^\"]*\";|version = \"unstable-${new_date}\";|" "$nix_file"
   sed -i "s|sha256 = \"sha256-[^\"]*\";|sha256 = \"${new_hash}\";|" "$nix_file"
@@ -322,6 +326,7 @@ Replace with:
 Edit `update-locks.sh`. Inside `update_bat_syntax` (currently lines 74-106), after the existing `sed` for `sha256` (line 105), add the same sed line:
 
 Find:
+
 ```bash
   sed -i "s|# last updated: unstable-[0-9-]*|# last updated: unstable-${new_date}|" "$nix_file"
   sed -i "s|sha256 = \"sha256-[^\"]*\";|sha256 = \"${new_hash}\";|" "$nix_file"
@@ -329,6 +334,7 @@ Find:
 ```
 
 Replace with:
+
 ```bash
   sed -i "s|# last updated: unstable-[0-9-]*|# last updated: unstable-${new_date}|" "$nix_file"
   sed -i "s|sha256 = \"sha256-[^\"]*\";|sha256 = \"${new_hash}\";|" "$nix_file"
@@ -441,6 +447,7 @@ Wait for confirmation.
 **Why now:** With B3 (Task 1) and B1 (Task 2) landed, CI is green and the package set is safe to build. Add packages to `checks` so CI actually exercises them.
 
 **Files:**
+
 - Modify: `flake.nix:48-51`
 
 **Branch:** `feat/ci-builds-packages`
@@ -565,6 +572,7 @@ Wait for confirmation. If new exclusions were added, mention them so the user ca
 **Why now:** Independent of B1/T1. Closes the main `nix-repo-base`-HEAD code-execution hole before Task 5 gates the bot's auto-merge.
 
 **Files:**
+
 - Modify: `update-locks.sh:26-31` (replace the lib-resolution lines)
 - Modify: `update-locks.sh:46-47` and `:82-83` (add explanatory comments at the `nix run nixpkgs#nix-prefetch-github` sites)
 
@@ -632,6 +640,7 @@ source "${UL_LIB_DIR}/update-locks-lib.bash"
 Edit `update-locks.sh`. In `update_tmux_plugin` (currently around line 47-48, just before the `prefetch_json=$(nix run nixpkgs#nix-prefetch-github ...)` line), add a comment block:
 
 Find:
+
 ```bash
   echo "==> Updating tmux plugin ${plugin_name}..."
 
@@ -640,6 +649,7 @@ Find:
 ```
 
 Replace with:
+
 ```bash
   echo "==> Updating tmux plugin ${plugin_name}..."
 
@@ -656,6 +666,7 @@ Replace with:
 Edit `update-locks.sh`. In `update_bat_syntax` (currently around line 83-84), add the identical comment block:
 
 Find:
+
 ```bash
   echo "==> Updating bat syntax ${syntax_name}..."
 
@@ -664,6 +675,7 @@ Find:
 ```
 
 Replace with:
+
 ```bash
   echo "==> Updating bat syntax ${syntax_name}..."
 
@@ -760,6 +772,7 @@ Wait for confirmation.
 **Why last:** Only safe to gate `main` once CI is green (Task 1), substantive (Task 3), and the bot itself is reproducible (Task 4).
 
 **Files:**
+
 - External (via `gh api`): branch protection rule on `main`
 - Modify: `.github/workflows/update-flakes.yml:88-91` (PR body Verification section)
 
@@ -786,6 +799,7 @@ gh run view "$LATEST_RUN_ID" --json jobs --jq '.jobs[].name'
 ```
 
 Expected output:
+
 ```
 nix-checks (ubuntu-latest)
 nix-checks (macos-latest)
@@ -838,6 +852,7 @@ gh api repos/phillipgreenii/nix-overlay/branches/main/protection | jq .
 ```
 
 Expected fields in the response:
+
 - `required_status_checks.contexts` contains both `nix-checks (ubuntu-latest)` and `nix-checks (macos-latest)`.
 - `required_status_checks.strict` is `true`.
 - `enforce_admins.enabled` is `false`.
@@ -853,10 +868,10 @@ If any field is wrong, edit `/tmp/protection.json` and re-run Step 5.5.
 Edit `.github/workflows/update-flakes.yml:88-91`. Replace:
 
 ```yaml
-            ### Verification
-            - CI checks will run automatically
-            - If all checks pass, this PR will be auto-merged
-            - Review the changes and close this PR if updates should not be applied
+### Verification
+- CI checks will run automatically
+- If all checks pass, this PR will be auto-merged
+- Review the changes and close this PR if updates should not be applied
 ```
 
 With:
@@ -971,11 +986,11 @@ After all 5 branches are merged, run this checklist:
 
 ## Rollback Reference
 
-| Branch | Rollback command |
-|---|---|
-| Task 1 (B3) | `git revert <merge-sha>` on main |
-| Task 2 (B1) | `git revert <merge-sha>` on main |
-| Task 3 (T1) | `git revert <merge-sha>` on main |
-| Task 4 (S2) | `git revert <merge-sha>` on main |
+| Branch            | Rollback command                                                             |
+| ----------------- | ---------------------------------------------------------------------------- |
+| Task 1 (B3)       | `git revert <merge-sha>` on main                                             |
+| Task 2 (B1)       | `git revert <merge-sha>` on main                                             |
+| Task 3 (T1)       | `git revert <merge-sha>` on main                                             |
+| Task 4 (S2)       | `git revert <merge-sha>` on main                                             |
 | Task 5 protection | `gh api -X DELETE repos/phillipgreenii/nix-overlay/branches/main/protection` |
-| Task 5 workflow | `git revert <merge-sha>` on main |
+| Task 5 workflow   | `git revert <merge-sha>` on main                                             |

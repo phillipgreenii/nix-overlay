@@ -3,6 +3,7 @@
 **Date:** 2026-06-18
 **Source review:** [`2026-06-12-nix-overlay-deepdive.md`](../../../2026-06-12-nix-overlay-deepdive.md)
 **Findings addressed:**
+
 - **A5** top-level attribute squatting — hard cutover to `phillipgreenii.{...}` namespace
 - **A7** `gascity` zombie package — delete entirely (already confirmed decommissioned)
 - **B8** `bat-gherkin-syntax` bare-fetch — wrap as proper derivation with `pname`/`version`
@@ -29,7 +30,7 @@ Close the residual honesty/cleanup findings from the 2026-06-12 deepdive plus th
 
 - **T3 `passthru.tests.version` smoke tests** — deferred to a later chunk (decided 2026-06-18 brainstorm). cmux's Electron `.dmg` form makes `testVersion` awkward; addressing it cleanly means deciding whether to skip cmux or fight it, and that decision is separable.
 - **S7 SHA-pin remaining tag-pinned actions + M7 Renovate/Dependabot adoption** — deferred via bead tc-w2pr4. Decision: defer until the broader Renovate-vs-Dependabot-vs-manual question is settled.
-- **A4 prune `nix-repo-base` transitive inputs** — requires upstream changes in `nix-repo-base` first; naturally pairs with that repo's nix-* refactor work.
+- **A4 prune `nix-repo-base` transitive inputs** — requires upstream changes in `nix-repo-base` first; naturally pairs with that repo's nix-\* refactor work.
 - **M3 flake-parts adoption** — structural; deepdive recommended pairing with next `nix-repo-base` touch.
 - **cmux APFS unpacking regression (tc-iv7vz)** — separate hotfix, not Chunk 6. Main CI being red does not block this chunk's work in a worktree; CI gates only on push-to-main.
 - **Allow auto-merge repo setting (tc-21ql1)** — separate one-click GitHub setting change.
@@ -48,6 +49,7 @@ Spec/plan work happens in the worktree at `/home/tcadmin/workspace/nix-overlay-c
 ### A5 — Namespace migration to `phillipgreenii.{...}` (hard cutover)
 
 **Current overlay shape** (`flake.nix:117-146`):
+
 ```
 overlays.default = final: prev: {
   beads-web         = ...;   # top-level injection
@@ -59,6 +61,7 @@ overlays.default = final: prev: {
 ```
 
 **Target shape:**
+
 ```
 overlays.default = final: prev: {
   phillipgreenii = {
@@ -75,6 +78,7 @@ overlays.default = final: prev: {
 The `phillipgreenii` attribute itself is the namespace; nothing about `phillipgreenii.user.*` (the home-manager forwarder seen in nix-personal:186-192) conflicts since that's a NixOS/HM module attribute path, not a `pkgs` attribute.
 
 **`packages.${system}` mirror** (`flake.nix:69-99`): becomes
+
 ```
 packages = {
   inherit (extended.phillipgreenii) beads-web bat-gherkin-syntax;
@@ -92,12 +96,12 @@ The flake `packages` output names stay flat (e.g. `packages.aarch64-darwin.beads
 
 **Consumer impact (confirmed by grep over /home/tcadmin/workspace):**
 
-| Consumer | File | Reference | Required change |
-|---|---|---|---|
-| nix-personal | `home/programs/bat/gherkin-syntax.nix:22` | `pkgs.bat-gherkin-syntax` | → `pkgs.phillipgreenii.bat-gherkin-syntax` |
-| nix-personal | `home/programs/tmux/default.nix:63,90,96` | `tmux-open-nvim`, `tmux-mouse-swipe`, `tmux-nerd-font-window-name` | **UNCHANGED** — accessed via `tmuxPlugins.*` |
-| nix-personal | (other files) | `pkgs.beads-web`, `pkgs.cmux` | **None found** by `pkgs.beads-web`/`pkgs.cmux` grep across nix-personal `--include="*.nix"`; no change. Implementer re-confirms before finalizing the post-merge checklist. |
-| homelab/nix | (all .nix files) | `pkgs.beads-web`, `pkgs.bat-gherkin-syntax`, `pkgs.cmux`, named tmux plugin attrs | **None found** by grep audit 2026-06-18. The overlay is applied (`homelab/nix/flake.nix:104,144`) but no leaf module references these packages by attribute. No change needed in homelab. |
+| Consumer     | File                                      | Reference                                                                         | Required change                                                                                                                                                                           |
+| ------------ | ----------------------------------------- | --------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| nix-personal | `home/programs/bat/gherkin-syntax.nix:22` | `pkgs.bat-gherkin-syntax`                                                         | → `pkgs.phillipgreenii.bat-gherkin-syntax`                                                                                                                                                |
+| nix-personal | `home/programs/tmux/default.nix:63,90,96` | `tmux-open-nvim`, `tmux-mouse-swipe`, `tmux-nerd-font-window-name`                | **UNCHANGED** — accessed via `tmuxPlugins.*`                                                                                                                                              |
+| nix-personal | (other files)                             | `pkgs.beads-web`, `pkgs.cmux`                                                     | **None found** by `pkgs.beads-web`/`pkgs.cmux` grep across nix-personal `--include="*.nix"`; no change. Implementer re-confirms before finalizing the post-merge checklist.               |
+| homelab/nix  | (all .nix files)                          | `pkgs.beads-web`, `pkgs.bat-gherkin-syntax`, `pkgs.cmux`, named tmux plugin attrs | **None found** by grep audit 2026-06-18. The overlay is applied (`homelab/nix/flake.nix:104,144`) but no leaf module references these packages by attribute. No change needed in homelab. |
 
 **Post-merge follow-up** (out of band, but spec'd here for completeness): the user updates nix-personal (one file) and any homelab references after Chunk 6 lands. Until then, those consumer flakes break on next `nix flake update`. Acceptable per the brainstorm decision.
 
@@ -116,12 +120,14 @@ Verification: `nix flake show` reports no `gascity` attribute on any system; `ni
 ### B8 — bat-gherkin-syntax proper derivation
 
 Current (`packages/bat-gherkin-syntax/default.nix`):
+
 ```nix
 { lib, sources }:
 sources.bat-gherkin-syntax.src // { meta = { platforms = lib.platforms.unix; }; }
 ```
 
 Target:
+
 ```nix
 { lib, stdenvNoCC, sources }:
 stdenvNoCC.mkDerivation {
@@ -149,13 +155,13 @@ Consumer impact in `nix-personal/home/programs/bat/gherkin-syntax.nix:22` is `sr
 
 ### B9 + S6 — Nits batch
 
-| Site | Change |
-|---|---|
-| `flake.nix:97` and `:144` | **Audited 2026-06-18: already use `pkgs.stdenv.hostPlatform.isDarwin` / `prev.stdenv.hostPlatform.isDarwin`.** Deepdive B9's `stdenv.isDarwin` alias finding was already addressed in an earlier chunk. No change in this chunk. (Implementer should still re-grep to confirm before committing the nits batch.) |
-| `treefmt.nix:7` | Delete the `package = pkgs.nixfmt;` line — restates the default. |
-| `packages/yaziPlugins/default.nix:35` | Drop the explicit `fetchFromGitHub` from the `callPlugin` call set; `callPackage` injects it automatically. |
-| `.github/workflows/ci.yml:44-49` | Drop the explicit `nix fmt -- --ci` step. `checks.formatting` (run by `nix flake check` at line 49) already exercises the same derivation. Keeping both was dead duplication. |
-| `.github/workflows/update-flakes.yml:16` (**S6**) | Delete the `id-token: write` permission line. No step uses FlakeHub Cache OIDC; the line generates `HTTP 401 Unauthorized` noise on every nix invocation. |
+| Site                                              | Change                                                                                                                                                                                                                                                                                                           |
+| ------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `flake.nix:97` and `:144`                         | **Audited 2026-06-18: already use `pkgs.stdenv.hostPlatform.isDarwin` / `prev.stdenv.hostPlatform.isDarwin`.** Deepdive B9's `stdenv.isDarwin` alias finding was already addressed in an earlier chunk. No change in this chunk. (Implementer should still re-grep to confirm before committing the nits batch.) |
+| `treefmt.nix:7`                                   | Delete the `package = pkgs.nixfmt;` line — restates the default.                                                                                                                                                                                                                                                 |
+| `packages/yaziPlugins/default.nix:35`             | Drop the explicit `fetchFromGitHub` from the `callPlugin` call set; `callPackage` injects it automatically.                                                                                                                                                                                                      |
+| `.github/workflows/ci.yml:44-49`                  | Drop the explicit `nix fmt -- --ci` step. `checks.formatting` (run by `nix flake check` at line 49) already exercises the same derivation. Keeping both was dead duplication.                                                                                                                                    |
+| `.github/workflows/update-flakes.yml:16` (**S6**) | Delete the `id-token: write` permission line. No step uses FlakeHub Cache OIDC; the line generates `HTTP 401 Unauthorized` noise on every nix invocation.                                                                                                                                                        |
 
 **Skipped from deepdive B9** (already addressed in prior chunks): `mkApp` rewrite (flake.nix has no `apps` output anymore); `with pkgs.lib;` in `meta` blocks (already `with lib;` after Chunk 2's granular-args refactor); `runtimeInputs = [ pkgs.nix ]` in `nix/update-*.nix` (those files were deleted in Chunk 5).
 
@@ -164,6 +170,7 @@ Consumer impact in `nix-personal/home/programs/bat/gherkin-syntax.nix:22` is `sr
 **Insertion point:** between `set -euo pipefail` (line 3) and the `NRB_REV=$(nix flake metadata ...)` call at line 32 — i.e. immediately after `WORKSPACE_ROOT` is computed and before the network-dependent lib resolution.
 
 **Behavior:**
+
 - `flake.lock` missing — log a one-line info message and continue. `nix flake update` (the second `ul_run_step`) will bootstrap it. This preserves the "first-run on a clean clone works" property and the existing self-repair principle in update-locks-resilience design.
 - `flake.lock` present but `jq -e '.' flake.lock >/dev/null` fails (corrupt JSON) — log a hard-fail message naming the file and `exit 1`. Operator restores from git (`git checkout HEAD -- flake.lock`) rather than letting the script silently overwrite.
 - `flake.lock` present and parses but lacks the `.nodes.root` invariant — same hard-fail. (jq check: `jq -e '.nodes.root' flake.lock >/dev/null`.)
@@ -175,13 +182,13 @@ Consumer impact in `nix-personal/home/programs/bat/gherkin-syntax.nix:22` is `sr
 Two coupled edits:
 
 1. `packages/cmux/default.nix:33` — `platforms = platforms.darwin;` → `platforms = [ "aarch64-darwin" ];` (or `platforms = lib.platforms.aarch64-darwin;` if that attr exists; otherwise the literal list).
-2. `flake.nix:97-99` — the gate `lib.optionalAttrs pkgs.stdenv.hostPlatform.isDarwin { inherit (extended) cmux; }` already correctly omits cmux on Linux, but it adds cmux to *both* `aarch64-darwin` and `x86_64-darwin` outputs. After A5, this becomes `inherit (extended.phillipgreenii) cmux`. Add a system check: `lib.optionalAttrs (pkgs.stdenv.hostPlatform.system == "aarch64-darwin") { ... }`. Same gate needed in the overlay (`flake.nix:144`).
+2. `flake.nix:97-99` — the gate `lib.optionalAttrs pkgs.stdenv.hostPlatform.isDarwin { inherit (extended) cmux; }` already correctly omits cmux on Linux, but it adds cmux to _both_ `aarch64-darwin` and `x86_64-darwin` outputs. After A5, this becomes `inherit (extended.phillipgreenii) cmux`. Add a system check: `lib.optionalAttrs (pkgs.stdenv.hostPlatform.system == "aarch64-darwin") { ... }`. Same gate needed in the overlay (`flake.nix:144`).
 
 Verification: `nix flake show --all-systems` reports cmux only under `packages.aarch64-darwin.phillipgreenii.cmux` (and `packages.aarch64-darwin.cmux` from the flat mirror), not under any other system. **The nvfetcher source URL `cmux-macos.dmg` is confirmed aarch64-only by manaflow-ai's release artifact naming convention** — Electron + Apple Silicon native.
 
 ### S3/M6 — Provenance verification for binary upstreams (hard-fail)
 
-**Scope:** binary releases only — `beads-web` (weselow), `cmux` (manaflow-ai). After A7, gascity is gone. Git-source plugins (tmux-*, bat-gherkin-syntax) are out of scope: the SHA pinned by `nvfetcher` *is* the integrity, and there's no separate provenance artifact for a git tarball.
+**Scope:** binary releases only — `beads-web` (weselow), `cmux` (manaflow-ai). After A7, gascity is gone. Git-source plugins (tmux-*, bat-gherkin-syntax) are out of scope: the SHA pinned by `nvfetcher` *is\* the integrity, and there's no separate provenance artifact for a git tarball.
 
 **Available verification methods.** The helper supports three discrete methods; each upstream is **assigned exactly one** method at audit time. There is no runtime fallback chain (fallback hides regressions: an upstream that stopped publishing attestations would silently demote to checksums and we'd never notice). Methods:
 
@@ -193,14 +200,14 @@ If an upstream publishes none of these, the audit-time decision is recorded expl
 
 **Per-upstream initial audit** (run during plan implementation; not pre-committed in this spec):
 
-| Upstream | First method to evaluate | If absent, evaluate next |
-|---|---|---|
-| weselow/beads-web | `attestation` | `checksums` |
-| manaflow-ai/cmux | `attestation` | `sigstore`, then `checksums` |
+| Upstream          | First method to evaluate | If absent, evaluate next     |
+| ----------------- | ------------------------ | ---------------------------- |
+| weselow/beads-web | `attestation`            | `checksums`                  |
+| manaflow-ai/cmux  | `attestation`            | `sigstore`, then `checksums` |
 
-**The audit is a one-time evaluation per upstream** — the implementer checks the latest release page once, picks the *single* method that's actually published, and hard-codes it in the helper's per-upstream config (e.g. `BEADS_WEB_METHOD=attestation`). The "if absent" column is the audit-time decision tree, not a runtime fallback.
+**The audit is a one-time evaluation per upstream** — the implementer checks the latest release page once, picks the _single_ method that's actually published, and hard-codes it in the helper's per-upstream config (e.g. `BEADS_WEB_METHOD=attestation`). The "if absent" column is the audit-time decision tree, not a runtime fallback.
 
-If audit determines an upstream publishes *neither* attestations nor checksums, the implementer pauses **before writing the verify step** and surfaces the gap for a decision: ship the helper anyway and let the nightly bot get stuck on that upstream (the contract — fail closed), or skip the upstream from verification with an explicit "no provenance available as of 2026-06-XX" comment in the helper (preserves automation continuity at the cost of one documented gap). This is a one-time decision per upstream, not a recurring runtime check.
+If audit determines an upstream publishes _neither_ attestations nor checksums, the implementer pauses **before writing the verify step** and surfaces the gap for a decision: ship the helper anyway and let the nightly bot get stuck on that upstream (the contract — fail closed), or skip the upstream from verification with an explicit "no provenance available as of 2026-06-XX" comment in the helper (preserves automation continuity at the cost of one documented gap). This is a one-time decision per upstream, not a recurring runtime check.
 
 **Integration point:** new `ul_run_step "verify-provenance"` between the existing `nvfetcher` step and the `nix-flake-update` step in `update-locks.sh`. The step invokes a new shell helper at repo root: `verify-provenance.sh` (sibling to `update-locks.sh`). One place, not per-package — gascity-style 4-file fan-out was the deepdive A3 anti-pattern. The `nix/` directory was removed in Chunk 5; do **not** recreate it.
 
@@ -228,6 +235,7 @@ no edge cases around git diff parsing. The verification is idempotent.
 If verification fails, `ul_run_step` exits non-zero, which fails `update-locks.sh`, which fails the workflow's `Run update-locks.sh` step, which prevents the `Create Pull Request` step from firing. **No PR opens on bad provenance.** The next nightly retries from clean state (the corrupted `_sources/generated.nix` change is uncommitted — it lives only in the workflow runner's checkout).
 
 **Caveat — git state on partial failure:** because `ul_run_step` commits each step as it goes, the `nvfetcher` step's source-delta commit may already exist when `verify-provenance` fails. Two options:
+
 - **(a)** verify-provenance rolls back the nvfetcher commit with `git reset --hard HEAD~1` before exiting. Simple, safe on the workflow runner (ephemeral checkout). Risk: on a laptop run, the developer loses any uncommitted other-file edits — mitigation: assert clean working tree before starting (`ul_setup` likely already does).
 - **(b)** restructure: do verification BEFORE nvfetcher commits. Requires either driving nvfetcher in two phases (compute, then write) — not supported — or pre-downloading what nvfetcher would download. Duplicate-download overhead.
 
@@ -235,10 +243,10 @@ Spec choice: **(a)** with a `git status --porcelain` clean assertion at the top 
 
 ## Worktree, branches, ordering
 
-| Branch | Off | Lifetime | Contents |
-|---|---|---|---|
-| `docs/chunk6-spec` (this branch) | `origin/main` (post-Chunk-5) | until human merge of spec+plan | this spec doc, then plan doc, then commit |
-| `feat/chunk6-trust-and-tidy` | `origin/main` (post-spec-merge) | until human merge of implementation | the actual code changes |
+| Branch                           | Off                             | Lifetime                            | Contents                                  |
+| -------------------------------- | ------------------------------- | ----------------------------------- | ----------------------------------------- |
+| `docs/chunk6-spec` (this branch) | `origin/main` (post-Chunk-5)    | until human merge of spec+plan      | this spec doc, then plan doc, then commit |
+| `feat/chunk6-trust-and-tidy`     | `origin/main` (post-spec-merge) | until human merge of implementation | the actual code changes                   |
 
 Worktree for implementation: `/home/tcadmin/workspace/nix-overlay-chunk6` (re-checkout the implementation branch after spec merges; the docs worktree may be removed first).
 
@@ -263,10 +271,10 @@ Post-merge to main, CI matrix runs (`ubuntu-latest`, `macos-latest`) and re-vali
 
 1. **`ul_run_step` commit-on-success behavior is opaque** (external nix-repo-base lib). The rollback-on-verify-fail strategy assumes the nvfetcher step commits and `git reset --hard HEAD~1` is sufficient. Plan must verify this empirically against the current `nix-repo-base` revision before relying on it.
 2. **Upstream provenance gap.** If both beads-web and cmux publish no provenance, the hard-fail mode means the nightly bot can never update either binary. Decision deferred to plan/implementation phase: if the audit finds zero provenance on either upstream, the implementer pauses and asks for the gap-handling preference (pin-and-document, vs. ship the hard-fail and accept stuck binaries until upstream fixes it).
-3. **Corrupt-`flake.lock` guard narrows the self-repair surface.** `update-locks.sh:32-39`'s self-repair fallback (empty `nix-repo-base` rev → unpinned HEAD) currently absorbs *any* failure to resolve the lock — including legitimate corruption. The tc-0ixb2 guard intentionally breaks that absorption for syntactic corruption (`jq -e '.' flake.lock` fails). **Trade-off:** in a hypothetical incident where the lock is corrupt *and* nix-repo-base is also unreachable, today's behavior would proceed via unpinned HEAD; the new behavior aborts and requires manual `git checkout HEAD -- flake.lock`. This is the desired semantics — corruption should not be silently routed around — but worth flagging because it does change the resilience design's failure-mode envelope. The nix-repo-base resilience doc (2026-05-29, lines 35, 262) covers the unpinned-HEAD fallback; this guard runs *before* that fallback and supersedes it for the corrupt case only. Missing-lock case is unchanged.
+3. **Corrupt-`flake.lock` guard narrows the self-repair surface.** `update-locks.sh:32-39`'s self-repair fallback (empty `nix-repo-base` rev → unpinned HEAD) currently absorbs _any_ failure to resolve the lock — including legitimate corruption. The tc-0ixb2 guard intentionally breaks that absorption for syntactic corruption (`jq -e '.' flake.lock` fails). **Trade-off:** in a hypothetical incident where the lock is corrupt _and_ nix-repo-base is also unreachable, today's behavior would proceed via unpinned HEAD; the new behavior aborts and requires manual `git checkout HEAD -- flake.lock`. This is the desired semantics — corruption should not be silently routed around — but worth flagging because it does change the resilience design's failure-mode envelope. The nix-repo-base resilience doc (2026-05-29, lines 35, 262) covers the unpinned-HEAD fallback; this guard runs _before_ that fallback and supersedes it for the corrupt case only. Missing-lock case is unchanged.
 4. **Homelab consumer audit captured in spec.** Grep on `homelab/nix --include="*.nix"` for `pkgs.{beads-web,bat-gherkin-syntax,cmux}` and the named tmux plugin attrs returned no matches as of 2026-06-18. Spec's consumer impact table treats homelab as no-change. Implementer re-confirms with the same grep before the post-merge follow-up.
-5. **`phillipgreenii.user.*` HM module attribute collision.** nix-personal exposes a `phillipgreenii` *module* path at `flake.nix:192,241` for the HM forwarder. The new `pkgs.phillipgreenii.*` attribute is in a different namespace (NixOS/HM modules vs. pkgs), so there's no direct conflict — but worth a spec comment so the implementer doesn't second-guess the name.
-6. **flake-parts and A4** look attractive *after* this chunk because the namespace cleanup reduces the surface area for a flake-parts conversion. Not in scope; noted for the next planning conversation.
+5. **`phillipgreenii.user.*` HM module attribute collision.** nix-personal exposes a `phillipgreenii` _module_ path at `flake.nix:192,241` for the HM forwarder. The new `pkgs.phillipgreenii.*` attribute is in a different namespace (NixOS/HM modules vs. pkgs), so there's no direct conflict — but worth a spec comment so the implementer doesn't second-guess the name.
+6. **flake-parts and A4** look attractive _after_ this chunk because the namespace cleanup reduces the surface area for a flake-parts conversion. Not in scope; noted for the next planning conversation.
 
 ## Out of scope (carryover beads still open)
 
@@ -277,12 +285,12 @@ Post-merge to main, CI matrix runs (`ubuntu-latest`, `macos-latest`) and re-vali
 
 ## Inputs / outputs summary
 
-| | Consumes | Produces |
-|---|---|---|
-| A5 | post-Chunk-5 overlay shape | `phillipgreenii.{...}` namespaced overlay + matching `packages.${system}` output |
-| A7 | post-A5 overlay shape | gascity-free `nvfetcher.toml`, regenerated `_sources/generated.nix`, no `packages/gascity/` |
-| B8 | sources.bat-gherkin-syntax | proper `stdenvNoCC.mkDerivation` with `pname`/`version`/`meta` |
-| B9 + S6 | post-A5 `flake.nix`; `treefmt.nix`; `packages/yaziPlugins/default.nix`; `ci.yml`; `update-flakes.yml` | trimmed nits, no `id-token: write`, no duplicate fmt step |
-| tc-0ixb2 | `update-locks.sh` | early guard distinguishing missing vs corrupt `flake.lock` |
-| tc-34rqk | `packages/cmux/default.nix`; `flake.nix` darwin gate | cmux outputs only on aarch64-darwin |
-| S3/M6 | nvfetcher source delta on each run | `verify-provenance.sh` + new `ul_run_step` in `update-locks.sh` + README provenance state table |
+|          | Consumes                                                                                              | Produces                                                                                        |
+| -------- | ----------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| A5       | post-Chunk-5 overlay shape                                                                            | `phillipgreenii.{...}` namespaced overlay + matching `packages.${system}` output                |
+| A7       | post-A5 overlay shape                                                                                 | gascity-free `nvfetcher.toml`, regenerated `_sources/generated.nix`, no `packages/gascity/`     |
+| B8       | sources.bat-gherkin-syntax                                                                            | proper `stdenvNoCC.mkDerivation` with `pname`/`version`/`meta`                                  |
+| B9 + S6  | post-A5 `flake.nix`; `treefmt.nix`; `packages/yaziPlugins/default.nix`; `ci.yml`; `update-flakes.yml` | trimmed nits, no `id-token: write`, no duplicate fmt step                                       |
+| tc-0ixb2 | `update-locks.sh`                                                                                     | early guard distinguishing missing vs corrupt `flake.lock`                                      |
+| tc-34rqk | `packages/cmux/default.nix`; `flake.nix` darwin gate                                                  | cmux outputs only on aarch64-darwin                                                             |
+| S3/M6    | nvfetcher source delta on each run                                                                    | `verify-provenance.sh` + new `ul_run_step` in `update-locks.sh` + README provenance state table |

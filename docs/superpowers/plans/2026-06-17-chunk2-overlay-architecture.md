@@ -36,6 +36,7 @@ These apply to every task; the implementer must internalize them before starting
 **Why first:** Mechanical, low risk. `pkgs.callPackage` accepts either `{ lib, pkgs }` or granular signatures; A2 is store-path-neutral until A1 rewires the overlay. Shippable on its own.
 
 **Files:**
+
 - Modify: `packages/bat-gherkin-syntax/default.nix:1`
 - Modify: `packages/beads-web/default.nix:1, 12, 13, 21, 25, 39`
 - Modify: `packages/cmux/default.nix:1, 2, 6`
@@ -47,6 +48,7 @@ These apply to every task; the implementer must internalize them before starting
 - Modify: `packages/c9watch/gui.nix:1, 10, 21, 25`
 
 **Interfaces:**
+
 - Consumes: nothing from prior tasks.
 - Produces: each package file now declares the exact deps it imports. Branch 2's overlay calls `final.callPackage <path> { }` and relies on the file's `__functionArgs` driving dependency injection. The deps shipped by Branch 1 must include every attr the body references.
 
@@ -97,7 +99,7 @@ fetchFromGitHub {
 }
 ```
 
-(The `rev` and `sha256` were pinned in Chunk 1 Task 2 — if those values differ from what's currently in the file, the file has been updated by the nightly bot since this plan was written; preserve the *current* values in the file rather than the ones shown here. Use Edit with targeted substitutions; do NOT pass the full block to Write.)
+(The `rev` and `sha256` were pinned in Chunk 1 Task 2 — if those values differ from what's currently in the file, the file has been updated by the nightly bot since this plan was written; preserve the _current_ values in the file rather than the ones shown here. Use Edit with targeted substitutions; do NOT pass the full block to Write.)
 
 - [ ] **Step 1.3: Edit `packages/beads-web/default.nix`**
 
@@ -114,6 +116,7 @@ With:
 ```
 
 Substitute in the body:
+
 - Line 12: `pkgs.stdenv.hostPlatform.system` → `stdenv.hostPlatform.system`
 - Line 13: same substitution
 - Line 21: `pkgs.stdenv.mkDerivation` → `stdenv.mkDerivation`
@@ -189,6 +192,7 @@ With:
 ```
 
 Substitute in the body:
+
 - Line 2: `pkgs.stdenvNoCC.mkDerivation` → `stdenvNoCC.mkDerivation`
 - Line 6: `pkgs.fetchurl` → `fetchurl`
 
@@ -250,6 +254,7 @@ With:
 ```
 
 Substitute in the body:
+
 - Line 13: `pkgs.stdenv.hostPlatform.system` → `stdenv.hostPlatform.system`
 - Line 23: `pkgs.stdenvNoCC.mkDerivation` → `stdenvNoCC.mkDerivation`
 - Line 27: `pkgs.fetchurl` → `fetchurl`
@@ -328,6 +333,7 @@ With:
 ```
 
 Substitute in the body:
+
 - Line 2: `pkgs.tmuxPlugins.mkTmuxPlugin` → `tmuxPlugins.mkTmuxPlugin`
 - Line 5: `pkgs.fetchFromGitHub` → `fetchFromGitHub`
 
@@ -415,6 +421,7 @@ With:
 ```
 
 Substitute in the body:
+
 - Line 10: `pkgs.stdenv.hostPlatform.system` → `stdenv.hostPlatform.system`
 - Line 21: `pkgs.stdenvNoCC.mkDerivation` → `stdenvNoCC.mkDerivation`
 - Line 25: `pkgs.fetchurl` → `fetchurl`
@@ -543,6 +550,7 @@ nix build .#bat-gherkin-syntax --no-link
 Each must succeed. (`beads-web` and `gascity` are excluded from linux builds per Chunk 1 Task 3, but you can spot-check eval: `nix eval --raw .#beads-web.drvPath` should not error.)
 
 If on a darwin host, also try:
+
 ```bash
 nix build .#cmux --no-link
 nix build .#c9watch-cli --no-link
@@ -603,10 +611,12 @@ Report status DONE (or DONE_WITH_CONCERNS if anything noteworthy). The human wil
 **Why second:** Depends on Task 1 (granular deps are what makes the inversion meaningful). Once landed, every package flows from the consumer's nixpkgs through one canonical wiring.
 
 **Files:**
+
 - Modify: `flake.nix:63-89` (the `packages = { ... }` block — replace whole-block)
 - Modify: `flake.nix:114-134` (the `overlays.default = ...` block — replace whole-block)
 
 **Interfaces:**
+
 - Consumes from Task 1: every `packages/<name>/default.nix` declares its real deps via `{ lib, stdenv?, stdenvNoCC?, fetchurl?, fetchFromGitHub?, tmuxPlugins?, ... }`.
 - Produces: `pkgs.extend self.overlays.default` evaluates to a pkgs-like set with `beads-web`, `bat-gherkin-syntax`, `gascity`, the three tmux plugins under `tmuxPlugins.*`, `yaziPlugins.{icons-brew,bunny}`, plus darwin-only `cmux`, `c9watch-{gui,cli}` — all built against the consumer's nixpkgs via `final.callPackage`.
 
@@ -683,6 +693,7 @@ Replace with:
 ```
 
 Changes:
+
 - The `let ownPackages = self.packages.${...}; in` binding is gone.
 - Every `inherit (ownPackages) X` becomes `X = final.callPackage ./packages/X { };`.
 - The yaziPlugins clause is unchanged (Chunk 1 Task 1 already did it right).
@@ -762,13 +773,14 @@ Replace with:
 ```
 
 Changes:
+
 - Wrap the block in `let extended = pkgs.extend self.overlays.default; in`.
 - Replace every `pkgs.callPackage ./packages/X { }` with `inherit (extended) X;` (grouped for top-level, and via `inherit (extended.tmuxPlugins) X;` for the three tmux plugins).
 - `yaziPlugins-icons-brew` and `yaziPlugins-bunny` source from `extended.yaziPlugins.{icons-brew,bunny}` instead of `yaziPluginSet`.
 - `fix-lint` and `install-pre-commit-hooks` stay sourced from `pkgs` — they're dev tooling, not overlay packages.
 - The `// lib.optionalAttrs pkgs.stdenv.isDarwin { ... }` becomes `// lib.optionalAttrs pkgs.stdenv.hostPlatform.isDarwin { inherit (extended) cmux c9watch-gui c9watch-cli; };` — both the deprecation fix and the sourcing change.
 
-**Note (`yaziPluginSet` double-eval, accepted):** after this change, `yaziPluginSet` (defined at `flake.nix:43`) is still referenced by `legacyPackages.yaziPlugins` (at `flake.nix:105-109`, written by Chunk 1 Task 1). That means the yaziPlugins set is evaluated twice — once for `yaziPluginSet`, once via the overlay. Spec marks `legacyPackages` as out of scope for Chunk 2, so this is *accepted* as a minor cost. A future chunk can rewire `legacyPackages.yaziPlugins` to source from `extended` and delete the `yaziPluginSet` binding.
+**Note (`yaziPluginSet` double-eval, accepted):** after this change, `yaziPluginSet` (defined at `flake.nix:43`) is still referenced by `legacyPackages.yaziPlugins` (at `flake.nix:105-109`, written by Chunk 1 Task 1). That means the yaziPlugins set is evaluated twice — once for `yaziPluginSet`, once via the overlay. Spec marks `legacyPackages` as out of scope for Chunk 2, so this is _accepted_ as a minor cost. A future chunk can rewire `legacyPackages.yaziPlugins` to source from `extended` and delete the `yaziPluginSet` binding.
 
 - [ ] **Step 2.4: Run `nix flake check --no-build` to verify eval succeeds**
 
@@ -948,8 +960,8 @@ After both branches are merged, run this checklist:
 
 ## Rollback Reference
 
-| Task | Rollback command |
-|---|---|
+| Task        | Rollback command                 |
+| ----------- | -------------------------------- |
 | Task 1 (A2) | `git revert <merge-sha>` on main |
 | Task 2 (A1) | `git revert <merge-sha>` on main |
 

@@ -37,12 +37,14 @@ These apply to every step; the implementer must internalize them before starting
 **Why one branch:** all four components are tiny, mutually independent in effect but share a single concern (consumer-facing repo cleanup) and a single CI surface. Splitting would multiply ceremony for no review benefit.
 
 **Files:**
+
 - Create: `README.md` (new, at repo root)
 - Modify: `.gitignore` (append two new entries)
 - Delete (index + on-disk): `.update-locks/steps/update-c9watch`
 - Untrack (index only; leave on-disk): `.pre-commit-config.yaml`, all remaining files under `.update-locks/steps/`
 
 **Interfaces:**
+
 - Consumes: post-Chunk-3 state — c9watch removed from packages/overlay/apps/update-locks.sh; beads-web/gascity use `supportedPlatforms` attrset; cmux declares `platforms.darwin`; tmux plugins declare `platforms.unix`; bat-gherkin-syntax declares `platforms.unix`; yaziPlugins declare `platforms.all`.
 - Produces: a `README.md` at repo root that renders cleanly on GitHub; `.gitignore` covers `.update-locks/steps/` and `.pre-commit-config.yaml`; no tracked step files remain; the pre-commit symlink is untracked (still present on-disk via devShell hook).
 
@@ -119,17 +121,17 @@ After that, `pkgs.beads-web`, `pkgs.tmuxPlugins.tmux-open-nvim`, etc. resolve no
 
 ## Packages
 
-| Name | Platforms | Source |
-| --- | --- | --- |
-| `beads-web` | aarch64-darwin, x86_64-linux | [weselow/beads-web](https://github.com/weselow/beads-web) |
-| `gascity` | aarch64-darwin, x86_64-linux | [gastownhall/gascity](https://github.com/gastownhall/gascity) |
-| `bat-gherkin-syntax` | unix | [keith-hall/SublimeGherkinSyntax](https://github.com/keith-hall/SublimeGherkinSyntax) |
-| `tmuxPlugins.tmux-open-nvim` | unix | [trevarj/tmux-open-nvim](https://github.com/trevarj/tmux-open-nvim) |
-| `tmuxPlugins.tmux-mouse-swipe` | unix | [jaclu/tmux-mouse-swipe](https://github.com/jaclu/tmux-mouse-swipe) |
-| `tmuxPlugins.tmux-nerd-font-window-name` | unix | [joshmedeski/tmux-nerd-font-window-name](https://github.com/joshmedeski/tmux-nerd-font-window-name) |
-| `yaziPlugins.icons-brew` | all | (in this repo, `packages/yaziPlugins/icons-brew`) |
-| `yaziPlugins.bunny` | all | (in this repo, `packages/yaziPlugins/bunny`) |
-| `cmux` | darwin (aarch64-darwin verified) | [manaflow-ai/cmux](https://github.com/manaflow-ai/cmux) |
+| Name                                     | Platforms                        | Source                                                                                              |
+| ---------------------------------------- | -------------------------------- | --------------------------------------------------------------------------------------------------- |
+| `beads-web`                              | aarch64-darwin, x86_64-linux     | [weselow/beads-web](https://github.com/weselow/beads-web)                                           |
+| `gascity`                                | aarch64-darwin, x86_64-linux     | [gastownhall/gascity](https://github.com/gastownhall/gascity)                                       |
+| `bat-gherkin-syntax`                     | unix                             | [keith-hall/SublimeGherkinSyntax](https://github.com/keith-hall/SublimeGherkinSyntax)               |
+| `tmuxPlugins.tmux-open-nvim`             | unix                             | [trevarj/tmux-open-nvim](https://github.com/trevarj/tmux-open-nvim)                                 |
+| `tmuxPlugins.tmux-mouse-swipe`           | unix                             | [jaclu/tmux-mouse-swipe](https://github.com/jaclu/tmux-mouse-swipe)                                 |
+| `tmuxPlugins.tmux-nerd-font-window-name` | unix                             | [joshmedeski/tmux-nerd-font-window-name](https://github.com/joshmedeski/tmux-nerd-font-window-name) |
+| `yaziPlugins.icons-brew`                 | all                              | (in this repo, `packages/yaziPlugins/icons-brew`)                                                   |
+| `yaziPlugins.bunny`                      | all                              | (in this repo, `packages/yaziPlugins/bunny`)                                                        |
+| `cmux`                                   | darwin (aarch64-darwin verified) | [manaflow-ai/cmux](https://github.com/manaflow-ai/cmux)                                             |
 
 `legacyPackages.${system}.yaziPlugins` exposes the structured `{ icons-brew, bunny }` set.
 
@@ -160,12 +162,14 @@ The `cmux` platforms cell reads "darwin (aarch64-darwin verified)" because the p
 Use the Edit tool. Append the following block to `/home/tcadmin/workspace/nix-overlay-chunk1/.gitignore` (the current last line is `.claude/worktrees/`; add a blank line, then the new block):
 
 old_string (the current tail of the file):
+
 ```
 # Claude Code per-session worktrees (runtime state, created by EnterWorktree)
 .claude/worktrees/
 ```
 
 new_string:
+
 ```
 # Claude Code per-session worktrees (runtime state, created by EnterWorktree)
 .claude/worktrees/
@@ -255,6 +259,7 @@ git diff --cached .gitignore
 ```
 
 Expected `git status` shows:
+
 - New file (staged): `README.md`
 - Modified (staged): `.gitignore`
 - Deleted (staged): `.pre-commit-config.yaml`
@@ -318,6 +323,7 @@ Do NOT run `gh run watch`. Do NOT open a PR. Do NOT run `gh pr create` / `gh pr 
 - [ ] **Step 12: Report and stop — wait for human merge**
 
 Report status DONE. The human will:
+
 1. Visually inspect the rendered README on GitHub (`https://github.com/phillipgreenii/nix-overlay/blob/docs/readme-and-hygiene/README.md`) to confirm tables, code fences, and links render correctly.
 2. Fast-forward `main` to this branch locally and push, triggering CI on the merge.
 
@@ -382,12 +388,12 @@ gh run list --branch=main --limit=1 --json conclusion --jq '.[0].conclusion'
 
 ## Rollback Reference
 
-| Component | Rollback |
-|---|---|
-| README | `git revert <merge-sha>` — removes the README, no other impact. |
-| .gitignore patterns | `git revert <merge-sha>` — restores tracking eligibility (does NOT re-add files; they were `git rm`'d separately). |
-| Untrack `.pre-commit-config.yaml` | After revert, `git add .pre-commit-config.yaml` to re-stage the symlink (assuming the on-disk symlink is still present from the devShell). |
-| Untrack `.update-locks/steps/*` | After revert, `git add .update-locks/steps/` to re-stage all step files. |
+| Component                         | Rollback                                                                                                                                                                                                                |
+| --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| README                            | `git revert <merge-sha>` — removes the README, no other impact.                                                                                                                                                         |
+| .gitignore patterns               | `git revert <merge-sha>` — restores tracking eligibility (does NOT re-add files; they were `git rm`'d separately).                                                                                                      |
+| Untrack `.pre-commit-config.yaml` | After revert, `git add .pre-commit-config.yaml` to re-stage the symlink (assuming the on-disk symlink is still present from the devShell).                                                                              |
+| Untrack `.update-locks/steps/*`   | After revert, `git add .update-locks/steps/` to re-stage all step files.                                                                                                                                                |
 | Delete `update-c9watch` step file | Restore via `git show <pre-merge-sha>:.update-locks/steps/update-c9watch > .update-locks/steps/update-c9watch && git add .update-locks/steps/update-c9watch`. (Pre-Chunk-3 era only; pointless to restore in practice.) |
 
 The four components are technically independently revertable, but in practice rolling back any of them in isolation is unlikely — the whole branch is one atomic hygiene change. `git revert` of the merge commit reverses all four at once.

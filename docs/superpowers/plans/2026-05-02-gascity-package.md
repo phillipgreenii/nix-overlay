@@ -15,11 +15,13 @@
 ## File Structure
 
 **Created:**
+
 - `packages/gascity/default.nix` — the derivation. Inputs: `lib`, `pkgs`. Outputs: a derivation building `$out/bin/gc`. One responsibility: package the `gascity` release tarball.
 - `nix/update-gascity.nix` — `pkgs.writeShellApplication` wrapper. Inputs: `pkgs`. Outputs: a Nix app named `update-gascity`. One responsibility: expose the updater script as a buildable Nix app with the right runtime PATH.
 - `nix/update-gascity.sh` — the updater body. Argument: `$1` = repo root. Side effects: edits `packages/gascity/default.nix` in place. One responsibility: query GitHub releases, prefetch tarballs, rewrite version + hashes.
 
 **Modified:**
+
 - `flake.nix` — add three lines: `packages.gascity`, `apps.update-gascity`, and `gascity` in `overlays.default`'s always-on inherit list.
 - `update-locks.sh` — add one `ul_run_step` invocation alongside the other GitHub-release package updaters, before `nix-flake-update`.
 
@@ -30,6 +32,7 @@
 ## Task 1: Create the package derivation
 
 **Files:**
+
 - Create: `packages/gascity/default.nix`
 
 - [ ] **Step 1: Write the derivation file**
@@ -161,6 +164,7 @@ Installs as bin/gc to match upstream README and Homebrew formula."
 ## Task 2: Add gascity to `overlays.default`
 
 **Files:**
+
 - Modify: `flake.nix` (the `overlays.default` block, around lines 102-119)
 
 - [ ] **Step 1: Add `gascity` to the always-on inherit line**
@@ -212,6 +216,7 @@ without an explicit packages.\${system}.gascity reference."
 ## Task 3: Create the updater Nix wrapper
 
 **Files:**
+
 - Create: `nix/update-gascity.nix`
 
 - [ ] **Step 1: Write the wrapper file**
@@ -285,6 +290,7 @@ wiring (apps entry + writeShellApplication wrapper) for clean review."
 ## Task 4: Implement the updater script
 
 **Files:**
+
 - Create: `nix/update-gascity.sh`
 
 - [ ] **Step 1: Write the updater script**
@@ -403,6 +409,7 @@ nix run .#update-gascity -- "$PWD"
 ```
 
 Expected output (approximately):
+
 ```
 Checking for gascity updates...
   Fetching latest release info...
@@ -435,6 +442,7 @@ git diff packages/gascity/default.nix
 ```
 
 Expected diff:
+
 - `version = "0.0.0";` → `version = "1.0.0";` (or whatever current latest is).
 - `darwin_arm64 = "sha256-..."` line refreshed (may be the same hash, may be different).
 - `linux_amd64 = "sha256-..."` line refreshed.
@@ -466,6 +474,7 @@ left untouched because the sed regex requires quoted values."
 ## Task 5: Wire updater into `update-locks.sh`
 
 **Files:**
+
 - Modify: `update-locks.sh` (around line 110)
 
 - [ ] **Step 1: Add the `ul_run_step` invocation**

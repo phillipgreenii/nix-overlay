@@ -38,7 +38,7 @@ A ~40-line file at the repo root. Sections:
 
 Target file:
 
-```markdown
+````markdown
 # phillipgreenii-nix-overlay
 
 Third-party Nix packages absent from or outdated in nixpkgs.
@@ -53,6 +53,7 @@ inputs.phillipgreenii-nix-overlay = {
   inputs.nixpkgs.follows = "nixpkgs";
 };
 ```
+````
 
 Apply the overlay to a `pkgs` import (NixOS, home-manager, or any flake consuming nixpkgs):
 
@@ -67,17 +68,17 @@ After that, `pkgs.beads-web`, `pkgs.tmuxPlugins.tmux-open-nvim`, etc. resolve no
 
 ## Packages
 
-| Name | Platforms | Source |
-| --- | --- | --- |
-| `beads-web` | aarch64-darwin, x86_64-linux | [weselow/beads-web](https://github.com/weselow/beads-web) |
-| `gascity` | aarch64-darwin, x86_64-linux | [gastownhall/gascity](https://github.com/gastownhall/gascity) |
-| `bat-gherkin-syntax` | unix | [keith-hall/SublimeGherkinSyntax](https://github.com/keith-hall/SublimeGherkinSyntax) |
-| `tmuxPlugins.tmux-open-nvim` | unix | [trevarj/tmux-open-nvim](https://github.com/trevarj/tmux-open-nvim) |
-| `tmuxPlugins.tmux-mouse-swipe` | unix | [jaclu/tmux-mouse-swipe](https://github.com/jaclu/tmux-mouse-swipe) |
-| `tmuxPlugins.tmux-nerd-font-window-name` | unix | [joshmedeski/tmux-nerd-font-window-name](https://github.com/joshmedeski/tmux-nerd-font-window-name) |
-| `yaziPlugins.icons-brew` | all | (in this repo, `packages/yaziPlugins/icons-brew`) |
-| `yaziPlugins.bunny` | all | (in this repo, `packages/yaziPlugins/bunny`) |
-| `cmux` | darwin (aarch64-darwin verified) | [manaflow-ai/cmux](https://github.com/manaflow-ai/cmux) |
+| Name                                     | Platforms                        | Source                                                                                              |
+| ---------------------------------------- | -------------------------------- | --------------------------------------------------------------------------------------------------- |
+| `beads-web`                              | aarch64-darwin, x86_64-linux     | [weselow/beads-web](https://github.com/weselow/beads-web)                                           |
+| `gascity`                                | aarch64-darwin, x86_64-linux     | [gastownhall/gascity](https://github.com/gastownhall/gascity)                                       |
+| `bat-gherkin-syntax`                     | unix                             | [keith-hall/SublimeGherkinSyntax](https://github.com/keith-hall/SublimeGherkinSyntax)               |
+| `tmuxPlugins.tmux-open-nvim`             | unix                             | [trevarj/tmux-open-nvim](https://github.com/trevarj/tmux-open-nvim)                                 |
+| `tmuxPlugins.tmux-mouse-swipe`           | unix                             | [jaclu/tmux-mouse-swipe](https://github.com/jaclu/tmux-mouse-swipe)                                 |
+| `tmuxPlugins.tmux-nerd-font-window-name` | unix                             | [joshmedeski/tmux-nerd-font-window-name](https://github.com/joshmedeski/tmux-nerd-font-window-name) |
+| `yaziPlugins.icons-brew`                 | all                              | (in this repo, `packages/yaziPlugins/icons-brew`)                                                   |
+| `yaziPlugins.bunny`                      | all                              | (in this repo, `packages/yaziPlugins/bunny`)                                                        |
+| `cmux`                                   | darwin (aarch64-darwin verified) | [manaflow-ai/cmux](https://github.com/manaflow-ai/cmux)                                             |
 
 `legacyPackages.${system}.yaziPlugins` exposes the structured `{ icons-brew, bunny }` set.
 
@@ -94,7 +95,8 @@ After that, `pkgs.beads-web`, `pkgs.tmuxPlugins.tmux-open-nvim`, etc. resolve no
 ## ADRs
 
 See `docs/adr/` for the rationale behind this repo's existence and structure.
-```
+
+`````
 
 Note: the README file (`README.md`) itself is not nested — it uses normal triple-backtick fences for the `nix` snippets. The outer ```` ```markdown ```` fence shown above in this spec is purely so this spec doc can display the README's contents as code; the implementer writes only the inner contents (between the outer markdown-fence delimiters) to `README.md`. **Caveat:** GitHub-flavored Markdown closes a triple-backtick fence at the first matching triple-backtick line, so the spec doc itself renders the inner ``` as fence-closes — that's a spec-rendering quirk, not a README-rendering bug. **Verification:** the implementer must preview the rendered `README.md` on GitHub after pushing to confirm the `nix` snippets render as code blocks.
 
@@ -112,9 +114,10 @@ Append to `.gitignore`:
 # devShell's pre-commit hook setup. Different store paths on different
 # machines.
 .pre-commit-config.yaml
-```
+`````
 
 Why each:
+
 - **`.update-locks/steps/`** — these are timestamp-marker files written by `ul_run_step` to remember when each updater last ran. Per-machine state. The deepdive (U2) cites commit `e74d564` as an example: "update-locks: update cmux" that touched only a timestamp file, generating a misleading commit on a no-op update.
 - **`.pre-commit-config.yaml`** — currently a symlink into `/nix/store/8sggy40m44l6l64zg6lg7zk9y3gzc29f-pre-commit-config.json`. That store path doesn't exist on any other machine, so a fresh clone has a dangling symlink. The standard git-hooks.nix pattern is to gitignore it (machine-local generated state).
 
@@ -142,7 +145,7 @@ The `.update-locks/steps/update-c9watch` timestamp file is a leftover from befor
 
 Step 4b — untrack the remaining step files (index-only; leave on-disk for `ul_run_step`):
 
-After Component 2's gitignore addition, the *remaining* files in `.update-locks/steps/` (`bat-gherkin-syntax`, `nix-flake-update`, `tmux-mouse-swipe`, `tmux-nerd-font-window-name`, `tmux-open-nvim`, `update-beads-web`, `update-cmux`, `update-gascity`) are still tracked. To purge them from the index:
+After Component 2's gitignore addition, the _remaining_ files in `.update-locks/steps/` (`bat-gherkin-syntax`, `nix-flake-update`, `tmux-mouse-swipe`, `tmux-nerd-font-window-name`, `tmux-open-nvim`, `update-beads-web`, `update-cmux`, `update-gascity`) are still tracked. To purge them from the index:
 
 ```bash
 git rm -rf --cached .update-locks/steps/
@@ -173,7 +176,9 @@ This removes all of them from the index. They remain on disk (still readable by 
 ## Cross-Cutting
 
 ### Implementer prompt hygiene
+
 Same lessons as Chunks 1–3 (apply to the Chunk 4 implementer):
+
 - **No PRs.** Push the branch; human merges.
 - **CI doesn't trigger on feature branches.** Verification is local.
 - Work in the worktree; can't `git checkout main` directly (sibling worktree state).
@@ -181,9 +186,11 @@ Same lessons as Chunks 1–3 (apply to the Chunk 4 implementer):
 - **Run `nix flake check` without `--no-build` at least once** (Chunk 3 lesson: `--no-build` skips the `check-linting` derivation, masking statix errors). For Chunk 4 this is minor — only the gitignore and README change — but the discipline matters.
 
 ### Beads tracking
+
 None. The single-branch structure is self-evident.
 
 ### Out-of-scope adjacent items intentionally NOT touched
+
 - Chunk 1 update-locks committed-state nuance ([U2 deep-cut] commit-only-on-real-change in `ul_run_step`) — that lives in `nix-repo-base`'s ul library; out of scope here.
 - ADR rewrites.
 - Any package or overlay change.
@@ -191,6 +198,7 @@ None. The single-branch structure is self-evident.
 ## Success Criteria
 
 After the branch is merged:
+
 1. `README.md` exists at repo root, rendered cleanly on GitHub.
 2. `.gitignore` includes `.update-locks/steps/` and `.pre-commit-config.yaml`.
 3. `git ls-files .pre-commit-config.yaml .update-locks/steps/` returns empty.
@@ -200,5 +208,6 @@ After the branch is merged:
 ## Open Questions
 
 None pending. Decisions resolved in dialogue:
+
 - README depth: ~40-line minimal per spec preview.
 - Branch granularity: one branch for all four components.

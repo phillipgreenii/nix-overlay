@@ -20,7 +20,7 @@ These apply to every step; the implementer must internalize them before starting
 - **CI does not run on feature branches.** `.github/workflows/ci.yml` triggers only on push-to-main and PRs-against-main. Do NOT run `gh run watch` — it hangs forever. Verification is local: `nix flake check --show-trace` and `nix build .#<pkg> --no-link`.
 - **Run `nix flake check` WITHOUT `--no-build`.** Chunk 3 lesson: `--no-build` skips the `check-linting` derivation, masking statix W04 errors. Always full-build.
 - **Vault key infra issue.** The remote builder `192.168.2.53` has been failing on derivations requiring `/run/vault-secrets/nix-signing-key.sec`. If `nix fmt`, `nix flake check`, or `nix build` fails with "No such file or directory" for that path, retry with `--builders '' --max-jobs 4` to force local execution.
-- **Use the Edit tool for surgical changes to existing files.** Use Write only for the brand-new `nvfetcher.toml`. `_sources/generated.nix` and `_sources/nvfetcher.json` are *generated* by `nvfetcher` itself — do not Write them by hand. After nvfetcher runs you read them back and adjust the package files to match the actual emitted shape if it differs from this plan's expectations.
+- **Use the Edit tool for surgical changes to existing files.** Use Write only for the brand-new `nvfetcher.toml`. `_sources/generated.nix` and `_sources/nvfetcher.json` are _generated_ by `nvfetcher` itself — do not Write them by hand. After nvfetcher runs you read them back and adjust the package files to match the actual emitted shape if it differs from this plan's expectations.
 - **Bootstrap principle.** The new `update-locks.sh` step calls `nix run nixpkgs#nvfetcher` (unpinned, same pattern as the old `nix run nixpkgs#nix-prefetch-github` calls). The flake's devShell ALSO ships `pkgs.nvfetcher` for human convenience. Both coexist intentionally.
 - **Do NOT touch:** `treefmt.nix`, `flake.lock` (let nvfetcher leave it alone; the existing `nix-flake-update` step still runs after), `.github/workflows/`, `firefox-binary-wrapper` overlay, `yaziPlugins` package (in-repo path, not external — out of scope), `homeModules`, `legacyPackages`, `checks`, `pre-commit` wiring, `install-pre-commit-hooks`, `fix-lint`. Beads/secrets/auth: none touched.
 
@@ -39,12 +39,14 @@ These apply to every step; the implementer must internalize them before starting
 **Why one branch:** the seven package files all change signature (`sources` is a new required arg) in lockstep with the overlay's `callPackage` call. Splitting per-package would leave the tree non-evaluating between commits. Single branch, single push.
 
 **Files:**
+
 - Create: `nvfetcher.toml` (root)
 - Create (via running `nvfetcher`): `_sources/generated.nix`, `_sources/nvfetcher.json`
 - Modify: `flake.nix`, `update-locks.sh`, all 7 of `packages/{beads-web,gascity,cmux,bat-gherkin-syntax,tmux-open-nvim,tmux-mouse-swipe,tmux-nerd-font-window-name}/default.nix`
 - Delete (index + on-disk): `nix/update-{cmux,beads-web,gascity}.{sh,nix}` (6 files); the `nix/` directory after it's empty; the 7 stale step files under `.update-locks/steps/` (`bat-gherkin-syntax`, `tmux-mouse-swipe`, `tmux-nerd-font-window-name`, `tmux-open-nvim`, `update-beads-web`, `update-cmux`, `update-gascity`)
 
 **Interfaces:**
+
 - Consumes: post-Chunk-4 state — beads-web/gascity use `supportedPlatforms` attrset; cmux declares `platforms.darwin`; tmux plugins + bat-gherkin-syntax declare `platforms.unix`; overlay is inverted (`final.callPackage ./packages/X { }` form); update-locks.sh sources nix-repo-base's `update-locks-lib.bash` and uses `ul_run_step` for staged checkpoints.
 - Produces: a single `nvfetcher.toml` driving all source pinning; per-package files that take a `sources` argument; `update-locks.sh` with only 2 `ul_run_step` calls (nvfetcher + nix-flake-update); 6 fewer files under `nix/`; the `nix/` directory removed; 7 fewer stale stamps under `.update-locks/steps/`.
 
@@ -138,6 +140,7 @@ fetch.github = "keith-hall/SublimeGherkinSyntax"
 ```
 
 Notes for the implementer:
+
 - `$ver` is the documented nvfetcher substitution variable; do NOT use `${ver}` or `$version`.
 - `src.github_tag` (not `src.github_release` — that key does not exist; the documented key for "latest GitHub release" is `src.github`, but tag-based tracking is the safer, more widely-used convention; it also pairs cleanly with `src.prefix = "v"` to strip the leading `v` so `$ver` is the bare semver like `0.11.2`).
 - For the binary-release packages (`fetch.url`), the URL templating uses `$ver` directly — multiple occurrences in one URL all substitute (verified against iynaix/dotfiles `helium-$ver-x86_64.AppImage` pattern).
@@ -153,6 +156,7 @@ nix run nixpkgs#nvfetcher -- --build-dir _sources --config nvfetcher.toml
 Expected: nvfetcher prints per-package "checked" / "fetched" lines for all 9 entries, then writes `_sources/generated.nix` and `_sources/nvfetcher.json`. The whole run takes 30s–2min on a fresh cache.
 
 If the run fails:
+
 - Network/DNS issue → retry; nvfetcher is idempotent.
 - Vault key error on a remote builder → re-run with `nix run nixpkgs#nvfetcher --builders '' --max-jobs 4 -- --build-dir _sources --config nvfetcher.toml` (force local).
 - Unrecognized TOML key → re-read Step 3, fix the typo. Do NOT invent new keys.
@@ -168,6 +172,7 @@ head -15 _sources/generated.nix
 ```
 
 Open `_sources/generated.nix` with the Read tool and inspect it. Confirm:
+
 - Each of the 9 entries has `pname`, `version`, `src`.
 - The 4 git-branch entries (3 tmux plugins + bat-gherkin-syntax) ALSO have a `date = "YYYY-MM-DD"` field.
 - The 5 binary entries (2 beads-web + 2 gascity + cmux) use `fetchurl` (no `date`).
@@ -412,6 +417,7 @@ Net changes: signature drops `fetchFromGitHub`, adds `sources`; the comment `# l
 Use Edit. Find the `overlays.default = final: prev: { ... };` block and replace exactly:
 
 Old:
+
 ```nix
       overlays.default =
         final: prev:
@@ -441,6 +447,7 @@ Old:
 ```
 
 New:
+
 ```nix
       overlays.default =
         final: prev:
@@ -505,7 +512,7 @@ Replace with:
         };
 ```
 
-- [ ] **Step 14: Update `flake.nix` — delete the three update-* apps**
+- [ ] **Step 14: Update `flake.nix` — delete the three update-\* apps**
 
 Use Edit. Find:
 
@@ -735,6 +742,7 @@ git status
 ```
 
 Expected `git status` (summarized):
+
 - New: `nvfetcher.toml`, `_sources/generated.nix`, `_sources/nvfetcher.json`
 - Modified: `flake.nix`, `update-locks.sh`, 7 `packages/*/default.nix` files
 - Deleted: 6 `nix/update-*.{sh,nix}` files, 7 `.update-locks/steps/*` files
@@ -751,6 +759,7 @@ Expected: exit 0. Builds the `formatting` and `linting` derivations and every pa
 If vault key error → retry with `--builders '' --max-jobs 4`.
 
 If a package fails to build:
+
 - `beads-web` / `gascity` / `cmux`: most likely the `sources.<name>.src` is a `fetchurl` result (for binary URLs) which the package expects to consume as a single file via `dontUnpack = true`. Verify the generated.nix shape and adjust.
 - `tmux-*`: if `sources.<name>.date` is undefined (i.e. nvfetcher didn't emit a `date` field on this system's run), fall back to `version = "unstable-${sources.X.version}"` per Step 8's fallback note.
 - `bat-gherkin-syntax`: if the `//` merge drops derivation markers and `nix build` complains the result isn't a derivation, switch to the `overrideAttrs` form from the comment in Step 11.

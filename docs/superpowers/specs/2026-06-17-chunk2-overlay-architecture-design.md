@@ -7,9 +7,9 @@
 
 ## Goal
 
-Invert the overlay so that packages are built against the *consumer's* nixpkgs (via `final.callPackage`), not against *this flake's* locked nixpkgs through `self.packages`. Switch every package derivation from `{ lib, pkgs }` (whole-pkgs injection) to granular dependency arguments so `callPackage`'s `.override` mechanism actually works and consumers can swap individual inputs.
+Invert the overlay so that packages are built against the _consumer's_ nixpkgs (via `final.callPackage`), not against _this flake's_ locked nixpkgs through `self.packages`. Switch every package derivation from `{ lib, pkgs }` (whole-pkgs injection) to granular dependency arguments so `callPackage`'s `.override` mechanism actually works and consumers can swap individual inputs.
 
-Two branches; A2 first because it's mechanical and harmless under the current overlay shape, then A1 which restructures how `packages.${system}` is derived. After both land, `pkgs.beads-web` (under the overlay) and `<flake>.packages.${system}.beads-web` evaluate the *same* derivation through the *same* callPackage path, with consumer nixpkgs as the source of truth.
+Two branches; A2 first because it's mechanical and harmless under the current overlay shape, then A1 which restructures how `packages.${system}` is derived. After both land, `pkgs.beads-web` (under the overlay) and `<flake>.packages.${system}.beads-web` evaluate the _same_ derivation through the _same_ callPackage path, with consumer nixpkgs as the source of truth.
 
 ## Non-Goals
 
@@ -34,6 +34,7 @@ A2 ──► A1
 ```
 
 A2 first because:
+
 - It's mechanical; each file independent.
 - A2 changes are **harmless under the current overlay shape** (`pkgs.callPackage` accepts either `{ lib, pkgs }` or granular signatures), so the branch is shippable on its own.
 - A1 depends on A2 to realize the benefit (`.override { fetchurl = ...; }` is only meaningful with granular deps).
@@ -41,10 +42,12 @@ A2 first because:
 ## Branch 1 — `refactor/granular-package-deps` (A2)
 
 ### Problem
+
 Every package in `packages/*` (except `yaziPlugins`) takes `{ lib, pkgs }`. Taking `pkgs` wholesale means:
+
 - `callPackage`'s dependency injection only works at the `pkgs`-level (consumers can't swap a single dep).
 - `.override { fetchurl = ...; }` granularity is lost.
-- The derivation files don't *document* their actual dependencies.
+- The derivation files don't _document_ their actual dependencies.
 
 `yaziPlugins/default.nix` is already the model — `{ lib, stdenvNoCC, callPackage, fetchFromGitHub }`.
 
@@ -52,24 +55,26 @@ Every package in `packages/*` (except `yaziPlugins`) takes `{ lib, pkgs }`. Taki
 
 For each file, replace the function signature with the minimal real deps, then substitute `pkgs.X` → `X` in the body. The deps below were determined by reading each file.
 
-| File | Current | After | Notes |
-|---|---|---|---|
-| `packages/bat-gherkin-syntax/default.nix` | `{ lib, pkgs }` | `{ lib, fetchFromGitHub }` | Uses `lib.platforms.unix` in meta. |
-| `packages/beads-web/default.nix` | `{ lib, pkgs }` | `{ lib, stdenv, fetchurl }` | Needs `stdenv` for `hostPlatform.system` and `stdenv.mkDerivation`. Drop the `with pkgs.lib;` in meta → `with lib;` (incidental B9 hit). |
-| `packages/cmux/default.nix` | `{ lib, pkgs }` | `{ lib, stdenvNoCC, fetchurl }` | The `/usr/bin/hdiutil` strings stay as string literals (S4 territory, Chunk 3). |
-| `packages/gascity/default.nix` | `{ lib, pkgs }` | `{ lib, stdenv, stdenvNoCC, fetchurl }` | Both `stdenv` (for `hostPlatform.system`) and `stdenvNoCC` (for `mkDerivation`). |
-| `packages/tmux-open-nvim/default.nix` | `{ lib, pkgs }` | `{ lib, tmuxPlugins, fetchFromGitHub }` | `lib` only for `lib.platforms.unix` in meta. |
-| `packages/tmux-mouse-swipe/default.nix` | `{ lib, pkgs }` | `{ lib, tmuxPlugins, fetchFromGitHub }` | Same shape as above. |
-| `packages/tmux-nerd-font-window-name/default.nix` | `{ lib, pkgs }` | `{ lib, tmuxPlugins, fetchFromGitHub }` | Same. |
-| `packages/c9watch/cli.nix` | `{ lib, pkgs }` | `{ lib, stdenv, stdenvNoCC, fetchurl }` | Same shape as gascity. |
-| `packages/c9watch/gui.nix` | `{ lib, pkgs }` | `{ lib, stdenv, stdenvNoCC, fetchurl }` | `/usr/bin/codesign` string stays as literal (S4 territory). |
+| File                                              | Current         | After                                   | Notes                                                                                                                                    |
+| ------------------------------------------------- | --------------- | --------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| `packages/bat-gherkin-syntax/default.nix`         | `{ lib, pkgs }` | `{ lib, fetchFromGitHub }`              | Uses `lib.platforms.unix` in meta.                                                                                                       |
+| `packages/beads-web/default.nix`                  | `{ lib, pkgs }` | `{ lib, stdenv, fetchurl }`             | Needs `stdenv` for `hostPlatform.system` and `stdenv.mkDerivation`. Drop the `with pkgs.lib;` in meta → `with lib;` (incidental B9 hit). |
+| `packages/cmux/default.nix`                       | `{ lib, pkgs }` | `{ lib, stdenvNoCC, fetchurl }`         | The `/usr/bin/hdiutil` strings stay as string literals (S4 territory, Chunk 3).                                                          |
+| `packages/gascity/default.nix`                    | `{ lib, pkgs }` | `{ lib, stdenv, stdenvNoCC, fetchurl }` | Both `stdenv` (for `hostPlatform.system`) and `stdenvNoCC` (for `mkDerivation`).                                                         |
+| `packages/tmux-open-nvim/default.nix`             | `{ lib, pkgs }` | `{ lib, tmuxPlugins, fetchFromGitHub }` | `lib` only for `lib.platforms.unix` in meta.                                                                                             |
+| `packages/tmux-mouse-swipe/default.nix`           | `{ lib, pkgs }` | `{ lib, tmuxPlugins, fetchFromGitHub }` | Same shape as above.                                                                                                                     |
+| `packages/tmux-nerd-font-window-name/default.nix` | `{ lib, pkgs }` | `{ lib, tmuxPlugins, fetchFromGitHub }` | Same.                                                                                                                                    |
+| `packages/c9watch/cli.nix`                        | `{ lib, pkgs }` | `{ lib, stdenv, stdenvNoCC, fetchurl }` | Same shape as gascity.                                                                                                                   |
+| `packages/c9watch/gui.nix`                        | `{ lib, pkgs }` | `{ lib, stdenv, stdenvNoCC, fetchurl }` | `/usr/bin/codesign` string stays as literal (S4 territory).                                                                              |
 
 ### Verification
+
 1. `nix flake check --no-build` exits 0.
 2. `nix build .#tmux-open-nvim .#tmux-mouse-swipe .#tmux-nerd-font-window-name .#bat-gherkin-syntax .#beads-web --no-link` succeeds. (`gascity` only if hash is real for the current host; skip on hash-failure platforms — that's B5/B6 territory.)
 3. Spot-check one `.override` call: `nix eval --raw '(import <nixpkgs> { overlays = [ (import ./. {}).overlays.default ]; }).tmux-open-nvim.override { fetchFromGitHub = throw "overridden"; }' 2>&1 | grep -q overridden` should show the throw (proves override works).
 
 ### Risk / Rollback
+
 A2 in isolation is a no-op for store paths: `pkgs.callPackage` injects deps the same way regardless of signature. If a file misses a dep, eval fails immediately with "function called without required argument 'X'" — easy to add. Rollback: one revert.
 
 ---
@@ -77,9 +82,10 @@ A2 in isolation is a no-op for store paths: `pkgs.callPackage` injects deps the 
 ## Branch 2 — `refactor/invert-overlay` (A1)
 
 ### Problem
+
 `flake.nix:114-134` defines `overlays.default = _final: prev: { ... inherit (ownPackages) ...; ... }` where `ownPackages = self.packages.${prev.stdenv.hostPlatform.system}`. Consequences for consumers applying `overlays.default`:
 
-- Packages are built against *this flake's* locked nixpkgs (`nixpkgs-26.05-darwin @ 2262dac`), not the consumer's.
+- Packages are built against _this flake's_ locked nixpkgs (`nixpkgs-26.05-darwin @ 2262dac`), not the consumer's.
 - Two nixpkgs evaluations per consumer (theirs + ours), with store-path divergence.
 - Consumer overrides via `.overrideAttrs`/`.override` don't reach into our derivations.
 - The yaziPlugins clause already does it right (Chunk 1 Task 1 partial fix).
@@ -148,7 +154,7 @@ in
   };
 ```
 
-`fix-lint` and `install-pre-commit-hooks` are not packages of *this overlay* (they're dev tooling exposed for `nix run`); leave them sourced from `pkgs` directly, not `extended`.
+`fix-lint` and `install-pre-commit-hooks` are not packages of _this overlay_ (they're dev tooling exposed for `nix run`); leave them sourced from `pkgs` directly, not `extended`.
 
 **Decisions baked in:**
 
@@ -159,6 +165,7 @@ in
 5. **Don't touch `apps`** — they use `pkgs.callPackage` against `./nix/update-*.nix`. Out of scope; orthogonal.
 
 ### Verification
+
 1. `nix flake check --no-build` exits 0.
 2. `nix build .#beads-web .#bat-gherkin-syntax .#tmux-open-nvim .#yaziPlugins-icons-brew --no-link` all succeed.
 3. **Consumer-side overlay test** (proves A1 actually inverted):
@@ -193,8 +200,9 @@ in
 5. The Chunk 1 Task 3 `removeAttrs` filter still works (linux CI still builds the same subset).
 
 ### Risk / Rollback
+
 - `pkgs.extend self.overlays.default` calls `final.callPackage` for every package — a typo in a package path is caught at eval time.
-- **Store-path change is expected.** Packages were previously built via `pkgs.callPackage` against `nixpkgs-26.05-darwin@2262dac` (our locked nixpkgs); after this branch they're built via `extended.callPackage` where `extended` is also our locked nixpkgs (since `pkgs.extend` operates on the same base). For *us*, store paths should be identical. For *consumers*, store paths will change because they now use *their* nixpkgs. That's the point.
+- **Store-path change is expected.** Packages were previously built via `pkgs.callPackage` against `nixpkgs-26.05-darwin@2262dac` (our locked nixpkgs); after this branch they're built via `extended.callPackage` where `extended` is also our locked nixpkgs (since `pkgs.extend` operates on the same base). For _us_, store paths should be identical. For _consumers_, store paths will change because they now use _their_ nixpkgs. That's the point.
 - Rollback: `git revert`. Caveat: reverting forces consumers back to two-nixpkgs evaluation; coordinate.
 
 ---
@@ -202,15 +210,19 @@ in
 ## Cross-Cutting
 
 ### Beads tracking
+
 None. Chunk 1 didn't have beads tracking either; per-branch progress is implicit in git log. The two-branch structure is self-evident.
 
 ### Implementer prompt hygiene (lessons from Chunk 1)
+
 The Chunk 1 Task 1 implementer opened a PR despite explicit instructions, because the CI workflow only triggers on push-to-main / PR. Chunk 2's implementer prompts must:
+
 - Reiterate "no PR" rule prominently.
 - Tell the implementer **not to wait for branch CI** (`gh run watch` will hang forever).
 - Verification is local (`nix flake check` + `nix build`).
 
 ### Out-of-scope adjacent items intentionally NOT touched
+
 - **B5/B6, S4/B10, B2**: see Non-Goals.
 - **Task 3 linux exclusion filter**: stays.
 - **Top-level attribute squatting (A5)**: orthogonal; deferred to Chunk 6.
@@ -219,6 +231,7 @@ The Chunk 1 Task 1 implementer opened a PR despite explicit instructions, becaus
 ## Success Criteria
 
 After both branches are merged:
+
 1. Every `packages/*` file (except `nix/update-*.nix`) takes granular dependency arguments — no `{ lib, pkgs }` signatures remain.
 2. `overlays.default` defines every package via `final.callPackage`, with no references to `self.packages` or `ownPackages`.
 3. `packages.${system}` is derived from `pkgs.extend self.overlays.default` — single source of truth.

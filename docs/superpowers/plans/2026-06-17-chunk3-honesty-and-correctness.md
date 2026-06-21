@@ -37,6 +37,7 @@ These apply to every task; the implementer must internalize them before starting
 **Why first:** Removes c9watch (cuts B2's `/usr/bin/codesign` users from two to one — only firefox left) and removes the Chunk-1-Task-3 linux-exclusion filter (which only existed because beads-web/gascity had `lib.fakeHash` for linux). Both ground-clearing.
 
 **Files:**
+
 - Delete: `packages/c9watch/cli.nix`
 - Delete: `packages/c9watch/gui.nix`
 - Delete (directory after files removed): `packages/c9watch/`
@@ -50,6 +51,7 @@ These apply to every task; the implementer must internalize them before starting
 - Modify: `nix/update-gascity.sh` (drop darwin_amd64 + linux_arm64; rewrite seds)
 
 **Interfaces:**
+
 - Consumes: post-Chunk-2 state — packages take granular deps; overlay uses `final.callPackage`; `packages.${system}` derived from `pkgs.extend self.overlays.default`.
 - Produces: beads-web and gascity each expose a `supportedPlatforms` attrset (single source of truth for both `src` and `meta.platforms`). Updater scripts target one-line attrset entries with anchored seds (no cross-platform contamination). c9watch is gone.
 
@@ -345,6 +347,7 @@ echo "  ✓ beads-web updated to $LATEST_VERSION"
 The seds use single-space attrset formatting to match what nixfmt produces (nixfmt collapses multi-space alignment to single spaces). After `nix fmt` in Step 1.18, verify the format matches.
 
 Two changes vs. the original script:
+
 1. `darwin-x64` prefetch + hash computation + sed gone (platform dropped).
 2. Hash-conversion fallback (`|| echo "sha256-$RAW"`) replaced with hard-fail (S5).
 3. Seds now target the new one-line attrset shape (anchored on the platform key).
@@ -586,10 +589,12 @@ Report status DONE. The human will fast-forward `main` to this branch and push, 
 **Why second:** B1 just dropped c9watch (one of the two original `/usr/bin/codesign` users), so B2's surface shrinks. The remaining work is cmux (hdiutil → undmg) and firefox-binary-wrapper (codesign → darwin.sigtool, plus B10's assertion).
 
 **Files:**
+
 - Modify: `packages/cmux/default.nix` (signature + nativeBuildInputs + unpackPhase)
 - Modify: `overlays/firefox-binary-wrapper.nix` (assertion + darwin.sigtool dep + PATH-resolved codesign)
 
 **Interfaces:**
+
 - Consumes: Task 1's c9watch removal; no shared state with Task 3.
 - Produces: cmux now declares `undmg` as a granular dep; firefox overlay declares `prev.darwin.sigtool`. No `/usr/bin/` references remain in `packages/` or `overlays/`.
 
@@ -651,6 +656,7 @@ stdenvNoCC.mkDerivation rec {
 ```
 
 Three changes vs. current state:
+
 1. Signature: `{ lib, stdenvNoCC, fetchurl, undmg }` (added `undmg`).
 2. `nativeBuildInputs = [ ]` → `nativeBuildInputs = [ undmg ]`.
 3. `unpackPhase` body: `mnt=$(mktemp -d)` + `hdiutil attach/detach` + `cp -r "$mnt"/*.app .` becomes a single `undmg "$src"` call (with `runHook preUnpack/postUnpack` per stdenv conventions).
@@ -705,6 +711,7 @@ prev.lib.optionalAttrs prev.stdenv.hostPlatform.isDarwin {
 ```
 
 Three substantive changes:
+
 1. Add `let sentinel = ''makeWrapper "$oldExe"''; in assert prev.lib.assertMsg (prev.lib.hasInfix sentinel oldAttrs.buildCommand) "...";` — fails the overlay at eval if upstream firefox ever stops emitting that string (B10).
 2. Add `prev.darwin.sigtool` to `nativeBuildInputs` — provides a `codesign` shim on `PATH`.
 3. Change `/usr/bin/codesign --force --sign -` to `codesign --force --sign -` — picks up sigtool's shim from PATH.
@@ -728,6 +735,7 @@ nix build .#cmux --no-link
 ```
 
 Expected: succeeds. Verify the `.app` ended up in the output:
+
 ```bash
 ls -la "$(nix eval --raw .#cmux)/Applications/" | head -5
 ls -la "$(nix eval --raw .#cmux)/bin/"
@@ -772,6 +780,7 @@ nix eval --impure --expr '
 Expected: error message containing "firefox-binary-wrapper overlay: upstream firefox buildCommand no longer contains the sentinel `BOGUSSENTINELNEVERMATCH`". Confirms the assertion fires loudly.
 
 Restore the file:
+
 ```bash
 cp /tmp/firefox-overlay-saved.nix overlays/firefox-binary-wrapper.nix
 rm /tmp/firefox-overlay-saved.nix
@@ -833,10 +842,12 @@ Report status DONE. The human will fast-forward `main` to this branch and push, 
 **Why last:** B3 is the smallest unit; bundling it last means B2's potential `undmg` fallback didn't ripple. fix-lint and update-cmux.sh's S5 fix are disjoint from B1 and B2.
 
 **Files:**
+
 - Modify: `flake.nix` (`fix-lint` block — single attrset entry)
 - Modify: `nix/update-cmux.sh` (drop `|| echo "sha256-$RAW"` fallback)
 
 **Interfaces:**
+
 - Consumes: post-B1+B2 state; no shared edits.
 - Produces: `fix-lint` operates on `"$@"` (defaulting to `.`) at runtime, no store-path interpolation. `update-cmux.sh` fails hard on hash-conversion errors.
 
@@ -872,6 +883,7 @@ With:
 ```
 
 Two substantive changes:
+
 1. `${./.}` (interpolates the flake source into the Nix store; statix can't write there) → `"''${@:-.}"` (positional args, default `.`).
 2. Add `exec` to avoid an extra shell process.
 
@@ -1059,10 +1071,10 @@ After all three branches are merged, run this checklist:
 
 ## Rollback Reference
 
-| Task | Rollback command |
-|---|---|
+| Task        | Rollback command                                                                                                  |
+| ----------- | ----------------------------------------------------------------------------------------------------------------- |
 | Task 1 (B1) | `git revert <merge-sha>` on main. Restores c9watch via git history; fakeHash and meta.platforms overclaim return. |
-| Task 2 (B2) | `git revert <merge-sha>` on main. Restores `/usr/bin/hdiutil` and `/usr/bin/codesign`. |
-| Task 3 (B3) | `git revert <merge-sha>` on main. Restores broken fix-lint and the invalid-SRI fallback. |
+| Task 2 (B2) | `git revert <merge-sha>` on main. Restores `/usr/bin/hdiutil` and `/usr/bin/codesign`.                            |
+| Task 3 (B3) | `git revert <merge-sha>` on main. Restores broken fix-lint and the invalid-SRI fallback.                          |
 
 Tasks are independently revertable; the changes don't cross-couple.

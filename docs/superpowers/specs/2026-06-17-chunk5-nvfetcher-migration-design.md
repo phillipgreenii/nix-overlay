@@ -25,21 +25,21 @@ Work in the worktree at `/home/tcadmin/workspace/nix-overlay-chunk1`. Branch dir
 
 ## Sources to migrate
 
-| nvfetcher entry | Type | Tracks | Fetches |
-|---|---|---|---|
-| `beads-web-darwin-arm64` | github_tag + url | weselow/beads-web (latest tag) | `beads-web-darwin-arm64` asset |
-| `beads-web-linux-x64` | github_tag + url | weselow/beads-web (latest tag) | `beads-web-linux-x64` asset |
-| `gascity-darwin-arm64` | github_tag + url | gastownhall/gascity (latest tag) | `gascity_${ver}_darwin_arm64.tar.gz` |
-| `gascity-linux-amd64` | github_tag + url | gastownhall/gascity (latest tag) | `gascity_${ver}_linux_amd64.tar.gz` |
-| `cmux` | github_tag + url | manaflow-ai/cmux (latest tag) | `cmux-macos.dmg` |
-| `tmux-open-nvim` | git branch tip | trevarj/tmux-open-nvim (master) | fetchFromGitHub at resolved rev |
-| `tmux-mouse-swipe` | git branch tip | jaclu/tmux-mouse-swipe (main) | fetchFromGitHub at resolved rev |
-| `tmux-nerd-font-window-name` | git branch tip | joshmedeski/tmux-nerd-font-window-name (main) | fetchFromGitHub at resolved rev |
-| `bat-gherkin-syntax` | git branch tip | keith-hall/SublimeGherkinSyntax (master) | fetchFromGitHub at resolved rev |
+| nvfetcher entry              | Type             | Tracks                                        | Fetches                              |
+| ---------------------------- | ---------------- | --------------------------------------------- | ------------------------------------ |
+| `beads-web-darwin-arm64`     | github_tag + url | weselow/beads-web (latest tag)                | `beads-web-darwin-arm64` asset       |
+| `beads-web-linux-x64`        | github_tag + url | weselow/beads-web (latest tag)                | `beads-web-linux-x64` asset          |
+| `gascity-darwin-arm64`       | github_tag + url | gastownhall/gascity (latest tag)              | `gascity_${ver}_darwin_arm64.tar.gz` |
+| `gascity-linux-amd64`        | github_tag + url | gastownhall/gascity (latest tag)              | `gascity_${ver}_linux_amd64.tar.gz`  |
+| `cmux`                       | github_tag + url | manaflow-ai/cmux (latest tag)                 | `cmux-macos.dmg`                     |
+| `tmux-open-nvim`             | git branch tip   | trevarj/tmux-open-nvim (master)               | fetchFromGitHub at resolved rev      |
+| `tmux-mouse-swipe`           | git branch tip   | jaclu/tmux-mouse-swipe (main)                 | fetchFromGitHub at resolved rev      |
+| `tmux-nerd-font-window-name` | git branch tip   | joshmedeski/tmux-nerd-font-window-name (main) | fetchFromGitHub at resolved rev      |
+| `bat-gherkin-syntax`         | git branch tip   | keith-hall/SublimeGherkinSyntax (master)      | fetchFromGitHub at resolved rev      |
 
 That's 9 entries (4 multi-arch binaries split into 2 each + 5 single-source). The multi-arch packages (beads-web, gascity) each get one entry per supported platform — nvfetcher's URL templating uses `$ver` from src's detected version, so per-platform asset URLs need their own entries.
 
-Note on `src.github_tag` vs `src.github`: `src.github` tracks the latest GitHub *release* (the Releases API), `src.github_tag` tracks the maximum tag (the Git tags API). For these projects the two normally agree, but tag-based tracking is the convention used across nvfetcher real-world configs (see iynaix/dotfiles). We pair it with `src.prefix = "v"` so `$ver` is the bare semver (e.g. `0.11.2`), matching the `v$ver` form in the existing release URLs.
+Note on `src.github_tag` vs `src.github`: `src.github` tracks the latest GitHub _release_ (the Releases API), `src.github_tag` tracks the maximum tag (the Git tags API). For these projects the two normally agree, but tag-based tracking is the convention used across nvfetcher real-world configs (see iynaix/dotfiles). We pair it with `src.prefix = "v"` so `$ver` is the bare semver (e.g. `0.11.2`), matching the `v$ver` form in the existing release URLs.
 
 ## `nvfetcher.toml`
 
@@ -189,6 +189,7 @@ Net change vs. post-Chunk-3 version: signature gains `sources`, loses `fetchurl`
 ### `packages/gascity/default.nix`
 
 Same shape as beads-web, with three differences carried forward from the current file:
+
 - signature is `{ lib, stdenvNoCC, sources }:` (current gascity uses `stdenvNoCC` because the tarball contains a prebuilt static binary — preserve that).
 - `sourceRoot = ".";` and `dontFixup = true;` (carry over).
 - `installPhase` installs `gc` (not `gascity`) — the binary inside the tarball is named `gc`. `mainProgram = "gc"`.
@@ -355,6 +356,7 @@ Expected `update-locks.sh` final size: ~50 lines (from current ~164).
 ## `.update-locks/steps/` cleanup
 
 Delete the 7 stale per-step stamps:
+
 - `bat-gherkin-syntax`
 - `tmux-mouse-swipe`
 - `tmux-nerd-font-window-name`
@@ -367,31 +369,31 @@ Delete the 7 stale per-step stamps:
 
 ## Files deleted
 
-| Path | Reason |
-|---|---|
-| `nix/update-cmux.sh` | Replaced by nvfetcher |
-| `nix/update-cmux.nix` | App wrapper no longer needed |
-| `nix/update-beads-web.sh` | Replaced by nvfetcher |
-| `nix/update-beads-web.nix` | App wrapper no longer needed |
-| `nix/update-gascity.sh` | Replaced by nvfetcher |
-| `nix/update-gascity.nix` | App wrapper no longer needed |
-| `.update-locks/steps/bat-gherkin-syntax` | Stale stamp |
-| `.update-locks/steps/tmux-mouse-swipe` | Stale stamp |
-| `.update-locks/steps/tmux-nerd-font-window-name` | Stale stamp |
-| `.update-locks/steps/tmux-open-nvim` | Stale stamp |
-| `.update-locks/steps/update-beads-web` | Stale stamp |
-| `.update-locks/steps/update-cmux` | Stale stamp |
-| `.update-locks/steps/update-gascity` | Stale stamp |
+| Path                                             | Reason                       |
+| ------------------------------------------------ | ---------------------------- |
+| `nix/update-cmux.sh`                             | Replaced by nvfetcher        |
+| `nix/update-cmux.nix`                            | App wrapper no longer needed |
+| `nix/update-beads-web.sh`                        | Replaced by nvfetcher        |
+| `nix/update-beads-web.nix`                       | App wrapper no longer needed |
+| `nix/update-gascity.sh`                          | Replaced by nvfetcher        |
+| `nix/update-gascity.nix`                         | App wrapper no longer needed |
+| `.update-locks/steps/bat-gherkin-syntax`         | Stale stamp                  |
+| `.update-locks/steps/tmux-mouse-swipe`           | Stale stamp                  |
+| `.update-locks/steps/tmux-nerd-font-window-name` | Stale stamp                  |
+| `.update-locks/steps/tmux-open-nvim`             | Stale stamp                  |
+| `.update-locks/steps/update-beads-web`           | Stale stamp                  |
+| `.update-locks/steps/update-cmux`                | Stale stamp                  |
+| `.update-locks/steps/update-gascity`             | Stale stamp                  |
 
 (Also the `nix/` directory itself becomes empty after the 6 file removals — delete if so.)
 
 ## Files added
 
-| Path | Reason |
-|---|---|
-| `nvfetcher.toml` | Source manifest |
-| `_sources/generated.nix` | Generated by nvfetcher; committed |
-| `_sources/nvfetcher.json` | nvfetcher's lock; committed |
+| Path                      | Reason                            |
+| ------------------------- | --------------------------------- |
+| `nvfetcher.toml`          | Source manifest                   |
+| `_sources/generated.nix`  | Generated by nvfetcher; committed |
+| `_sources/nvfetcher.json` | nvfetcher's lock; committed       |
 
 ## Bootstrap principle (Chunk 1 Task 4 carry-forward)
 
@@ -409,7 +411,7 @@ Delete the 7 stale per-step stamps:
 6. `nix build .#bat-gherkin-syntax --no-link` succeeds on linux.
 7. On darwin (or via eval-check): `nix build .#cmux --no-link` or `nix eval --raw .#cmux.drvPath`.
 8. `meta.platforms` still matches Chunk 3's claims (`["aarch64-darwin", "x86_64-linux"]` for beads-web/gascity; `platforms.unix` for bat-gherkin/tmux; `platforms.darwin` for cmux).
-9. The three nix/update-*.sh and three nix/update-*.nix files are gone (`ls nix/` should fail or show empty — and the `nix/` directory itself is removed).
+9. The three nix/update-_.sh and three nix/update-_.nix files are gone (`ls nix/` should fail or show empty — and the `nix/` directory itself is removed).
 10. `update-locks.sh` size ~50 lines; only two `ul_run_step` calls.
 11. `git grep update_tmux_plugin update-locks.sh` returns nothing.
 12. CI on `main` is green after merge.
@@ -420,7 +422,7 @@ Delete the 7 stale per-step stamps:
 - **`_sources/generated.nix` schema may differ from spec example**: the implementer verifies the exact shape after running `nvfetcher` once and adjusts package files to match. Expected shape based on nvfetcher 0.6+'s output; could be slightly different.
 - **The tmux plugin `version` derivation may need passthru.date**: nvfetcher's git source emits a `version` (sha) by default, and per the nvfetcher manifest spec, `passthru.date = ...` can be used to inject custom fields. If `version = "unstable-${sources.X.date}"` doesn't work, the package file falls back to a bare `version` from the sha. Implementer verifies empirically.
 - **bat-gherkin-syntax bare-fetchFromGitHub-with-meta-smuggling** (deepdive B8) is preserved with a TODO comment for a future cleanup chunk.
-- **Rollback**: `git revert`. All packages return to per-package hashes inline; the 6 update-*.sh files come back; update-locks.sh's inline functions return. The `_sources/` directory and `nvfetcher.toml` are deleted by the revert.
+- **Rollback**: `git revert`. All packages return to per-package hashes inline; the 6 update-\*.sh files come back; update-locks.sh's inline functions return. The `_sources/` directory and `nvfetcher.toml` are deleted by the revert.
 
 ## Cross-Cutting
 
@@ -443,6 +445,7 @@ Delete the 7 stale per-step stamps:
 ## Success Criteria
 
 After the branch is merged:
+
 1. `nvfetcher.toml` and `_sources/generated.nix` exist at repo root and `_sources/` respectively.
 2. The three `nix/update-*.sh` and three `nix/update-*.nix` files are deleted (six files total, leaving `nix/` empty — delete the directory too).
 3. `update-locks.sh` has only two `ul_run_step` calls (nvfetcher + nix-flake-update); the two inline functions are gone.
@@ -454,6 +457,7 @@ After the branch is merged:
 ## Open Questions
 
 None pending. Decisions resolved in dialogue:
+
 - Branch granularity: single big-bang branch.
 - S3/M6 provenance: deferred.
 - yaziPlugins not in scope (in-repo paths).
