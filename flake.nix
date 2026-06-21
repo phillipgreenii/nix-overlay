@@ -15,7 +15,6 @@
       self,
       nixpkgs,
       flake-parts,
-      phillipgreenii-nix-base,
       ...
     }:
     flake-parts.lib.mkFlake { inherit inputs; } {
@@ -46,12 +45,19 @@
         nvfetcher
       ];
 
+      # nvfetcher's _sources/ is generated (not hand-written); deadnix flags its
+      # unused fetcher args. The producer merges extraHooks over its hook set, so
+      # override the deadnix hook to exclude the generated tree. (treefmt excludes
+      # it via settings.global.excludes in perSystem.) Surfaced post-migration; tc-xbxex.
+      phillipgreenii.pre-commit.extraHooks.deadnix = {
+        enable = true;
+        name = "deadnix";
+        excludes = [ "^_sources/" ];
+      };
+
       perSystem =
         {
-          self',
-          inputs',
           pkgs,
-          system,
           config,
           ...
         }:
@@ -62,6 +68,15 @@
           # formatter, devShells.default, packages.install-pre-commit-hooks,
           # checks.{formatting, linting, pre-commit, consumer-input-alignment}
           # — all auto-contributed.
+
+          # The producer treefmt runs prettier on *.json; nvfetcher's source
+          # manifests are generated (not hand-formatted) and would fight it.
+          # The old local treefmt.nix never enabled prettier, so this only
+          # surfaced after the flake-parts migration adopted the producer module.
+          treefmt.settings.global.excludes = [
+            "_sources/generated.json"
+            "_sources/generated.nix"
+          ];
 
           # Build every package as a check. Use config.packages (same-perSystem
           # scope) rather than self.packages.${system} which forces an eval
