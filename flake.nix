@@ -33,41 +33,19 @@
         inputs.phillipgreenii-nix-base.flakeModules.checks
       ];
 
-      # Single phillipgreenii block (statix: no repeated top-level keys).
-      phillipgreenii = {
-        # devshell.extraInputs — see nix-repo-base/flake-modules/devshell.nix:7.
-        # KNOWN LIMITATION: a flat `listOf package` evaluated once; hardcoding
-        # x86_64-linux means the devshell only works correctly there. nix-overlay's
-        # primary dev host is Linux. Track a producer-side follow-up to make this
-        # option per-system-aware.
-        devshell.extraInputs = with nixpkgs.legacyPackages.x86_64-linux; [
-          jq
-          curl
-          gnused
-          nvfetcher
-        ];
-
-        # nvfetcher's _sources/ is generated (not hand-written). The producer's
-        # lint/whitespace hooks have no generated-paths exclude, so override them
-        # to skip the generated tree (the producer merges extraHooks over its hook
-        # set). treefmt is excluded separately via settings.global.excludes in
-        # perSystem. Surfaced post-migration; tc-xbxex. A producer-side global
-        # `excludes` option (tracked separately) would replace these per-hook overrides.
-        pre-commit.extraHooks = {
-          deadnix = {
-            enable = true;
-            name = "deadnix";
-            excludes = [ "^_sources/" ];
-          };
-          # generated.json has no trailing newline; end-of-file-fixer would
-          # rewrite it every run.
-          end-of-file-fixer = {
-            enable = true;
-            entry = "${nixpkgs.legacyPackages.x86_64-linux.python3Packages.pre-commit-hooks}/bin/end-of-file-fixer";
-            excludes = [ "^_sources/" ];
-          };
-        };
-      };
+      # devshell.extraInputs — see nix-repo-base/flake-modules/devshell.nix:7.
+      # KNOWN LIMITATION: a flat `listOf package` evaluated once; hardcoding
+      # x86_64-linux means the devshell only works correctly there. nix-overlay's
+      # primary dev host is Linux. Track a producer-side follow-up to make this
+      # option per-system-aware.
+      # nvfetcher's generated _sources/ tree is excluded from lint+format by the
+      # producer default (tc-uergy), so no per-repo overrides are needed here.
+      phillipgreenii.devshell.extraInputs = with nixpkgs.legacyPackages.x86_64-linux; [
+        jq
+        curl
+        gnused
+        nvfetcher
+      ];
 
       perSystem =
         {
@@ -82,15 +60,6 @@
           # formatter, devShells.default, packages.install-pre-commit-hooks,
           # checks.{formatting, linting, pre-commit, consumer-input-alignment}
           # — all auto-contributed.
-
-          # The producer treefmt runs prettier on *.json; nvfetcher's source
-          # manifests are generated (not hand-formatted) and would fight it.
-          # The old local treefmt.nix never enabled prettier, so this only
-          # surfaced after the flake-parts migration adopted the producer module.
-          treefmt.settings.global.excludes = [
-            "_sources/generated.json"
-            "_sources/generated.nix"
-          ];
 
           # Build every package as a check. Use config.packages (same-perSystem
           # scope) rather than self.packages.${system} which forces an eval
