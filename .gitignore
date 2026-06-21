@@ -2,6 +2,9 @@ result
 result-*
 .direnv
 
+# Local agent tooling config (machine-local, not for the tracked tree)
+.perles/
+
 # Gas Town (added by gt)
 .runtime/
 .logs/
