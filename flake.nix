@@ -13,7 +13,6 @@
   outputs =
     inputs@{
       self,
-      nixpkgs,
       flake-parts,
       ...
     }:
@@ -33,20 +32,6 @@
         inputs.phillipgreenii-nix-base.flakeModules.checks
       ];
 
-      # devshell.extraInputs — see nix-repo-base/flake-modules/devshell.nix:7.
-      # KNOWN LIMITATION: a flat `listOf package` evaluated once; hardcoding
-      # x86_64-linux means the devshell only works correctly there. nix-overlay's
-      # primary dev host is Linux. Track a producer-side follow-up to make this
-      # option per-system-aware.
-      # nvfetcher's generated _sources/ tree is excluded from lint+format by the
-      # producer default (tc-uergy), so no per-repo overrides are needed here.
-      phillipgreenii.devshell.extraInputs = with nixpkgs.legacyPackages.x86_64-linux; [
-        jq
-        curl
-        gnused
-        nvfetcher
-      ];
-
       perSystem =
         {
           pkgs,
@@ -60,6 +45,16 @@
           # formatter, devShells.default, packages.install-pre-commit-hooks,
           # checks.{formatting, linting, pre-commit, consumer-input-alignment}
           # — all auto-contributed.
+
+          # devshell.extraInputs — see nix-repo-base/flake-modules/devshell.nix:7.
+          # nvfetcher's generated _sources/ tree is excluded from lint+format by the
+          # producer default (tc-uergy), so no per-repo overrides are needed here.
+          phillipgreenii.devshell.extraInputs = with pkgs; [
+            jq
+            curl
+            gnused
+            nvfetcher
+          ];
 
           # Build every package as a check. Use config.packages (same-perSystem
           # scope) rather than self.packages.${system} which forces an eval
