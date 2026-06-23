@@ -36,10 +36,10 @@
   };
   cmux = {
     pname = "cmux";
-    version = "0.64.16";
+    version = "0.64.17";
     src = fetchurl {
-      url = "https://github.com/manaflow-ai/cmux/releases/download/v0.64.16/cmux-macos.dmg";
-      sha256 = "sha256-QB/2emBrAzqkcKaLrVUZanK4qXHSma4CeJM2PwGhmXI=";
+      url = "https://github.com/manaflow-ai/cmux/releases/download/v0.64.17/cmux-macos.dmg";
+      sha256 = "sha256-LVdt+sjSY/vDOiRX3JIAhSDffM5KMIC7SZsRwbvKliQ=";
     };
   };
   tmux-mouse-swipe = {
