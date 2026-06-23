@@ -59,11 +59,11 @@
         "pinned": false,
         "src": {
             "name": null,
-            "sha256": "sha256-QB/2emBrAzqkcKaLrVUZanK4qXHSma4CeJM2PwGhmXI=",
+            "sha256": "sha256-LVdt+sjSY/vDOiRX3JIAhSDffM5KMIC7SZsRwbvKliQ=",
             "type": "url",
-            "url": "https://github.com/manaflow-ai/cmux/releases/download/v0.64.16/cmux-macos.dmg"
+            "url": "https://github.com/manaflow-ai/cmux/releases/download/v0.64.17/cmux-macos.dmg"
         },
-        "version": "0.64.16"
+        "version": "0.64.17"
     },
     "tmux-mouse-swipe": {
         "cargoLock": null,
