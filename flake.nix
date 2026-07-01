@@ -59,7 +59,19 @@
           # Build every package as a check. Use config.packages (same-perSystem
           # scope) rather than self.packages.${system} which forces an eval
           # cycle through flake-parts' mkPerSystemFile.
-          checks = config.packages;
+          #
+          # Also surface package passthru.tests as checks so `nix flake check`
+          # exercises the CLI smoke tests (tc-cyvj8): a successful build only
+          # proves the derivation realised, not that its binary runs.
+          # `beads-web-version` runs `beads-web --version`. beads-web is only in
+          # config.packages on its supported systems (see the platform-gated
+          # `packages` below), so the `? beads-web` guard keeps this test off
+          # beads-web's unsupported systems.
+          checks =
+            config.packages
+            // pkgs.lib.optionalAttrs (config.packages ? beads-web) {
+              beads-web-version = config.packages.beads-web.passthru.tests.version;
+            };
 
           packages =
             let
@@ -67,7 +79,6 @@
             in
             {
               inherit (extended.phillipgreenii)
-                beads-web
                 bat-gherkin-syntax
                 ;
               inherit (extended.tmuxPlugins)
@@ -83,6 +94,18 @@
               '';
               # install-pre-commit-hooks REMOVED — pre-commit module auto-contributes it.
             }
+            # beads-web ships prebuilt release binaries only for these systems.
+            # Expose it (and thereby make it a flake check) only there, so
+            # `nix flake check --all-systems` does not force its drv on an
+            # unsupported host and trip meta.platforms' "not available on this
+            # platform" guard (tc-hgn29). Reading meta.platforms does not force
+            # the drv, so this predicate is eval-safe on every system.
+            //
+              pkgs.lib.optionalAttrs
+                (pkgs.lib.elem pkgs.stdenv.hostPlatform.system extended.phillipgreenii.beads-web.meta.platforms)
+                {
+                  inherit (extended.phillipgreenii) beads-web;
+                }
             // pkgs.lib.optionalAttrs (pkgs.stdenv.hostPlatform.system == "aarch64-darwin") {
               inherit (extended.phillipgreenii) cmux;
             };
