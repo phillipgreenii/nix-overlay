@@ -22,20 +22,19 @@ pkgs = import nixpkgs {
 };
 ```
 
-After that, `pkgs.phillipgreenii.beads-web`, `pkgs.tmuxPlugins.tmux-open-nvim`, etc. resolve normally.
+After that, `pkgs.phillipgreenii.bat-gherkin-syntax`, `pkgs.tmuxPlugins.tmux-open-nvim`, etc. resolve normally.
 
 ## Packages
 
-| Name                                     | Platforms                    | Source                                                                                              |
-| ---------------------------------------- | ---------------------------- | --------------------------------------------------------------------------------------------------- |
-| `phillipgreenii.beads-web`               | aarch64-darwin, x86_64-linux | [weselow/beads-web](https://github.com/weselow/beads-web)                                           |
-| `phillipgreenii.bat-gherkin-syntax`      | unix                         | [keith-hall/SublimeGherkinSyntax](https://github.com/keith-hall/SublimeGherkinSyntax)               |
-| `phillipgreenii.cmux`                    | aarch64-darwin               | [manaflow-ai/cmux](https://github.com/manaflow-ai/cmux)                                             |
-| `tmuxPlugins.tmux-open-nvim`             | unix                         | [trevarj/tmux-open-nvim](https://github.com/trevarj/tmux-open-nvim)                                 |
-| `tmuxPlugins.tmux-mouse-swipe`           | unix                         | [jaclu/tmux-mouse-swipe](https://github.com/jaclu/tmux-mouse-swipe)                                 |
-| `tmuxPlugins.tmux-nerd-font-window-name` | unix                         | [joshmedeski/tmux-nerd-font-window-name](https://github.com/joshmedeski/tmux-nerd-font-window-name) |
-| `yaziPlugins.icons-brew`                 | all                          | (in this repo, `packages/yaziPlugins/icons-brew`)                                                   |
-| `yaziPlugins.bunny`                      | all                          | (in this repo, `packages/yaziPlugins/bunny`)                                                        |
+| Name                                     | Platforms      | Source                                                                                              |
+| ---------------------------------------- | -------------- | --------------------------------------------------------------------------------------------------- |
+| `phillipgreenii.bat-gherkin-syntax`      | unix           | [keith-hall/SublimeGherkinSyntax](https://github.com/keith-hall/SublimeGherkinSyntax)               |
+| `phillipgreenii.cmux`                    | aarch64-darwin | [manaflow-ai/cmux](https://github.com/manaflow-ai/cmux)                                             |
+| `tmuxPlugins.tmux-open-nvim`             | unix           | [trevarj/tmux-open-nvim](https://github.com/trevarj/tmux-open-nvim)                                 |
+| `tmuxPlugins.tmux-mouse-swipe`           | unix           | [jaclu/tmux-mouse-swipe](https://github.com/jaclu/tmux-mouse-swipe)                                 |
+| `tmuxPlugins.tmux-nerd-font-window-name` | unix           | [joshmedeski/tmux-nerd-font-window-name](https://github.com/joshmedeski/tmux-nerd-font-window-name) |
+| `yaziPlugins.icons-brew`                 | all            | (in this repo, `packages/yaziPlugins/icons-brew`)                                                   |
+| `yaziPlugins.bunny`                      | all            | (in this repo, `packages/yaziPlugins/bunny`)                                                        |
 
 `legacyPackages.${system}.yaziPlugins` exposes the structured `{ icons-brew, bunny }` set.
 
@@ -52,10 +51,9 @@ After that, `pkgs.phillipgreenii.beads-web`, `pkgs.tmuxPlugins.tmux-open-nvim`, 
 
 The nightly updater (`verify-provenance.sh`, invoked between `nvfetcher` and `nix flake update` in `update-locks.sh`) verifies every binary upstream's release artifact against published provenance. Per-upstream method assignment (audit **2026-06-18**):
 
-| Upstream            | Method                         | Notes                                                                                                                                                                                                                  |
-| ------------------- | ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `weselow/beads-web` | `none-no-provenance-published` | Releases ship bare binaries: no `gh attestation verify`, no `checksums.txt`, no `.sig`. Helper logs the gap and continues; re-audit when upstream changes their release pipeline.                                      |
-| `manaflow-ai/cmux`  | `none-no-provenance-published` | `cmux-macos.dmg` has no attestation and no `.dmg.sig`. The `cmuxd-remote-checksums.txt` published alongside covers a _different_ product (cmuxd-remote), not the cmux Electron app. Helper logs the gap and continues. |
+| Upstream           | Method                         | Notes                                                                                                                                                                                                                  |
+| ------------------ | ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `manaflow-ai/cmux` | `none-no-provenance-published` | `cmux-macos.dmg` has no attestation and no `.dmg.sig`. The `cmuxd-remote-checksums.txt` published alongside covers a _different_ product (cmuxd-remote), not the cmux Electron app. Helper logs the gap and continues. |
 
 Git-source plugins (`tmux-*`, `bat-gherkin-syntax`) are not verified separately — the nvfetcher-pinned commit SHA is the integrity proof.
 

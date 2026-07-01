@@ -7,9 +7,6 @@
 #
 # Per-upstream methods (audit 2026-06-18 — re-audit if upstream changes
 # release pipeline):
-#   beads-web — none-no-provenance-published (weselow/beads-web ships
-#               bare binaries; no `gh attestation verify`, no
-#               checksums.txt, no .sig files at v0.11.2)
 #   cmux      — none-no-provenance-published (manaflow-ai/cmux ships
 #               cmux-macos.dmg + appcast.xml; no attestation, no
 #               .dmg.sig, and the cmuxd-remote-checksums.txt covers a
@@ -40,8 +37,6 @@ fi
 
 # --- per-upstream method config (audit-time decision; 2026-06-18) ---
 declare -A METHODS=(
-  ["beads-web-darwin-arm64"]="none-no-provenance-published"
-  ["beads-web-linux-x64"]="none-no-provenance-published"
   ["cmux"]="none-no-provenance-published"
   ["tmux-open-nvim"]="git-source"
   ["tmux-mouse-swipe"]="git-source"
@@ -49,8 +44,6 @@ declare -A METHODS=(
   ["bat-gherkin-syntax"]="git-source"
 )
 declare -A REPOS=(
-  ["beads-web-darwin-arm64"]="weselow/beads-web"
-  ["beads-web-linux-x64"]="weselow/beads-web"
   ["cmux"]="manaflow-ai/cmux"
 )
 

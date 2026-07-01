@@ -18,22 +18,6 @@
     };
     date = "2024-10-12";
   };
-  beads-web-darwin-arm64 = {
-    pname = "beads-web-darwin-arm64";
-    version = "0.11.2";
-    src = fetchurl {
-      url = "https://github.com/weselow/beads-web/releases/download/v0.11.2/beads-web-darwin-arm64";
-      sha256 = "sha256-6+4ddKilgMHFfSBSNCQNPl2jZDmNtWpQ99zKn2bWnkc=";
-    };
-  };
-  beads-web-linux-x64 = {
-    pname = "beads-web-linux-x64";
-    version = "0.11.2";
-    src = fetchurl {
-      url = "https://github.com/weselow/beads-web/releases/download/v0.11.2/beads-web-linux-x64";
-      sha256 = "sha256-eDL5aAwQ41XK58YFirf7HLvImxR5PJeFr6WIzmS5IRE=";
-    };
-  };
   cmux = {
     pname = "cmux";
     version = "0.64.17";

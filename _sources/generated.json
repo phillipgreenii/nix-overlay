@@ -20,36 +20,6 @@
         },
         "version": "ec3fae90209136a89a5027f61167e04790c83382"
     },
-    "beads-web-darwin-arm64": {
-        "cargoLock": null,
-        "date": null,
-        "extract": null,
-        "name": "beads-web-darwin-arm64",
-        "passthru": null,
-        "pinned": false,
-        "src": {
-            "name": null,
-            "sha256": "sha256-6+4ddKilgMHFfSBSNCQNPl2jZDmNtWpQ99zKn2bWnkc=",
-            "type": "url",
-            "url": "https://github.com/weselow/beads-web/releases/download/v0.11.2/beads-web-darwin-arm64"
-        },
-        "version": "0.11.2"
-    },
-    "beads-web-linux-x64": {
-        "cargoLock": null,
-        "date": null,
-        "extract": null,
-        "name": "beads-web-linux-x64",
-        "passthru": null,
-        "pinned": false,
-        "src": {
-            "name": null,
-            "sha256": "sha256-eDL5aAwQ41XK58YFirf7HLvImxR5PJeFr6WIzmS5IRE=",
-            "type": "url",
-            "url": "https://github.com/weselow/beads-web/releases/download/v0.11.2/beads-web-linux-x64"
-        },
-        "version": "0.11.2"
-    },
     "cmux": {
         "cargoLock": null,
         "date": null,

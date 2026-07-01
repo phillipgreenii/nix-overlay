@@ -1,13 +1,3 @@
-[beads-web-darwin-arm64]
-src.github = "weselow/beads-web"
-src.prefix = "v"
-fetch.url = "https://github.com/weselow/beads-web/releases/download/v$ver/beads-web-darwin-arm64"
-
-[beads-web-linux-x64]
-src.github = "weselow/beads-web"
-src.prefix = "v"
-fetch.url = "https://github.com/weselow/beads-web/releases/download/v$ver/beads-web-linux-x64"
-
 [cmux]
 src.github = "manaflow-ai/cmux"
 src.prefix = "v"
