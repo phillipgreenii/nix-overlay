@@ -5,23 +5,13 @@ result-*
 # Local agent tooling config (machine-local, not for the tracked tree)
 .perles/
 
-# Gas Town (added by gt)
-.runtime/
-.logs/
-__pycache__/
-state.json
-CLAUDE.md
-CLAUDE.local.md
-
 # Beads / Dolt files (added by bd init)
 .dolt/
 *.db
 .beads-credential-key
 
-# Gas City
-.beads/*
-!.beads/config.yaml
-!.beads/metadata.json
+# beads: local-only (data lives in dolt; nothing under .beads/ is tracked)
+.beads/
 
 # Claude Code per-session worktrees (runtime state, created by EnterWorktree)
 .claude/worktrees/
