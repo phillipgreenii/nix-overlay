@@ -35,6 +35,27 @@
         },
         "version": "0.64.17"
     },
+    "pint": {
+        "cargoLock": null,
+        "date": null,
+        "extract": null,
+        "name": "pint",
+        "passthru": null,
+        "pinned": false,
+        "src": {
+            "deepClone": false,
+            "fetchSubmodules": false,
+            "leaveDotGit": false,
+            "name": null,
+            "owner": "cloudflare",
+            "repo": "pint",
+            "rev": "v0.87.0",
+            "sha256": "sha256-gQosR2LovEEw0AOzIf91AJAL2cMvygMEsYGszvSYFps=",
+            "sparseCheckout": [],
+            "type": "github"
+        },
+        "version": "v0.87.0"
+    },
     "tmux-mouse-swipe": {
         "cargoLock": null,
         "date": "2025-12-29",

@@ -3,6 +3,15 @@ src.github = "manaflow-ai/cmux"
 src.prefix = "v"
 fetch.url = "https://github.com/manaflow-ai/cmux/releases/download/v$ver/cmux-macos.dmg"
 
+# NOTE: no `src.prefix = "v"`. nvfetcher's `fetch.github` fetches rev `$ver`
+# verbatim, and pint's release tags are `vX.Y.Z`; stripping the prefix would
+# make it fetch rev `0.87.0` (no such tag -> 404). Keeping the `v` in the
+# version yields the correct `fetchFromGitHub` rev; packages/pint strips it
+# for the ldflag.
+[pint]
+src.github = "cloudflare/pint"
+fetch.github = "cloudflare/pint"
+
 [tmux-open-nvim]
 src.git = "https://github.com/trevarj/tmux-open-nvim"
 src.branch = "master"

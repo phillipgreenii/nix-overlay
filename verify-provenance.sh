@@ -12,8 +12,10 @@
 #               .dmg.sig, and the cmuxd-remote-checksums.txt covers a
 #               different product, not cmux-macos.dmg)
 #
-# Git-source plugins (tmux-*, bat-gherkin-syntax) use method `git-source`
-# — explicitly skipped because the nvfetcher-pinned SHA is the integrity.
+# Git-source packages (tmux-*, bat-gherkin-syntax, pint) use method
+# `git-source` — explicitly skipped because the nvfetcher-pinned SHA is the
+# integrity. (pint is a rev-pinned fetchFromGitHub source repackaged with
+# buildGoModule; the source pin, not a release binary, is what is verified.)
 #
 # When method is `none-no-provenance-published`, the helper logs the gap
 # and continues (does NOT fail). Per Chunk 6 brainstorm decision
@@ -42,6 +44,7 @@ declare -A METHODS=(
   ["tmux-mouse-swipe"]="git-source"
   ["tmux-nerd-font-window-name"]="git-source"
   ["bat-gherkin-syntax"]="git-source"
+  ["pint"]="git-source"
 )
 declare -A REPOS=(
   ["cmux"]="manaflow-ai/cmux"

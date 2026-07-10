@@ -22,7 +22,7 @@ pkgs = import nixpkgs {
 };
 ```
 
-After that, `pkgs.phillipgreenii.bat-gherkin-syntax`, `pkgs.tmuxPlugins.tmux-open-nvim`, etc. resolve normally.
+After that, `pkgs.phillipgreenii.bat-gherkin-syntax`, `pkgs.phillipgreenii.pint`, `pkgs.tmuxPlugins.tmux-open-nvim`, etc. resolve normally.
 
 ## Packages
 
@@ -30,6 +30,7 @@ After that, `pkgs.phillipgreenii.bat-gherkin-syntax`, `pkgs.tmuxPlugins.tmux-ope
 | ---------------------------------------- | -------------- | --------------------------------------------------------------------------------------------------- |
 | `phillipgreenii.bat-gherkin-syntax`      | unix           | [keith-hall/SublimeGherkinSyntax](https://github.com/keith-hall/SublimeGherkinSyntax)               |
 | `phillipgreenii.cmux`                    | aarch64-darwin | [manaflow-ai/cmux](https://github.com/manaflow-ai/cmux)                                             |
+| `phillipgreenii.pint`                    | unix           | [cloudflare/pint](https://github.com/cloudflare/pint)                                               |
 | `tmuxPlugins.tmux-open-nvim`             | unix           | [trevarj/tmux-open-nvim](https://github.com/trevarj/tmux-open-nvim)                                 |
 | `tmuxPlugins.tmux-mouse-swipe`           | unix           | [jaclu/tmux-mouse-swipe](https://github.com/jaclu/tmux-mouse-swipe)                                 |
 | `tmuxPlugins.tmux-nerd-font-window-name` | unix           | [joshmedeski/tmux-nerd-font-window-name](https://github.com/joshmedeski/tmux-nerd-font-window-name) |
@@ -55,7 +56,7 @@ The nightly updater (`verify-provenance.sh`, invoked between `nvfetcher` and `ni
 | ------------------ | ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `manaflow-ai/cmux` | `none-no-provenance-published` | `cmux-macos.dmg` has no attestation and no `.dmg.sig`. The `cmuxd-remote-checksums.txt` published alongside covers a _different_ product (cmuxd-remote), not the cmux Electron app. Helper logs the gap and continues. |
 
-Git-source plugins (`tmux-*`, `bat-gherkin-syntax`) are not verified separately — the nvfetcher-pinned commit SHA is the integrity proof.
+Git-source packages (`tmux-*`, `bat-gherkin-syntax`, `pint`) are not verified separately — the nvfetcher-pinned commit SHA is the integrity proof. (`pint` is a rev-pinned `fetchFromGitHub` source repackaged with `buildGoModule`; there is no release binary to attest.)
 
 When an upstream's release pipeline changes (publishes/withdraws attestation or checksums), the per-upstream `METHODS` table at the top of `verify-provenance.sh` must be re-audited. Search for "audit 2026-06-18" in that file to find the config block.
 

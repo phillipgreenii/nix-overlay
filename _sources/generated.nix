@@ -26,6 +26,17 @@
       sha256 = "sha256-LVdt+sjSY/vDOiRX3JIAhSDffM5KMIC7SZsRwbvKliQ=";
     };
   };
+  pint = {
+    pname = "pint";
+    version = "v0.87.0";
+    src = fetchFromGitHub {
+      owner = "cloudflare";
+      repo = "pint";
+      rev = "v0.87.0";
+      fetchSubmodules = false;
+      sha256 = "sha256-gQosR2LovEEw0AOzIf91AJAL2cMvygMEsYGszvSYFps=";
+    };
+  };
   tmux-mouse-swipe = {
     pname = "tmux-mouse-swipe";
     version = "8667851876c7591c668f29df6a142271051a3e2d";

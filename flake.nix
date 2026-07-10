@@ -68,6 +68,7 @@
             {
               inherit (extended.phillipgreenii)
                 bat-gherkin-syntax
+                pint
                 ;
               inherit (extended.tmuxPlugins)
                 tmux-open-nvim
@@ -113,6 +114,7 @@
           {
             phillipgreenii = {
               bat-gherkin-syntax = final.callPackage ./packages/bat-gherkin-syntax { inherit sources; };
+              pint = final.callPackage ./packages/pint { inherit sources; };
             }
             // prev.lib.optionalAttrs (prev.stdenv.hostPlatform.system == "aarch64-darwin") {
               cmux = final.callPackage ./packages/cmux { inherit sources; };
