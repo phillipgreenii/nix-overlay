@@ -29,6 +29,7 @@ jobs:
             accept-flake-config = true
 
       - name: Setup Nix store cache
+        if: runner.os == 'Linux'
         uses: nix-community/cache-nix-action@v7
         with:
           primary-key: nix-${{ runner.os }}-${{ hashFiles('**/flake.lock') }}
