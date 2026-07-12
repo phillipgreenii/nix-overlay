@@ -297,6 +297,8 @@ Decisions:
 - **`required_pull_request_reviews` key omitted entirely** — required reviews would break the bot's auto-merge (no reviewer). Omission disables; explicit `null` may misinterpret on some plan tiers.
 - **`restrictions: null`** — explicitly documented by GitHub to mean "no push allowlist"; admin bypass is enough.
 
+> **Errata (2026-07-12, bead pg2-xzprx):** The "existing squash-only pattern" referenced above is superseded. Repo settings are `allow_squash_merge: false`, `allow_merge_commit: false`, `allow_rebase_merge: true`, so `update-flakes.yml` now calls `gh pr merge --auto --rebase --delete-branch` (rebase is the only method GitHub will accept). `required_linear_history: true` remains correct — rebase merges are linear. The original problem/decision text above is preserved for forensics; full branch-protection reconciliation (required checks, arming auto-merge) remains the domain of the separate S1 bead.
+
 **Part B — Honest PR body (`.github/workflows/update-flakes.yml:88-91`).**
 
 Replace:
