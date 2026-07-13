@@ -43,8 +43,11 @@
           ...
         }:
         let
-          sources = pkgs.callPackage ./_sources/generated.nix { };
-          yaziPluginSet = pkgs.callPackage ./packages/yaziPlugins { inherit sources; };
+          # Single overlay-applied instantiation shared by `packages` and
+          # `legacyPackages` so the two never derive the same content through
+          # two different pkgs scopes (plain pkgs vs pkgs.extend) and drift
+          # apart (pg2-24530).
+          extended = pkgs.extend self.overlays.default;
         in
         {
           # formatter, devShells.default, packages.install-pre-commit-hooks,
@@ -98,33 +101,29 @@
                 );
             };
 
-          packages =
-            let
-              extended = pkgs.extend self.overlays.default;
-            in
-            {
-              inherit (extended.phillipgreenii)
-                bat-gherkin-syntax
-                pint
-                ;
-              inherit (extended.tmuxPlugins)
-                tmux-open-nvim
-                tmux-mouse-swipe
-                tmux-nerd-font-window-name
-                ;
-              yaziPlugins-icons-brew = extended.yaziPlugins.icons-brew;
-              yaziPlugins-bunny = extended.yaziPlugins.bunny;
+          packages = {
+            inherit (extended.phillipgreenii)
+              bat-gherkin-syntax
+              pint
+              ;
+            inherit (extended.tmuxPlugins)
+              tmux-open-nvim
+              tmux-mouse-swipe
+              tmux-nerd-font-window-name
+              ;
+            yaziPlugins-icons-brew = extended.yaziPlugins.icons-brew;
+            yaziPlugins-bunny = extended.yaziPlugins.bunny;
 
-              # fix-lint + install-pre-commit-hooks REMOVED — pre-commit module
-              # auto-contributes both (bead pg2-7vhvn). This flake's cwd-correct
-              # fix-lint variant is the one now shipped from base.
-            }
-            // pkgs.lib.optionalAttrs (pkgs.stdenv.hostPlatform.system == "aarch64-darwin") {
-              inherit (extended.phillipgreenii) cmux;
-            };
+            # fix-lint + install-pre-commit-hooks REMOVED — pre-commit module
+            # auto-contributes both (bead pg2-7vhvn). This flake's cwd-correct
+            # fix-lint variant is the one now shipped from base.
+          }
+          // pkgs.lib.optionalAttrs (pkgs.stdenv.hostPlatform.system == "aarch64-darwin") {
+            inherit (extended.phillipgreenii) cmux;
+          };
 
           legacyPackages = {
-            yaziPlugins = { inherit (yaziPluginSet) icons-brew bunny; };
+            yaziPlugins = { inherit (extended.yaziPlugins) icons-brew bunny; };
           };
         };
 
