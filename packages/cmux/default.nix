@@ -35,10 +35,12 @@ stdenvNoCC.mkDerivation {
   dontFixup = true;
 
   installPhase = ''
+    runHook preInstall
     mkdir -p $out/Applications $out/bin
     cp -r *.app $out/Applications/
     ln -s $out/Applications/cmux.app/Contents/Resources/bin/cmux $out/bin/cmux
     ln -s $out/Applications/cmux.app/Contents/Resources/bin/claude $out/bin/cmux-claude
+    runHook postInstall
   '';
 
   meta = {
