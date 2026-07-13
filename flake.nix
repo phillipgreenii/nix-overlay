@@ -39,7 +39,8 @@
           ...
         }:
         let
-          yaziPluginSet = pkgs.callPackage ./packages/yaziPlugins { };
+          sources = pkgs.callPackage ./_sources/generated.nix { };
+          yaziPluginSet = pkgs.callPackage ./packages/yaziPlugins { inherit sources; };
         in
         {
           # formatter, devShells.default, packages.install-pre-commit-hooks,
@@ -161,7 +162,12 @@
               prev.yaziPlugins
               // (
                 let
-                  ours = final.callPackage ./packages/yaziPlugins { };
+                  # Pass prev.yaziPlugins explicitly so mkYaziPlugin resolves to
+                  # nixpkgs' builder without recursing through this override.
+                  ours = final.callPackage ./packages/yaziPlugins {
+                    inherit sources;
+                    inherit (prev) yaziPlugins;
+                  };
                 in
                 {
                   inherit (ours) icons-brew bunny;

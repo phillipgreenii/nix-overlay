@@ -18,6 +18,18 @@
     };
     date = "2024-10-12";
   };
+  bunny = {
+    pname = "bunny";
+    version = "71b14a3d624572f4884354c2e218296e9ece07cc";
+    src = fetchFromGitHub {
+      owner = "stelcodes";
+      repo = "bunny.yazi";
+      rev = "71b14a3d624572f4884354c2e218296e9ece07cc";
+      fetchSubmodules = false;
+      sha256 = "sha256-uQO0C00yOFPWq8KEO/kEZM6tFZRc9SiXfgN7kzlwDeA=";
+    };
+    date = "2026-03-08";
+  };
   cmux = {
     pname = "cmux";
     version = "0.64.17";
@@ -25,6 +37,18 @@
       url = "https://github.com/manaflow-ai/cmux/releases/download/v0.64.17/cmux-macos.dmg";
       sha256 = "sha256-LVdt+sjSY/vDOiRX3JIAhSDffM5KMIC7SZsRwbvKliQ=";
     };
+  };
+  icons-brew = {
+    pname = "icons-brew";
+    version = "e524eaccce065103774148fcb445621dd5bdc17a";
+    src = fetchFromGitHub {
+      owner = "lpnh";
+      repo = "icons-brew.yazi";
+      rev = "e524eaccce065103774148fcb445621dd5bdc17a";
+      fetchSubmodules = false;
+      sha256 = "sha256-wBpjAHikC06uJEbjaQQffCZq1QjMDJ2XSm8AJcOfmLE=";
+    };
+    date = "2026-07-11";
   };
   pint = {
     pname = "pint";

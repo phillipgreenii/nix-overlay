@@ -1,18 +1,12 @@
 {
   lib,
-  fetchFromGitHub,
   mkYaziPlugin,
+  sources,
 }:
 mkYaziPlugin {
   pname = "bunny.yazi";
-  version = "unstable-2026-03-09";
-
-  src = fetchFromGitHub {
-    owner = "stelcodes";
-    repo = "bunny.yazi";
-    rev = "71b14a3d624572f4884354c2e218296e9ece07cc";
-    hash = "sha256-uQO0C00yOFPWq8KEO/kEZM6tFZRc9SiXfgN7kzlwDeA=";
-  };
+  version = "unstable-${sources.bunny.date}";
+  src = sources.bunny.src;
 
   meta = {
     description = "Yazi quick-jump plugin";

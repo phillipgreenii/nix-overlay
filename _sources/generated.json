@@ -20,6 +20,27 @@
         },
         "version": "ec3fae90209136a89a5027f61167e04790c83382"
     },
+    "bunny": {
+        "cargoLock": null,
+        "date": "2026-03-08",
+        "extract": null,
+        "name": "bunny",
+        "passthru": null,
+        "pinned": false,
+        "src": {
+            "deepClone": false,
+            "fetchSubmodules": false,
+            "leaveDotGit": false,
+            "name": null,
+            "owner": "stelcodes",
+            "repo": "bunny.yazi",
+            "rev": "71b14a3d624572f4884354c2e218296e9ece07cc",
+            "sha256": "sha256-uQO0C00yOFPWq8KEO/kEZM6tFZRc9SiXfgN7kzlwDeA=",
+            "sparseCheckout": [],
+            "type": "github"
+        },
+        "version": "71b14a3d624572f4884354c2e218296e9ece07cc"
+    },
     "cmux": {
         "cargoLock": null,
         "date": null,
@@ -34,6 +55,27 @@
             "url": "https://github.com/manaflow-ai/cmux/releases/download/v0.64.17/cmux-macos.dmg"
         },
         "version": "0.64.17"
+    },
+    "icons-brew": {
+        "cargoLock": null,
+        "date": "2026-07-11",
+        "extract": null,
+        "name": "icons-brew",
+        "passthru": null,
+        "pinned": false,
+        "src": {
+            "deepClone": false,
+            "fetchSubmodules": false,
+            "leaveDotGit": false,
+            "name": null,
+            "owner": "lpnh",
+            "repo": "icons-brew.yazi",
+            "rev": "e524eaccce065103774148fcb445621dd5bdc17a",
+            "sha256": "sha256-wBpjAHikC06uJEbjaQQffCZq1QjMDJ2XSm8AJcOfmLE=",
+            "sparseCheckout": [],
+            "type": "github"
+        },
+        "version": "e524eaccce065103774148fcb445621dd5bdc17a"
     },
     "pint": {
         "cargoLock": null,

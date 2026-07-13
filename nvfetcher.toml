@@ -31,3 +31,16 @@ fetch.github = "joshmedeski/tmux-nerd-font-window-name"
 src.git = "https://github.com/keith-hall/SublimeGherkinSyntax"
 src.branch = "master"
 fetch.github = "keith-hall/SublimeGherkinSyntax"
+
+# Yazi plugins: tracked here so the nightly updater bumps them (previously
+# hand-pinned fetchFromGitHub in packages/yaziPlugins/*, which the updater
+# never touched — pg2-ztb6l).
+[bunny]
+src.git = "https://github.com/stelcodes/bunny.yazi"
+src.branch = "main"
+fetch.github = "stelcodes/bunny.yazi"
+
+[icons-brew]
+src.git = "https://github.com/lpnh/icons-brew.yazi"
+src.branch = "main"
+fetch.github = "lpnh/icons-brew.yazi"
