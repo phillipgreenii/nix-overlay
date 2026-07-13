@@ -48,26 +48,22 @@ declare -A REPOS=(
   ["cmux"]="manaflow-ai/cmux"
 )
 
-# Extract `url = "..."` from a key's source block (fetchurl-style only).
+# Extract the fetchurl `url` for a key from nvfetcher's generated.json.
+# jq addresses the value by exact key, so — unlike the previous awk block
+# scanner, which set in_block=1 but never reset it at the closing `}` — a
+# package that lacks a url can never bleed into the NEXT package's url
+# (pg2-xb4zc). Returns empty when the key has no url (e.g. git sources).
 extract_url() {
   local key="$1"
-  awk -v key="$key" '
-    $0 ~ ("^  " key " = \\{") { in_block = 1; next }
-    in_block && /url = / {
-      gsub(/.*url = "/, ""); gsub(/".*/, "")
-      print; exit
-    }' _sources/generated.nix
+  jq -r --arg k "$key" '.[$k].src.url // empty' _sources/generated.json
 }
 
-# Extract `sha256 = "sha256-BASE64"` from a key's source block (SRI form).
+# Extract the recorded SRI hash (sha256 = "sha256-BASE64") for a key from
+# nvfetcher's generated.json. Key-addressed, so no cross-package bleed
+# (pg2-xb4zc). Returns empty when the key is absent or has no sha256.
 extract_sri() {
   local key="$1"
-  awk -v key="$key" '
-    $0 ~ ("^  " key " = \\{") { in_block = 1; next }
-    in_block && /sha256 = / {
-      gsub(/.*sha256 = "/, ""); gsub(/".*/, "")
-      print; exit
-    }' _sources/generated.nix
+  jq -r --arg k "$key" '.[$k].src.sha256 // empty' _sources/generated.json
 }
 
 # Assert a just-downloaded artifact hashes to the SRI nvfetcher pinned.
@@ -96,7 +92,7 @@ verify_attestation() {
   local key="$1" url
   url=$(extract_url "$key")
   if [ -z "$url" ]; then
-    echo "verify-provenance: $key: could not extract URL from _sources/generated.nix" >&2
+    echo "verify-provenance: $key: could not extract URL from _sources/generated.json" >&2
     return 1
   fi
   local tmpdir
@@ -120,7 +116,7 @@ verify_checksums() {
   local key="$1" url
   url=$(extract_url "$key")
   if [ -z "$url" ]; then
-    echo "verify-provenance: $key: could not extract URL from _sources/generated.nix" >&2
+    echo "verify-provenance: $key: could not extract URL from _sources/generated.json" >&2
     return 1
   fi
   local recorded_sri
@@ -161,7 +157,7 @@ verify_sigstore() {
   local key="$1" url
   url=$(extract_url "$key")
   if [ -z "$url" ]; then
-    echo "verify-provenance: $key: could not extract URL from _sources/generated.nix" >&2
+    echo "verify-provenance: $key: could not extract URL from _sources/generated.json" >&2
     return 1
   fi
   local tmpdir
