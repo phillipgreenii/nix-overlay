@@ -60,13 +60,23 @@ source "${UL_LIB_DIR}/update-locks-lib.bash"
 ul_reexec_in_dev_shell "$@"
 ul_setup "phillipgreenii-nix-overlay" "${SCRIPT_DIR}"
 
-# Use `nix run nixpkgs#nvfetcher` (unpinned) deliberately: the updater
-# must remain bootstrappable when this flake's devShell or flake.lock
-# is itself the artifact being repaired. See nix-repo-base's 2026-05-29
-# update-locks-resilience design (lines 35, 262).
+# Prefer the devShell-pinned nvfetcher when it is on PATH: `ul_reexec_in_dev_shell`
+# above re-execs into this flake's devShell (extraInputs ships nvfetcher), so a
+# normal CI/laptop run uses the pinned binary instead of fetching+running
+# registry-HEAD `nixpkgs#nvfetcher` (unpinned code, executed fresh each run —
+# pg2-y4brd). Fall back to `nix run nixpkgs#nvfetcher` ONLY when nvfetcher is
+# absent, which keeps the updater bootstrappable when this flake's devShell or
+# flake.lock is itself the artifact being repaired. See nix-repo-base's
+# 2026-05-29 update-locks-resilience design (lines 35, 262).
+if command -v nvfetcher >/dev/null 2>&1; then
+  nvfetcher_cmd=(nvfetcher)
+else
+  echo "update-locks.sh: nvfetcher not on PATH (devShell unavailable?); falling back to unpinned nix run nixpkgs#nvfetcher" >&2
+  nvfetcher_cmd=(nix run nixpkgs#nvfetcher --)
+fi
 ul_run_step "nvfetcher" \
   "update-locks: update sources via nvfetcher" \
-  nix run nixpkgs#nvfetcher -- --build-dir _sources --config nvfetcher.toml
+  "${nvfetcher_cmd[@]}" --build-dir _sources --config nvfetcher.toml
 
 ul_run_step "verify-provenance" \
   "update-locks: verify provenance of nvfetcher source updates" \
