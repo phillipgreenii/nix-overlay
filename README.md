@@ -46,11 +46,18 @@ After that, `pkgs.phillipgreenii.bat-gherkin-syntax`, `pkgs.phillipgreenii.pint`
 
 ## Update automation
 
-`update-locks.sh` (run by `.github/workflows/update-flakes.yml` nightly) bumps package sources via `nvfetcher`, verifies provenance, then bumps `flake.lock`. The workflow opens a PR which auto-merges after CI passes on the gated `main` branch.
+`update-locks.sh` (run by `.github/workflows/update-flakes.yml` nightly) bumps package sources via `nvfetcher`, runs the provenance hook (`verify-provenance.sh`; see below), then bumps `flake.lock`. The workflow opens a PR which auto-merges after CI passes on the gated `main` branch.
 
-### Provenance verification
+### Integrity and provenance
 
-The nightly updater (`verify-provenance.sh`, invoked between `nvfetcher` and `nix flake update` in `update-locks.sh`) verifies every binary upstream's release artifact against published provenance. Per-upstream method assignment (audit **2026-06-18**):
+Integrity today rests on two mechanisms that always run:
+
+1. **Content-hash pinning.** `nvfetcher` pins every source — git revision or release artifact — to a SHA-256 SRI hash under `_sources/`. Nix refuses to build if the fetched bytes don't match the pin, so a silent upstream swap fails the build rather than shipping.
+2. **CI builds.** Every package is built as a flake check on the gated `main` branch, so an update only merges if it still builds from the pinned sources.
+
+`verify-provenance.sh` (invoked between `nvfetcher` and `nix flake update` in `update-locks.sh`) is an _additional_, per-upstream provenance hook layered on top. **As currently configured it is a no-op**: every configured upstream uses a method that skips (see the table below), so no attestation, checksum file, or signature is actually checked today. The script also carries dormant `attestation`, `checksums`, and `sigstore` verifiers (each of which now also re-checks the download against the pinned SRI before trusting it); these run only when an upstream's `METHODS` entry is switched to one of them — reserved for when a binary upstream begins publishing provenance.
+
+Per-upstream method assignment (audit **2026-06-18**):
 
 | Upstream           | Method                         | Notes                                                                                                                                                                                                                  |
 | ------------------ | ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
