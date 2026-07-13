@@ -38,20 +38,6 @@ cp -rf source dest          # NOT: cp -r source dest
 - `apt-get` - use `-y` flag
 - `brew` - use `HOMEBREW_NO_AUTO_UPDATE=1` env var
 
-## Changes to `main` go through a PR
-
-`main` is a **gated** branch. Tracked code, `flake.lock`, and `_sources/`
-updates MUST land via a pull request — the `update-flakes.yml` workflow opens
-one that auto-merges after CI passes (see the README's "Update automation"
-section) — and MUST NOT be pushed straight to `main`. Do **not** commit
-lock/source/code changes onto `main` locally and push them up: that bypasses
-the CI gate the PR path enforces (a laptop `push` event to `main` was observed
-doing exactly this).
-
-The "PUSH TO REMOTE" step in the beads session-completion workflow below
-applies to your **working branch** and to beads data (`bd dolt push`); it MUST
-NOT be read as license to push code commits directly to `main`.
-
 <!-- BEGIN BEADS INTEGRATION v:1 profile:minimal hash:ca08a54f -->
 
 ## Beads Issue Tracker
