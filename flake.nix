@@ -62,6 +62,14 @@
             curl
             gnused
             nvfetcher
+            # Tools the non-no-op verify-provenance.sh methods need. They are
+            # dormant today (every upstream uses a skip method), but the moment
+            # a METHODS entry flips to attestation/checksums/sigstore the step
+            # shells out to these — and cosign/gh are not preinstalled on the
+            # runners. Ship them in the shell so the hook actually runs (pg2-qnzrt).
+            gh # verify_attestation: gh attestation verify
+            cosign # verify_sigstore: cosign verify-blob
+            xxd # verify_checksums: xxd -r -p
           ];
 
           # Build every package as a check. Use config.packages (same-perSystem
