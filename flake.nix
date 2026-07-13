@@ -59,7 +59,39 @@
           # Build every package as a check. Use config.packages (same-perSystem
           # scope) rather than self.packages.${system} which forces an eval
           # cycle through flake-parts' mkPerSystemFile.
-          checks = config.packages;
+          checks =
+            config.packages
+            // pkgs.lib.optionalAttrs pkgs.stdenv.hostPlatform.isDarwin {
+              # Eval-only smoke check for the opt-in firefox-binary-wrapper
+              # overlay (bead pg2-pimam). Forcing firefox.drvPath instantiates
+              # the overlay's overrideAttrs — including its sentinel assertion
+              # that upstream's buildCommand still contains the `makeWrapper`
+              # string we rewrite — so a nixpkgs bump that voids the assertion
+              # fails CI here, not silently in a consumer's darwin-rebuild.
+              #
+              # The force happens via `seq` at EVAL time and firefox is kept out
+              # of the produced derivation's build inputs (no drvPath in the
+              # command string): `nix flake check` realizes only the trivial
+              # marker, never the 3.7 GiB firefox closure.
+              #
+              # This does NOT cover the /usr/bin/codesign impurity that the same
+              # buildCommand shells out to (it breaks under sandbox=true); the
+              # sandbox-safe rework (rcodesign/sigtool) is deferred to the
+              # overlay-rework initiative, per the note in the overlay itself.
+              firefox-binary-wrapper-eval =
+                let
+                  pkgsFx = pkgs.extend self.overlays.firefox-binary-wrapper;
+                  # WHNF-force the drvPath string (runs the assertion + the
+                  # overrideAttrs) then discard it, so nothing firefox-shaped
+                  # reaches the marker derivation's context.
+                  assertionHeld = builtins.seq pkgsFx.firefox.drvPath null;
+                in
+                builtins.seq assertionHeld (
+                  pkgs.runCommand "firefox-binary-wrapper-eval" { } ''
+                    echo "firefox-binary-wrapper overlay evaluated (sentinel assertion held)" >"$out"
+                  ''
+                );
+            };
 
           packages =
             let
