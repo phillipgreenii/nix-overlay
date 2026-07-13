@@ -42,5 +42,11 @@ jobs:
           fail-mode: true
           send-statistics: false
 
+      # --all-systems evaluates the outputs for every system in the flake's
+      # `systems` list, not just the runner's. The runner still only BUILDS its
+      # own system's derivations (foreign systems are eval-only), but this
+      # surfaces eval errors on x86_64-darwin and aarch64-linux — which are
+      # declared yet have no dedicated CI leg — instead of shipping silently
+      # (pg2-g3p6r).
       - name: Run nix flake check
-        run: nix flake check --show-trace -L
+        run: nix flake check --all-systems --show-trace -L
