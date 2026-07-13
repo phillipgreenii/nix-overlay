@@ -17,6 +17,7 @@ stdenvNoCC.mkDerivation {
   meta = {
     description = "Gherkin syntax for SublimeText, consumable by bat";
     homepage = "https://github.com/keith-hall/SublimeGherkinSyntax";
+    license = lib.licenses.mit;
     platforms = lib.platforms.unix;
   };
 }

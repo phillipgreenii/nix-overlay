@@ -41,10 +41,16 @@ stdenvNoCC.mkDerivation {
     ln -s $out/Applications/cmux.app/Contents/Resources/bin/claude $out/bin/cmux-claude
   '';
 
-  meta = with lib; {
+  meta = {
     description = "Ghostty-based macOS terminal with vertical tabs and notifications for AI coding agents";
     homepage = "https://github.com/manaflow-ai/cmux";
-    license = licenses.agpl3Plus;
+    # Prebuilt, notarized macOS .dmg — an Electron bundle carrying native
+    # Mach-O binaries, not built from source here.
+    sourceProvenance = [ lib.sourceTypes.binaryNativeCode ];
+    # GPL-3.0-or-later: upstream README states "cmux is open source under
+    # GPL-3.0-or-later" and the repo LICENSE is GPLv3. Corrected from the
+    # previous (unverified) agpl3Plus (pg2-4ehlt).
+    license = lib.licenses.gpl3Plus;
     platforms = [ "aarch64-darwin" ];
   };
 }
