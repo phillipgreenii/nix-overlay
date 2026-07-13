@@ -8,7 +8,7 @@ stdenvNoCC.mkDerivation {
   pname = "cmux";
   inherit (sources.cmux) version src;
 
-  # cmux 0.64.16 ships an APFS-formatted .dmg; `undmg` only supports HFS+
+  # cmux ships an APFS-formatted .dmg; `undmg` only supports HFS+
   # images (fails with "only HFS file systems are supported"). 7-Zip reads
   # APFS, so extract with `7zz` instead.
   nativeBuildInputs = [ _7zz ];
