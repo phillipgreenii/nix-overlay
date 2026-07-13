@@ -70,6 +70,28 @@ extract_sri() {
     }' _sources/generated.nix
 }
 
+# Assert a just-downloaded artifact hashes to the SRI nvfetcher pinned.
+# Closes the TOCTOU gap (pg2-oqrus): verify_attestation/verify_sigstore
+# re-download the artifact at verify time and prove *those* bytes carry a
+# valid attestation/signature — but if upstream swapped the artifact between
+# the nvfetcher fetch and this run, the verified bytes are NOT the bytes that
+# will be built from the pinned sha256. Comparing the download to the pinned
+# SRI (nvfetcher/fetchurl use a flat file hash, which `nix hash file` also
+# emits) ties the provenance proof to the exact bytes the store will use.
+verify_pinned_hash() {
+  local key="$1" file="$2" recorded_sri actual_sri
+  recorded_sri=$(extract_sri "$key")
+  if [ -z "$recorded_sri" ]; then
+    echo "verify-provenance: $key: could not extract recorded SRI hash" >&2
+    return 1
+  fi
+  actual_sri=$(nix hash file --type sha256 --sri "$file")
+  if [ "$actual_sri" != "$recorded_sri" ]; then
+    echo "verify-provenance: $key: downloaded artifact hash '$actual_sri' does not match nvfetcher-pinned '$recorded_sri' — refusing to verify non-pinned bytes (TOCTOU)" >&2
+    return 1
+  fi
+}
+
 verify_attestation() {
   local key="$1" url
   url=$(extract_url "$key")
@@ -85,6 +107,9 @@ verify_attestation() {
     echo "verify-provenance: $key: download failed ($url)" >&2
     return 1
   fi
+  # Verify the downloaded bytes are the pinned bytes before trusting the
+  # attestation over them (TOCTOU — pg2-oqrus).
+  verify_pinned_hash "$key" "$tmpdir/artifact" || return 1
   if ! gh attestation verify "$tmpdir/artifact" --repo "${REPOS[$key]}" 2>&1; then
     echo "verify-provenance: $key: gh attestation verify failed" >&2
     return 1
@@ -147,6 +172,9 @@ verify_sigstore() {
     echo "verify-provenance: $key: download failed ($url)" >&2
     return 1
   fi
+  # Verify the downloaded bytes are the pinned bytes before trusting the
+  # signature over them (TOCTOU — pg2-oqrus).
+  verify_pinned_hash "$key" "$tmpdir/artifact" || return 1
   if ! curl --location --silent --show-error --fail --output "$tmpdir/artifact.sig" "$url.sig"; then
     echo "verify-provenance: $key: signature download failed ($url.sig)" >&2
     return 1

@@ -54,3 +54,60 @@ teardown() {
   # footgun pg2-iy3yf removed.
   [ ! -f "${GIT_LOG}" ]
 }
+
+# --- pg2-oqrus: verify_pinned_hash ties provenance to the pinned bytes ---
+
+# Write a minimal _sources/generated.nix block (matching the real nvfetcher
+# layout the awk parser expects) recording <sri> for <key>.
+write_generated_nix() {
+  local key="$1" sri="$2"
+  mkdir -p "${TEST_DIR}/_sources"
+  cat >"${TEST_DIR}/_sources/generated.nix" <<EOF
+{
+  ${key} = {
+    pname = "${key}";
+    version = "1.0";
+    src = fetchurl {
+      url = "https://example.invalid/${key}";
+      sha256 = "${sri}";
+    };
+  };
+}
+EOF
+}
+
+@test "verify_pinned_hash: passes when the download matches the pinned SRI" {
+  local artifact="${TEST_DIR}/artifact"
+  printf 'pinned bytes' >"$artifact"
+  local sri
+  sri=$(nix hash file --type sha256 --sri "$artifact")
+  write_generated_nix cmux "$sri"
+  cd "${TEST_DIR}"
+  run verify_pinned_hash cmux "$artifact"
+  [ "$status" -eq 0 ]
+}
+
+@test "verify_pinned_hash: fails (TOCTOU) when the download differs from the pin" {
+  local artifact="${TEST_DIR}/artifact"
+  printf 'swapped bytes' >"$artifact"
+  # Pin the SRI of DIFFERENT bytes than what was downloaded.
+  local other="${TEST_DIR}/other"
+  printf 'the originally pinned bytes' >"$other"
+  local sri
+  sri=$(nix hash file --type sha256 --sri "$other")
+  write_generated_nix cmux "$sri"
+  cd "${TEST_DIR}"
+  run verify_pinned_hash cmux "$artifact"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"does not match nvfetcher-pinned"* ]]
+}
+
+@test "verify_pinned_hash: fails when no SRI is recorded for the key" {
+  local artifact="${TEST_DIR}/artifact"
+  printf 'bytes' >"$artifact"
+  write_generated_nix someotherkey "sha256-AAAA"
+  cd "${TEST_DIR}"
+  run verify_pinned_hash cmux "$artifact"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"could not extract recorded SRI"* ]]
+}
