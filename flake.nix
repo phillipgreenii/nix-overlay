@@ -77,6 +77,37 @@
           # cycle through flake-parts' mkPerSystemFile.
           checks =
             config.packages
+            // {
+              # Run the verify-provenance.sh bats suite as a CI check so a
+              # regression in the provenance helper — including the SRI-pin
+              # TOCTOU fix (pg2-oqrus) and the jq-vs-awk cross-package bleed
+              # fix (pg2-xb4zc) — fails the build instead of going unnoticed
+              # (pg2-q5mjn). The suite sources ../verify-provenance.sh relative
+              # to its own dir, so stage both into that layout. Two tests call
+              # `nix hash file`, which is a pure local hash (no store writes, no
+              # recursive-nix) and runs fine in the sandbox; NIX_CONFIG enables
+              # the nix-command feature on runners that don't default it on.
+              verify-provenance-tests =
+                pkgs.runCommand "verify-provenance-tests"
+                  {
+                    nativeBuildInputs = [
+                      pkgs.bats
+                      pkgs.jq
+                      pkgs.coreutils
+                      pkgs.nix
+                    ];
+                  }
+                  ''
+                    export HOME="$TMPDIR/home"
+                    mkdir -p "$HOME"
+                    export NIX_CONFIG="experimental-features = nix-command"
+                    mkdir -p suite/tests
+                    cp ${./verify-provenance.sh} suite/verify-provenance.sh
+                    cp ${./tests/verify-provenance.bats} suite/tests/verify-provenance.bats
+                    bats suite/tests
+                    touch "$out"
+                  '';
+            }
             // pkgs.lib.optionalAttrs pkgs.stdenv.hostPlatform.isDarwin {
               # Eval-only smoke check for the opt-in firefox-binary-wrapper
               # overlay (bead pg2-pimam). Forcing firefox.drvPath instantiates
