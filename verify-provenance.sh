@@ -24,18 +24,16 @@
 # and re-audit when upstream changes their release pipeline.
 #
 # When ANY upstream method fails (attestation/checksums/sigstore
-# verification mismatch, or an `unknown method` entry), the helper
-# rolls back the prior commit via `git reset --hard HEAD~1` so the
-# workflow's PR step does not fire.
+# verification mismatch, or an `unknown method` entry), the helper exits
+# non-zero and does NOT touch git history itself. It runs as a step under
+# nix-repo-base's update-locks framework (ul_run_step): a non-zero exit makes
+# the framework roll back that step and mark the whole run failed, so the
+# workflow's PR step never fires. A self-managed `git reset --hard HEAD~1`
+# was removed (bead pg2-iy3yf): it assumed HEAD was always the nvfetcher
+# commit, but when the nvfetcher step is TTL-skipped HEAD~1 is an unrelated
+# (possibly unpushed) commit the reset would silently destroy. This helper is
+# now purely read-only with respect to the git tree.
 set -euo pipefail
-
-# Refuse to run on a dirty tree — rollback uses `git reset --hard HEAD~1`
-# which would silently destroy uncommitted edits if any existed.
-if ! git diff --quiet || ! git diff --cached --quiet; then
-  echo "verify-provenance: refusing to run on a dirty working tree (uncommitted changes present)" >&2
-  echo "  commit or stash before retrying." >&2
-  exit 1
-fi
 
 # --- per-upstream method config (audit-time decision; 2026-06-18) ---
 declare -A METHODS=(
@@ -160,39 +158,47 @@ verify_sigstore() {
 }
 
 # --- main loop: verify every configured key every run ---
-fail=0
-for key in "${!METHODS[@]}"; do
-  method="${METHODS[$key]}"
-  case "$method" in
-  attestation) verify_attestation "$key" || fail=1 ;;
-  checksums) verify_checksums "$key" || fail=1 ;;
-  sigstore) verify_sigstore "$key" || fail=1 ;;
-  git-source)
-    # Intentional no-op: git-fetched sources have no separate provenance
-    # artifact; the nvfetcher-pinned commit SHA is the integrity proof.
-    echo "verify-provenance: $key: skipped (git source, SHA pin is integrity)"
-    ;;
-  none-no-provenance-published)
-    # Intentional no-op with explicit gap log. Audit 2026-06-18: this
-    # upstream publishes neither GitHub attestations, checksums.txt, nor
-    # cosign signatures. Re-audit if upstream changes their release
-    # pipeline (see this file's header comment for context).
-    echo "verify-provenance: $key: skipped (no upstream provenance as of 2026-06-18 audit)"
-    ;;
-  *)
-    echo "verify-provenance: $key: unknown method '$method'" >&2
-    fail=1
-    ;;
-  esac
-done
+main() {
+  local fail=0 key method
+  for key in "${!METHODS[@]}"; do
+    method="${METHODS[$key]}"
+    case "$method" in
+    attestation) verify_attestation "$key" || fail=1 ;;
+    checksums) verify_checksums "$key" || fail=1 ;;
+    sigstore) verify_sigstore "$key" || fail=1 ;;
+    git-source)
+      # Intentional no-op: git-fetched sources have no separate provenance
+      # artifact; the nvfetcher-pinned commit SHA is the integrity proof.
+      echo "verify-provenance: $key: skipped (git source, SHA pin is integrity)"
+      ;;
+    none-no-provenance-published)
+      # Intentional no-op with explicit gap log. Audit 2026-06-18: this
+      # upstream publishes neither GitHub attestations, checksums.txt, nor
+      # cosign signatures. Re-audit if upstream changes their release
+      # pipeline (see this file's header comment for context).
+      echo "verify-provenance: $key: skipped (no upstream provenance as of 2026-06-18 audit)"
+      ;;
+    *)
+      echo "verify-provenance: $key: unknown method '$method'" >&2
+      fail=1
+      ;;
+    esac
+  done
 
-if [ "$fail" -ne 0 ]; then
-  echo "verify-provenance: at least one upstream failed provenance check" >&2
-  if git rev-parse HEAD~1 >/dev/null 2>&1; then
-    echo "verify-provenance: rolling back to HEAD~1" >&2
-    git reset --hard HEAD~1
+  if [ "$fail" -ne 0 ]; then
+    # Exit non-zero WITHOUT touching git history. Under ul_run_step this
+    # rolls back the failed step and fails the whole update-locks run, so the
+    # PR step never fires (see the header note on the removed HEAD~1 reset,
+    # bead pg2-iy3yf).
+    echo "verify-provenance: at least one upstream failed provenance check" >&2
+    return 1
   fi
-  exit 1
-fi
 
-echo "verify-provenance: all configured upstreams verified."
+  echo "verify-provenance: all configured upstreams verified."
+}
+
+# Only run the verification loop when executed directly. Sourcing the script
+# (e.g. from bats tests) defines the functions without running main.
+if [[ ${BASH_SOURCE[0]} == "${0}" ]]; then
+  main "$@"
+fi
