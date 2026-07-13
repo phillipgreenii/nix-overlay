@@ -3,11 +3,15 @@
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-26.05-darwin";
-    flake-parts.url = "github:hercules-ci/flake-parts";
     phillipgreenii-nix-base = {
       url = "github:phillipgreenii/nix-repo-base";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    # flake-parts: framework for the consumed nix-base flakeModules. Deduped onto
+    # nix-base's pin so it is a single shared node (inherits nix-base's
+    # nixpkgs-lib follow; no extra wiring needed). Fleet convention — every other
+    # consumer (agent-support, support-apps, ziprecruiter) follows the same pin.
+    flake-parts.follows = "phillipgreenii-nix-base/flake-parts";
   };
 
   outputs =
