@@ -32,10 +32,10 @@
   };
   cmux = {
     pname = "cmux";
-    version = "0.64.17";
+    version = "0.64.18";
     src = fetchurl {
-      url = "https://github.com/manaflow-ai/cmux/releases/download/v0.64.17/cmux-macos.dmg";
-      sha256 = "sha256-LVdt+sjSY/vDOiRX3JIAhSDffM5KMIC7SZsRwbvKliQ=";
+      url = "https://github.com/manaflow-ai/cmux/releases/download/v0.64.18/cmux-macos.dmg";
+      sha256 = "sha256-K2bDRYZZVbmx60LXBhrVQhH2s0AlXJvk/rmqPXDuKpI=";
     };
   };
   icons-brew = {

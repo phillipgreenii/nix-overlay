@@ -50,11 +50,11 @@
         "pinned": false,
         "src": {
             "name": null,
-            "sha256": "sha256-LVdt+sjSY/vDOiRX3JIAhSDffM5KMIC7SZsRwbvKliQ=",
+            "sha256": "sha256-K2bDRYZZVbmx60LXBhrVQhH2s0AlXJvk/rmqPXDuKpI=",
             "type": "url",
-            "url": "https://github.com/manaflow-ai/cmux/releases/download/v0.64.17/cmux-macos.dmg"
+            "url": "https://github.com/manaflow-ai/cmux/releases/download/v0.64.18/cmux-macos.dmg"
         },
-        "version": "0.64.17"
+        "version": "0.64.18"
     },
     "icons-brew": {
         "cargoLock": null,
