@@ -12,6 +12,13 @@ fetch.url = "https://github.com/manaflow-ai/cmux/releases/download/v$ver/cmux-ma
 src.github = "cloudflare/pint"
 fetch.github = "cloudflare/pint"
 
+# Same pattern as pint: glowm's release tags are `vX.Y.Z`; keep the `v`
+# (no `src.prefix`) so `fetch.github` fetches the correct rev, and let
+# packages/glowm strip it for the version/ldflag.
+[glowm]
+src.github = "atani/glowm"
+fetch.github = "atani/glowm"
+
 [tmux-open-nvim]
 src.git = "https://github.com/trevarj/tmux-open-nvim"
 src.branch = "master"

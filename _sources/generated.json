@@ -56,6 +56,27 @@
         },
         "version": "0.64.19"
     },
+    "glowm": {
+        "cargoLock": null,
+        "date": null,
+        "extract": null,
+        "name": "glowm",
+        "passthru": null,
+        "pinned": false,
+        "src": {
+            "deepClone": false,
+            "fetchSubmodules": false,
+            "leaveDotGit": false,
+            "name": null,
+            "owner": "atani",
+            "repo": "glowm",
+            "rev": "v0.4.0",
+            "sha256": "sha256-kyylQrn2OROQe+taGEw0L7q5Y6HW+UqDcA46DOgeOYI=",
+            "sparseCheckout": [],
+            "type": "github"
+        },
+        "version": "v0.4.0"
+    },
     "icons-brew": {
         "cargoLock": null,
         "date": "2026-07-11",

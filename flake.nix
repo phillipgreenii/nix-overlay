@@ -143,6 +143,7 @@
           packages = {
             inherit (extended.phillipgreenii)
               bat-gherkin-syntax
+              glowm
               pint
               ;
             inherit (extended.tmuxPlugins)
@@ -188,6 +189,7 @@
           {
             phillipgreenii = {
               bat-gherkin-syntax = final.callPackage ./packages/bat-gherkin-syntax { inherit sources; };
+              glowm = final.callPackage ./packages/glowm { inherit sources; };
               pint = final.callPackage ./packages/pint { inherit sources; };
             }
             // prev.lib.optionalAttrs (prev.stdenv.hostPlatform.system == "aarch64-darwin") {
@@ -223,7 +225,7 @@
             # until the consumer-side ADR-0047 migration lands. Remove then.
             # NOTE: c9watch was genuinely dropped (not just moved) and so cannot
             # be aliased here — it is disabled at the consumer instead.
-            inherit (final.phillipgreenii) bat-gherkin-syntax;
+            inherit (final.phillipgreenii) bat-gherkin-syntax glowm;
           }
           // prev.lib.optionalAttrs (prev.stdenv.hostPlatform.system == "aarch64-darwin") {
             # cmux only exists under phillipgreenii.* on aarch64-darwin (see above).

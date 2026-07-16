@@ -43,6 +43,7 @@ declare -A METHODS=(
   ["tmux-nerd-font-window-name"]="git-source"
   ["bat-gherkin-syntax"]="git-source"
   ["pint"]="git-source"
+  ["glowm"]="git-source"
 )
 declare -A REPOS=(
   ["cmux"]="manaflow-ai/cmux"

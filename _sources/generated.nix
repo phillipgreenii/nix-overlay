@@ -38,6 +38,17 @@
       sha256 = "sha256-npYbupFZ8tgg+OHX9YpTLRmth1i7dTZaV/183Jp8/PQ=";
     };
   };
+  glowm = {
+    pname = "glowm";
+    version = "v0.4.0";
+    src = fetchFromGitHub {
+      owner = "atani";
+      repo = "glowm";
+      rev = "v0.4.0";
+      fetchSubmodules = false;
+      sha256 = "sha256-kyylQrn2OROQe+taGEw0L7q5Y6HW+UqDcA46DOgeOYI=";
+    };
+  };
   icons-brew = {
     pname = "icons-brew";
     version = "e524eaccce065103774148fcb445621dd5bdc17a";
