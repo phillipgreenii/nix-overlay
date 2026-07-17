@@ -12,6 +12,19 @@
     # nixpkgs-lib follow; no extra wiring needed). Fleet convention — every other
     # consumer (agent-support, support-apps, ziprecruiter) follows the same pin.
     flake-parts.follows = "phillipgreenii-nix-base/flake-parts";
+
+    # NUR (nix-community) — source of hash-pinned Firefox add-on derivations
+    # (rycee's firefox-addons set). Re-exposed to consumers as pkgs.firefoxAddons
+    # through overlays.default (below) so home-manager firefox profiles can pin
+    # extensions instead of letting Firefox auto-install latest.xpi at runtime
+    # (pg2-ku1f7). Version-tracked by `nix flake update` — no bespoke refresh
+    # step. nixpkgs follows ours so the add-ons build against our pkgs and NUR
+    # does not pull a second nixpkgs node.
+    nur = {
+      url = "github:nix-community/nur";
+      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.flake-parts.follows = "flake-parts";
+    };
   };
 
   outputs =
@@ -187,6 +200,16 @@
             sources = final.callPackage ./_sources/generated.nix { };
           in
           {
+            # Hash-pinned Firefox add-ons from NUR's rycee firefox-addons set,
+            # instantiated against our pkgs (both pkgs and nurpkgs = final so no
+            # impure <nixpkgs> lookup and no second nixpkgs). Lazy: NUR is only
+            # evaluated when a consumer forces pkgs.firefoxAddons.<name>.
+            firefoxAddons =
+              (import inputs.nur {
+                pkgs = final;
+                nurpkgs = final;
+              }).repos.rycee.firefox-addons;
+
             phillipgreenii = {
               bat-gherkin-syntax = final.callPackage ./packages/bat-gherkin-syntax { inherit sources; };
               glowm = final.callPackage ./packages/glowm { inherit sources; };

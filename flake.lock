@@ -115,6 +115,29 @@
         "type": "github"
       }
     },
+    "nur": {
+      "inputs": {
+        "flake-parts": [
+          "flake-parts"
+        ],
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1784312703,
+        "narHash": "sha256-a0NqtZyYZud/ILSaR3RKWy+ogGIexcsxf92cusjp1bA=",
+        "owner": "nix-community",
+        "repo": "nur",
+        "rev": "b643b754868a52d1038a6492a9b6c8aa6e99c54d",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nix-community",
+        "repo": "nur",
+        "type": "github"
+      }
+    },
     "phillipgreenii-nix-base": {
       "inputs": {
         "flake-parts": "flake-parts",
@@ -199,6 +222,7 @@
           "flake-parts"
         ],
         "nixpkgs": "nixpkgs",
+        "nur": "nur",
         "phillipgreenii-nix-base": "phillipgreenii-nix-base"
       }
     },
