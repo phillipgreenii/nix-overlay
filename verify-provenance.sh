@@ -7,10 +7,17 @@
 #
 # Per-upstream methods (audit 2026-06-18 — re-audit if upstream changes
 # release pipeline):
-#   cmux      — none-no-provenance-published (manaflow-ai/cmux ships
-#               cmux-macos.dmg + appcast.xml; no attestation, no
-#               .dmg.sig, and the cmuxd-remote-checksums.txt covers a
-#               different product, not cmux-macos.dmg)
+#   cmux         — none-no-provenance-published (manaflow-ai/cmux ships
+#                  cmux-macos.dmg + appcast.xml; no attestation, no
+#                  .dmg.sig, and the cmuxd-remote-checksums.txt covers a
+#                  different product, not cmux-macos.dmg)
+#   eclipse-java — none-no-provenance-published (audit 2026-07-21). The Eclipse
+#                  EPP .dmg is served from download.eclipse.org, not GitHub, so
+#                  `gh attestation` does not apply, and no .dmg.sig / cosign
+#                  signature is published beside the artifact. No REPOS entry:
+#                  none-no-provenance-published never consults REPOS (only
+#                  verify_attestation does, via `--repo owner/repo`), and this
+#                  upstream has no GitHub owner/repo slug.
 #
 # Git-source packages (tmux-*, bat-gherkin-syntax, pint) use method
 # `git-source` — explicitly skipped because the nvfetcher-pinned SHA is the
@@ -38,6 +45,7 @@ set -euo pipefail
 # --- per-upstream method config (audit-time decision; 2026-06-18) ---
 declare -A METHODS=(
   ["cmux"]="none-no-provenance-published"
+  ["eclipse-java"]="none-no-provenance-published"
   ["tmux-open-nvim"]="git-source"
   ["tmux-mouse-swipe"]="git-source"
   ["tmux-nerd-font-window-name"]="git-source"

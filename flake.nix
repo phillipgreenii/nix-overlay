@@ -172,7 +172,12 @@
             # fix-lint variant is the one now shipped from base.
           }
           // pkgs.lib.optionalAttrs (pkgs.stdenv.hostPlatform.system == "aarch64-darwin") {
-            inherit (extended.phillipgreenii) cmux;
+            inherit (extended.phillipgreenii)
+              cmux
+              eclipse-java
+              eclipse-gradleimport-plugin
+              eclipse-with-gradleimport
+              ;
           };
 
           legacyPackages = {
@@ -217,6 +222,17 @@
             }
             // prev.lib.optionalAttrs (prev.stdenv.hostPlatform.system == "aarch64-darwin") {
               cmux = final.callPackage ./packages/cmux { inherit sources; };
+              # Eclipse trio. eclipse-java is the repackaged .dmg; the plugin and
+              # the composed app take their Eclipse dependency explicitly (same
+              # explicit-pass precedent as yaziPlugins), since these packages live
+              # under final.phillipgreenii.* and are not auto-resolved.
+              eclipse-java = final.callPackage ./packages/eclipse-java { inherit sources; };
+              eclipse-gradleimport-plugin = final.callPackage ./packages/eclipse-gradleimport-plugin {
+                inherit (final.phillipgreenii) eclipse-java;
+              };
+              eclipse-with-gradleimport = final.callPackage ./packages/eclipse-with-gradleimport {
+                inherit (final.phillipgreenii) eclipse-java eclipse-gradleimport-plugin;
+              };
             };
             tmuxPlugins = prev.tmuxPlugins // {
               tmux-open-nvim = final.callPackage ./packages/tmux-open-nvim { inherit sources; };
@@ -251,8 +267,15 @@
             inherit (final.phillipgreenii) bat-gherkin-syntax glowm;
           }
           // prev.lib.optionalAttrs (prev.stdenv.hostPlatform.system == "aarch64-darwin") {
-            # cmux only exists under phillipgreenii.* on aarch64-darwin (see above).
-            inherit (final.phillipgreenii) cmux;
+            # cmux and the eclipse trio only exist under phillipgreenii.* on
+            # aarch64-darwin (see above). Re-export at top level so consumers can
+            # use pkgs.eclipse-with-gradleimport directly.
+            inherit (final.phillipgreenii)
+              cmux
+              eclipse-java
+              eclipse-gradleimport-plugin
+              eclipse-with-gradleimport
+              ;
           };
       };
     };

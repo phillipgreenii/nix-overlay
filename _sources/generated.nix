@@ -38,6 +38,14 @@
       sha256 = "sha256-npYbupFZ8tgg+OHX9YpTLRmth1i7dTZaV/183Jp8/PQ=";
     };
   };
+  eclipse-java = {
+    pname = "eclipse-java";
+    version = "2026-06-R";
+    src = fetchurl {
+      url = "https://download.eclipse.org/technology/epp/downloads/release/2026-06/R/eclipse-java-2026-06-R-macosx-cocoa-aarch64.dmg";
+      sha256 = "sha256-w3B7LiarR9eZglhCVBqveXt/L9TAl1TJiSbl14kT5Ik=";
+    };
+  };
   glowm = {
     pname = "glowm";
     version = "v0.4.0";

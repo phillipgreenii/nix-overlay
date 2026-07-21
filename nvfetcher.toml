@@ -3,6 +3,16 @@ src.github = "manaflow-ai/cmux"
 src.prefix = "v"
 fetch.url = "https://github.com/manaflow-ai/cmux/releases/download/v$ver/cmux-macos.dmg"
 
+# Eclipse EPP "Eclipse IDE for Java Developers" macOS .dmg. Pinned to a fixed
+# quarterly release with nvchecker's `manual` source (`src.manual`), so the
+# nightly updater never auto-bumps it — Eclipse releases are quarterly and each
+# bump is a deliberate, reviewed change. The download URL is a static literal
+# (the path embeds the release train `2026-06/R`, which does not map cleanly to
+# a `$ver` substitution). aarch64-darwin only.
+[eclipse-java]
+src.manual = "2026-06-R"
+fetch.url = "https://download.eclipse.org/technology/epp/downloads/release/2026-06/R/eclipse-java-2026-06-R-macosx-cocoa-aarch64.dmg"
+
 # NOTE: no `src.prefix = "v"`. nvfetcher's `fetch.github` fetches rev `$ver`
 # verbatim, and pint's release tags are `vX.Y.Z`; stripping the prefix would
 # make it fetch rev `0.87.0` (no such tag -> 404). Keeping the `v` in the

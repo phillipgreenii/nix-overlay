@@ -26,17 +26,20 @@ After that, `pkgs.phillipgreenii.bat-gherkin-syntax`, `pkgs.phillipgreenii.pint`
 
 ## Packages
 
-| Name                                     | Platforms      | Source                                                                                              |
-| ---------------------------------------- | -------------- | --------------------------------------------------------------------------------------------------- |
-| `phillipgreenii.bat-gherkin-syntax`      | unix           | [keith-hall/SublimeGherkinSyntax](https://github.com/keith-hall/SublimeGherkinSyntax)               |
-| `phillipgreenii.cmux`                    | aarch64-darwin | [manaflow-ai/cmux](https://github.com/manaflow-ai/cmux)                                             |
-| `phillipgreenii.glowm`                   | unix           | [atani/glowm](https://github.com/atani/glowm)                                                       |
-| `phillipgreenii.pint`                    | unix           | [cloudflare/pint](https://github.com/cloudflare/pint)                                               |
-| `tmuxPlugins.tmux-open-nvim`             | unix           | [trevarj/tmux-open-nvim](https://github.com/trevarj/tmux-open-nvim)                                 |
-| `tmuxPlugins.tmux-mouse-swipe`           | unix           | [jaclu/tmux-mouse-swipe](https://github.com/jaclu/tmux-mouse-swipe)                                 |
-| `tmuxPlugins.tmux-nerd-font-window-name` | unix           | [joshmedeski/tmux-nerd-font-window-name](https://github.com/joshmedeski/tmux-nerd-font-window-name) |
-| `yaziPlugins.icons-brew`                 | all            | (in this repo, `packages/yaziPlugins/icons-brew`)                                                   |
-| `yaziPlugins.bunny`                      | all            | (in this repo, `packages/yaziPlugins/bunny`)                                                        |
+| Name                                         | Platforms      | Source                                                                                                 |
+| -------------------------------------------- | -------------- | ------------------------------------------------------------------------------------------------------ |
+| `phillipgreenii.bat-gherkin-syntax`          | unix           | [keith-hall/SublimeGherkinSyntax](https://github.com/keith-hall/SublimeGherkinSyntax)                  |
+| `phillipgreenii.cmux`                        | aarch64-darwin | [manaflow-ai/cmux](https://github.com/manaflow-ai/cmux)                                                |
+| `phillipgreenii.eclipse-java`                | aarch64-darwin | [Eclipse EPP 2026-06-R .dmg](https://download.eclipse.org/technology/epp/downloads/release/2026-06/R/) |
+| `phillipgreenii.eclipse-gradleimport-plugin` | aarch64-darwin | (in this repo, `packages/eclipse-gradleimport-plugin`)                                                 |
+| `phillipgreenii.eclipse-with-gradleimport`   | aarch64-darwin | (composed: `eclipse-java` + `eclipse-gradleimport-plugin`)                                             |
+| `phillipgreenii.glowm`                       | unix           | [atani/glowm](https://github.com/atani/glowm)                                                          |
+| `phillipgreenii.pint`                        | unix           | [cloudflare/pint](https://github.com/cloudflare/pint)                                                  |
+| `tmuxPlugins.tmux-open-nvim`                 | unix           | [trevarj/tmux-open-nvim](https://github.com/trevarj/tmux-open-nvim)                                    |
+| `tmuxPlugins.tmux-mouse-swipe`               | unix           | [jaclu/tmux-mouse-swipe](https://github.com/jaclu/tmux-mouse-swipe)                                    |
+| `tmuxPlugins.tmux-nerd-font-window-name`     | unix           | [joshmedeski/tmux-nerd-font-window-name](https://github.com/joshmedeski/tmux-nerd-font-window-name)    |
+| `yaziPlugins.icons-brew`                     | all            | (in this repo, `packages/yaziPlugins/icons-brew`)                                                      |
+| `yaziPlugins.bunny`                          | all            | (in this repo, `packages/yaziPlugins/bunny`)                                                           |
 
 `legacyPackages.${system}.yaziPlugins` exposes the structured `{ icons-brew, bunny }` set.
 
@@ -60,9 +63,10 @@ Integrity today rests on two mechanisms that always run:
 
 Per-upstream method assignment (audit **2026-06-18**):
 
-| Upstream           | Method                         | Notes                                                                                                                                                                                                                  |
-| ------------------ | ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `manaflow-ai/cmux` | `none-no-provenance-published` | `cmux-macos.dmg` has no attestation and no `.dmg.sig`. The `cmuxd-remote-checksums.txt` published alongside covers a _different_ product (cmuxd-remote), not the cmux Electron app. Helper logs the gap and continues. |
+| Upstream                              | Method                         | Notes                                                                                                                                                                                                                                                                          |
+| ------------------------------------- | ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `manaflow-ai/cmux`                    | `none-no-provenance-published` | `cmux-macos.dmg` has no attestation and no `.dmg.sig`. The `cmuxd-remote-checksums.txt` published alongside covers a _different_ product (cmuxd-remote), not the cmux Electron app. Helper logs the gap and continues.                                                         |
+| `download.eclipse.org` (eclipse-java) | `none-no-provenance-published` | Audit 2026-07-21. The Eclipse EPP `.dmg` is served from `download.eclipse.org` (not GitHub, so no `gh attestation`); no `.dmg.sig` / cosign signature is published next to the artifact. Helper logs the gap and continues; the nvfetcher SRI pin remains the integrity proof. |
 
 Git-source packages (`tmux-*`, `bat-gherkin-syntax`, `pint`, `glowm`) are not verified separately — the nvfetcher-pinned commit SHA is the integrity proof. (`pint` and `glowm` are release-tag-pinned `fetchFromGitHub` sources repackaged with `buildGoModule`; there is no release binary to attest.)
 

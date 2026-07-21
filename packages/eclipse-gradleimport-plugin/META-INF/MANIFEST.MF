@@ -1,0 +1,7 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: ZR Gradle Headless Import
+Bundle-SymbolicName: zr.eclipse.gradleimport;singleton:=true
+Bundle-Version: 0.1.0
+Require-Bundle: org.eclipse.core.runtime,org.eclipse.buildship.core,org.eclipse.equinox.app
+Bundle-RequiredExecutionEnvironment: JavaSE-17
