@@ -69,6 +69,14 @@
     };
     date = "2026-07-11";
   };
+  lombok = {
+    pname = "lombok";
+    version = "1.18.46";
+    src = fetchurl {
+      url = "https://repo1.maven.org/maven2/org/projectlombok/lombok/1.18.46/lombok-1.18.46.jar";
+      sha256 = "sha256-AfexoBXjPiti1fXzcFMwY1erFBX9GB/Lp3lPXRmMESY=";
+    };
+  };
   pint = {
     pname = "pint";
     version = "v0.87.0";

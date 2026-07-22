@@ -18,6 +18,20 @@
 #                  none-no-provenance-published never consults REPOS (only
 #                  verify_attestation does, via `--repo owner/repo`), and this
 #                  upstream has no GitHub owner/repo slug.
+#   lombok       — none-no-provenance-published (audit 2026-07-22). The lombok
+#                  jar is fetched from Maven Central. Maven Central does publish
+#                  a detached PGP signature (lombok-$ver.jar.asc) and per-file
+#                  .sha1/.md5 sidecars — but NONE of the mechanized methods here
+#                  fit: `attestation` is GitHub-only; `checksums` expects a
+#                  single release-dir `checksums.txt` (Maven has per-artifact
+#                  .sha1, not that file); `sigstore` uses a cosign `.sig` (Maven
+#                  uses GPG `.asc`, which would need lombok's trusted signing
+#                  key — no such verifier exists here). So this is treated as the
+#                  same "log the gap, do not fail" bucket as the other fetchurl
+#                  upstreams; the nvfetcher-pinned SRI remains the content
+#                  integrity guarantee. Re-audit (and consider adding a
+#                  Maven .asc/.sha1 verifier) if this needs hardening. No REPOS
+#                  entry (not a GitHub owner/repo slug).
 #
 # Git-source packages (tmux-*, bat-gherkin-syntax, pint) use method
 # `git-source` — explicitly skipped because the nvfetcher-pinned SHA is the
@@ -46,6 +60,7 @@ set -euo pipefail
 declare -A METHODS=(
   ["cmux"]="none-no-provenance-published"
   ["eclipse-java"]="none-no-provenance-published"
+  ["lombok"]="none-no-provenance-published"
   ["tmux-open-nvim"]="git-source"
   ["tmux-mouse-swipe"]="git-source"
   ["tmux-nerd-font-window-name"]="git-source"

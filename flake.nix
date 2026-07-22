@@ -231,6 +231,7 @@
                 inherit (final.phillipgreenii) eclipse-java;
               };
               eclipse-with-gradleimport = final.callPackage ./packages/eclipse-with-gradleimport {
+                inherit sources;
                 inherit (final.phillipgreenii) eclipse-java eclipse-gradleimport-plugin;
               };
             };

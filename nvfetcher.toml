@@ -13,6 +13,27 @@ fetch.url = "https://github.com/manaflow-ai/cmux/releases/download/v$ver/cmux-ma
 src.manual = "2026-06-R"
 fetch.url = "https://download.eclipse.org/technology/epp/downloads/release/2026-06/R/eclipse-java-2026-06-R-macosx-cocoa-aarch64.dmg"
 
+# Project Lombok's javaagent jar, baked into the composed Eclipse so JDT's ECJ
+# compiler recognizes Lombok annotations (see packages/eclipse-with-gradleimport).
+# VERSION DISCOVERY via Maven Central's maven-metadata.xml, ARTIFACT via the same
+# host (the cmux "discover-then-override" model: src.* discovers, fetch.url is the
+# real download).
+#
+# NOT the cmux `src.github` model: lombok publishes NO GitHub "releases"
+# (api.github.com/.../releases/latest -> 404), so nvfetcher's github source (which
+# is CheckGitHubRelease) errors out. It only tags even/stable patches on GitHub
+# (v1.18.46, v1.18.44, ...); odd numbers (1.18.47) are edge/dev builds absent from
+# both GitHub tags and Maven Central. Rather than depend on GitHub tags at all, we
+# discover against `<release>` in Maven Central's maven-metadata.xml — the
+# canonical "latest STABLE release available on Maven Central" field — via an
+# nvchecker `regex` (webpage) source. `$ver` is then the bare `1.18.46` (no `v` to
+# strip), which drops straight into the Maven Central jar path. This guarantees we
+# never pin a version whose jar 404s and never pick up an odd edge build.
+[lombok]
+src.webpage = "https://repo1.maven.org/maven2/org/projectlombok/lombok/maven-metadata.xml"
+src.regex = "<release>([^<]+)</release>"
+fetch.url = "https://repo1.maven.org/maven2/org/projectlombok/lombok/$ver/lombok-$ver.jar"
+
 # NOTE: no `src.prefix = "v"`. nvfetcher's `fetch.github` fetches rev `$ver`
 # verbatim, and pint's release tags are `vX.Y.Z`; stripping the prefix would
 # make it fetch rev `0.87.0` (no such tag -> 404). Keeping the `v` in the

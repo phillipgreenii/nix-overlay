@@ -113,6 +113,21 @@
         },
         "version": "e524eaccce065103774148fcb445621dd5bdc17a"
     },
+    "lombok": {
+        "cargoLock": null,
+        "date": null,
+        "extract": null,
+        "name": "lombok",
+        "passthru": null,
+        "pinned": false,
+        "src": {
+            "name": null,
+            "sha256": "sha256-AfexoBXjPiti1fXzcFMwY1erFBX9GB/Lp3lPXRmMESY=",
+            "type": "url",
+            "url": "https://repo1.maven.org/maven2/org/projectlombok/lombok/1.18.46/lombok-1.18.46.jar"
+        },
+        "version": "1.18.46"
+    },
     "pint": {
         "cargoLock": null,
         "date": null,

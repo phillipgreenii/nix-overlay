@@ -3,6 +3,7 @@
   stdenvNoCC,
   eclipse-java,
   eclipse-gradleimport-plugin,
+  sources,
 }:
 stdenvNoCC.mkDerivation {
   pname = "eclipse-with-gradleimport";
@@ -43,6 +44,29 @@ stdenvNoCC.mkDerivation {
     binfo="$eclipseDir/configuration/org.eclipse.equinox.simpleconfigurator/bundles.info"
     echo 'zr.eclipse.gradleimport,0.1.0,plugins/zr.eclipse.gradleimport_0.1.0.jar,4,true' >> "$binfo"
 
+    # --- Project Lombok javaagent ---
+    # Eclipse/JDT recognizes Lombok's generated members only when lombok.jar is
+    # loaded as a JVM `-javaagent`: the agent patches Eclipse's ECJ compiler at
+    # class-load time. The app is a read-only nix store path, so the usual
+    # `java -jar lombok.jar` GUI installer (which edits eclipse.ini in place)
+    # cannot be run against it — bake the agent in at build time instead.
+    #
+    # Copy the jar as a REAL, writable file (chmod +w — the fetchurl store source
+    # is read-only) alongside the launcher/config, NOT a symlink.
+    cp ${sources.lombok.src} "$eclipseDir/lombok.jar"
+    chmod +w "$eclipseDir/lombok.jar"
+
+    # eclipse.ini is one-argument-per-line, and everything after the `-vmargs`
+    # line is passed to the JVM. Appending a single `-javaagent` line at
+    # END-OF-FILE therefore lands in the JVM-args section without disturbing any
+    # existing content. Point it at the ABSOLUTE store path of the jar we just
+    # copied (`$out/.../Contents/Eclipse/lombok.jar`, i.e. `$eclipseDir/...`):
+    # the JVM resolves `-javaagent` against the launcher's cwd, so a relative
+    # path would be unsafe. `$out` is the final output store path at build time,
+    # so the correct absolute path is baked in. Do NOT add any
+    # `jdk.compiler --add-opens` flags — those target javac, not Eclipse's ECJ.
+    echo "-javaagent:$eclipseDir/lombok.jar" >> "$eclipseDir/eclipse.ini"
+
     # Exec wrapper, not a symlink — see the eclipse-java package for the path
     # rationale. It also injects `--launcher.suppressErrors`, which is REQUIRED
     # for headless use: the EPP product is a UI product, so the macOS Cocoa
@@ -82,6 +106,13 @@ stdenvNoCC.mkDerivation {
     test -x "$out/bin/eclipse"
     grep -q 'Contents/MacOS/eclipse' "$out/bin/eclipse"
     grep -q -- '--launcher.suppressErrors' "$out/bin/eclipse"
+    # Lombok javaagent baked in: the jar must be a REAL copied file (not a store
+    # symlink — the -javaagent must resolve to real bytes) and eclipse.ini must
+    # load it via a -javaagent line so JDT's ECJ sees the agent.
+    lombokJar="$eclipseDir/lombok.jar"
+    test -f "$lombokJar"
+    test ! -L "$lombokJar"
+    grep -q -- '-javaagent:.*lombok.jar' "$eclipseDir/eclipse.ini"
     runHook postInstallCheck
   '';
 
