@@ -50,11 +50,11 @@
         "pinned": false,
         "src": {
             "name": null,
-            "sha256": "sha256-npYbupFZ8tgg+OHX9YpTLRmth1i7dTZaV/183Jp8/PQ=",
+            "sha256": "sha256-pq5qsvmBc+W/1Nz0a0Up/iOpynX9yHkxDX5t6CZpPnU=",
             "type": "url",
-            "url": "https://github.com/manaflow-ai/cmux/releases/download/v0.64.19/cmux-macos.dmg"
+            "url": "https://github.com/manaflow-ai/cmux/releases/download/v0.64.20/cmux-macos.dmg"
         },
-        "version": "0.64.19"
+        "version": "0.64.20"
     },
     "eclipse-java": {
         "cargoLock": null,
@@ -151,7 +151,7 @@
     },
     "tmux-mouse-swipe": {
         "cargoLock": null,
-        "date": "2025-12-29",
+        "date": "2026-07-19",
         "extract": null,
         "name": "tmux-mouse-swipe",
         "passthru": null,
@@ -163,12 +163,12 @@
             "name": null,
             "owner": "jaclu",
             "repo": "tmux-mouse-swipe",
-            "rev": "8667851876c7591c668f29df6a142271051a3e2d",
-            "sha256": "sha256-0Mh0sQm3GP1V/KlYi6VjD3Zx2ssLwVI5uOnOp67trYk=",
+            "rev": "a174109db49f016c7ea449f57d555ff11d22b44c",
+            "sha256": "sha256-Uf5OWOtX2f1X6mkJ6MA0bZyqRFyy01GFqHt/QkZfFE8=",
             "sparseCheckout": [],
             "type": "github"
         },
-        "version": "8667851876c7591c668f29df6a142271051a3e2d"
+        "version": "a174109db49f016c7ea449f57d555ff11d22b44c"
     },
     "tmux-nerd-font-window-name": {
         "cargoLock": null,
