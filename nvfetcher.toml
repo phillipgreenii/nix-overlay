@@ -50,6 +50,14 @@ fetch.github = "cloudflare/pint"
 src.github = "atani/glowm"
 fetch.github = "atani/glowm"
 
+# github/gh-stack is a private-preview `gh` extension; pin the release tag
+# manually (like eclipse-java/cmux above) so the nightly updater never
+# auto-bumps it to an unreviewed preview release, and let fetch.github fetch
+# that exact tag.
+[gh-stack]
+src.manual = "v0.0.8"
+fetch.github = "github/gh-stack"
+
 [tmux-open-nvim]
 src.git = "https://github.com/trevarj/tmux-open-nvim"
 src.branch = "master"

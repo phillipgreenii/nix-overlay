@@ -156,6 +156,7 @@
           packages = {
             inherit (extended.phillipgreenii)
               bat-gherkin-syntax
+              gh-stack
               glowm
               pint
               ;
@@ -217,6 +218,7 @@
 
             phillipgreenii = {
               bat-gherkin-syntax = final.callPackage ./packages/bat-gherkin-syntax { inherit sources; };
+              gh-stack = final.callPackage ./packages/gh-stack { inherit sources; };
               glowm = final.callPackage ./packages/glowm { inherit sources; };
               pint = final.callPackage ./packages/pint { inherit sources; };
             }
@@ -277,6 +279,12 @@
               eclipse-gradleimport-plugin
               eclipse-with-gradleimport
               ;
+          }
+          // {
+            # gh-stack is a fresh flat top-level re-export (not part of the A5
+            # back-compat bridge above, and not aarch64-only) so downstream
+            # consumers can reference pkgs.gh-stack directly.
+            gh-stack = final.phillipgreenii.gh-stack;
           };
       };
     };

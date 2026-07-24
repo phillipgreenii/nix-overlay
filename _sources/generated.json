@@ -71,6 +71,27 @@
         },
         "version": "2026-06-R"
     },
+    "gh-stack": {
+        "cargoLock": null,
+        "date": null,
+        "extract": null,
+        "name": "gh-stack",
+        "passthru": null,
+        "pinned": false,
+        "src": {
+            "deepClone": false,
+            "fetchSubmodules": false,
+            "leaveDotGit": false,
+            "name": null,
+            "owner": "github",
+            "repo": "gh-stack",
+            "rev": "v0.0.8",
+            "sha256": "sha256-N0S/zQ+JsFAKzC780m3lwiZgsCoCjtcWgDB/MJy6jYU=",
+            "sparseCheckout": [],
+            "type": "github"
+        },
+        "version": "v0.0.8"
+    },
     "glowm": {
         "cargoLock": null,
         "date": null,

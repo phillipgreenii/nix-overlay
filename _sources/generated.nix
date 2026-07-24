@@ -46,6 +46,17 @@
       sha256 = "sha256-w3B7LiarR9eZglhCVBqveXt/L9TAl1TJiSbl14kT5Ik=";
     };
   };
+  gh-stack = {
+    pname = "gh-stack";
+    version = "v0.0.8";
+    src = fetchFromGitHub {
+      owner = "github";
+      repo = "gh-stack";
+      rev = "v0.0.8";
+      fetchSubmodules = false;
+      sha256 = "sha256-N0S/zQ+JsFAKzC780m3lwiZgsCoCjtcWgDB/MJy6jYU=";
+    };
+  };
   glowm = {
     pname = "glowm";
     version = "v0.4.0";
