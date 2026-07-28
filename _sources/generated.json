@@ -134,6 +134,21 @@
         },
         "version": "e524eaccce065103774148fcb445621dd5bdc17a"
     },
+    "logseq": {
+        "cargoLock": null,
+        "date": null,
+        "extract": null,
+        "name": "logseq",
+        "passthru": null,
+        "pinned": false,
+        "src": {
+            "name": null,
+            "sha256": "sha256-t2ryU4T4qqC6Mi+LVSOupxLZdQ2fPnnKxV3Hg3lkOc0=",
+            "type": "url",
+            "url": "https://github.com/logseq/logseq/releases/download/2.0.1/Logseq-darwin-arm64-2.0.1.dmg"
+        },
+        "version": "2.0.1"
+    },
     "lombok": {
         "cargoLock": null,
         "date": null,

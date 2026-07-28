@@ -96,10 +96,17 @@
               # TOCTOU fix (pg2-oqrus) and the jq-vs-awk cross-package bleed
               # fix (pg2-xb4zc) — fails the build instead of going unnoticed
               # (pg2-q5mjn). The suite sources ../verify-provenance.sh relative
-              # to its own dir, so stage both into that layout. Two tests call
-              # `nix hash file`, which is a pure local hash (no store writes, no
-              # recursive-nix) and runs fine in the sandbox; NIX_CONFIG enables
-              # the nix-command feature on runners that don't default it on.
+              # to its own dir, so stage both into that layout. Several tests call
+              # `nix hash file` / `nix hash convert`, which are pure local hash
+              # operations (no store writes, no recursive-nix) and run fine in the
+              # sandbox; NIX_CONFIG enables the nix-command feature on runners
+              # that don't default it on.
+              #
+              # The deliberately MINIMAL nativeBuildInputs are load-bearing: this
+              # sandbox has no `xxd` (it ships with vim, not coreutils), so it is
+              # what catches verify-provenance.sh reaching for host-only tools.
+              # Adding tools here to make a test pass would defeat that — fix the
+              # script to use what is listed instead.
               verify-provenance-tests =
                 pkgs.runCommand "verify-provenance-tests"
                   {
@@ -178,6 +185,7 @@
               eclipse-java
               eclipse-gradleimport-plugin
               eclipse-with-gradleimport
+              logseq
               ;
           };
 
@@ -236,6 +244,14 @@
                 inherit sources;
                 inherit (final.phillipgreenii) eclipse-java eclipse-gradleimport-plugin;
               };
+              # Logseq 2.x ("DB version") repackaged from the upstream macOS
+              # arm64 .dmg — nixpkgs carries only 0.10.15, the legacy
+              # file-based version. Deliberately NOT re-exported at top level
+              # below: the flat aliases there are the TEMPORARY A5 back-compat
+              # bridge for unmigrated consumers, and this is a new package, so
+              # its consumer uses `pkgs.phillipgreenii.logseq` directly (the
+              # post-ADR-0047 namespace) rather than growing that bridge.
+              logseq = final.callPackage ./packages/logseq { inherit sources; };
             };
             tmuxPlugins = prev.tmuxPlugins // {
               tmux-open-nvim = final.callPackage ./packages/tmux-open-nvim { inherit sources; };

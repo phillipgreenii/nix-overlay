@@ -32,6 +32,14 @@
 #                  integrity guarantee. Re-audit (and consider adding a
 #                  Maven .asc/.sha1 verifier) if this needs hardening. No REPOS
 #                  entry (not a GitHub owner/repo slug).
+#   logseq       — checksums (audit 2026-07-28). logseq/logseq publishes NO
+#                  GitHub attestations (the attestations API 404s for the .dmg
+#                  digest) and no cosign `.dmg.sig`, but it DOES publish a
+#                  release-dir hash manifest — so this is genuinely verifiable
+#                  and is NOT a none-no-provenance-published gap. The manifest
+#                  is named `SHA256SUMS.txt`, not `checksums.txt`, which is why
+#                  CHECKSUM_FILES below exists. No REPOS entry (only
+#                  verify_attestation consults it).
 #
 # Git-source packages (tmux-*, bat-gherkin-syntax, pint) use method
 # `git-source` — explicitly skipped because the nvfetcher-pinned SHA is the
@@ -61,6 +69,7 @@ declare -A METHODS=(
   ["cmux"]="none-no-provenance-published"
   ["eclipse-java"]="none-no-provenance-published"
   ["lombok"]="none-no-provenance-published"
+  ["logseq"]="checksums"
   ["tmux-open-nvim"]="git-source"
   ["tmux-mouse-swipe"]="git-source"
   ["tmux-nerd-font-window-name"]="git-source"
@@ -71,6 +80,21 @@ declare -A METHODS=(
 declare -A REPOS=(
   ["cmux"]="manaflow-ai/cmux"
 )
+
+# Per-upstream basename of the release-dir hash manifest used by the `checksums`
+# method. Upstreams do not agree on this name (logseq ships `SHA256SUMS.txt`),
+# so it is configurable; keys absent here fall back to CHECKSUM_FILE_DEFAULT,
+# which preserves the original hardcoded behavior for existing upstreams.
+declare -A CHECKSUM_FILES=(
+  ["logseq"]="SHA256SUMS.txt"
+)
+CHECKSUM_FILE_DEFAULT="checksums.txt"
+
+# Resolve the hash-manifest basename for an upstream (override, else default).
+checksum_file_for() {
+  local key="$1"
+  echo "${CHECKSUM_FILES[$key]:-$CHECKSUM_FILE_DEFAULT}"
+}
 
 # Extract the fetchurl `url` for a key from nvfetcher's generated.json.
 # jq addresses the value by exact key, so — unlike the previous awk block
@@ -149,28 +173,40 @@ verify_checksums() {
     echo "verify-provenance: $key: could not extract recorded SRI hash" >&2
     return 1
   fi
-  local artifact_name release_base
+  local artifact_name release_base checksum_file
   artifact_name=$(basename "$url")
   release_base="${url%/"$artifact_name"}"
+  # Upstreams disagree on the manifest basename (logseq: SHA256SUMS.txt), so
+  # take a per-upstream override and fall back to the common default.
+  checksum_file=$(checksum_file_for "$key")
   local tmpdir
   tmpdir=$(mktemp -d)
   # shellcheck disable=SC2064  # expand-now is intentional: $tmpdir is set just above.
   trap "rm -rf '$tmpdir'" RETURN
-  if ! curl --location --silent --show-error --fail --output "$tmpdir/checksums.txt" "$release_base/checksums.txt"; then
-    echo "verify-provenance: $key: failed to download checksums.txt from $release_base" >&2
+  if ! curl --location --silent --show-error --fail --output "$tmpdir/$checksum_file" "$release_base/$checksum_file"; then
+    echo "verify-provenance: $key: failed to download $checksum_file from $release_base" >&2
     return 1
   fi
   local upstream_hex
   upstream_hex=$(awk -v name="$artifact_name" '
     { for (i = 1; i <= NF; i++) if ($i == name || $i == "*"name) { print $1; exit } }
-  ' "$tmpdir/checksums.txt")
+  ' "$tmpdir/$checksum_file")
   if [ -z "$upstream_hex" ]; then
-    echo "verify-provenance: $key: artifact '$artifact_name' not listed in checksums.txt" >&2
+    echo "verify-provenance: $key: artifact '$artifact_name' not listed in $checksum_file" >&2
     return 1
   fi
-  # Portable base64 (Linux `base64 -w0` ≠ macOS `base64`): pipe to `tr -d '\n'`.
+  # hex -> SRI via `nix hash convert`, NOT the previous `xxd -r -p | base64`
+  # pipeline. `xxd` ships with vim, not coreutils, so it is absent from the
+  # sandboxed flake-check derivation and from a clean Linux runner — it only
+  # appeared to work because macOS has /usr/bin/xxd. This path went unexercised
+  # until logseq became the first `checksums` upstream. `nix` is unconditionally
+  # available here (update-locks.sh itself drives `nix flake metadata`/`nix run`),
+  # and this also drops the base64 portability dance.
   local upstream_sri
-  upstream_sri="sha256-$(printf '%s' "$upstream_hex" | xxd -r -p | base64 | tr -d '\n')"
+  if ! upstream_sri=$(nix hash convert --hash-algo sha256 --from base16 --to sri "$upstream_hex" 2>&1); then
+    echo "verify-provenance: $key: could not convert upstream hash '$upstream_hex' from $checksum_file: $upstream_sri" >&2
+    return 1
+  fi
   if [ "$upstream_sri" != "$recorded_sri" ]; then
     echo "verify-provenance: $key: hash mismatch — nvfetcher recorded '$recorded_sri', upstream checksums.txt says '$upstream_sri' (hex: $upstream_hex)" >&2
     return 1
@@ -211,9 +247,31 @@ main() {
   for key in "${!METHODS[@]}"; do
     method="${METHODS[$key]}"
     case "$method" in
-    attestation) verify_attestation "$key" || fail=1 ;;
-    checksums) verify_checksums "$key" || fail=1 ;;
-    sigstore) verify_sigstore "$key" || fail=1 ;;
+    # The verifying methods are silent on success, so log an explicit PASS line
+    # for each. Without it a run shows only `skipped` lines plus a blanket
+    # "all upstreams verified", making a genuinely-verified upstream
+    # indistinguishable from one that was never configured.
+    attestation)
+      if verify_attestation "$key"; then
+        echo "verify-provenance: $key: verified (GitHub attestation)"
+      else
+        fail=1
+      fi
+      ;;
+    checksums)
+      if verify_checksums "$key"; then
+        echo "verify-provenance: $key: verified (pinned hash matches upstream $(checksum_file_for "$key"))"
+      else
+        fail=1
+      fi
+      ;;
+    sigstore)
+      if verify_sigstore "$key"; then
+        echo "verify-provenance: $key: verified (cosign signature)"
+      else
+        fail=1
+      fi
+      ;;
     git-source)
       # Intentional no-op: git-fetched sources have no separate provenance
       # artifact; the nvfetcher-pinned commit SHA is the integrity proof.

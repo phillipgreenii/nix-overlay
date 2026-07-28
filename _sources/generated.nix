@@ -80,6 +80,14 @@
     };
     date = "2026-07-11";
   };
+  logseq = {
+    pname = "logseq";
+    version = "2.0.1";
+    src = fetchurl {
+      url = "https://github.com/logseq/logseq/releases/download/2.0.1/Logseq-darwin-arm64-2.0.1.dmg";
+      sha256 = "sha256-t2ryU4T4qqC6Mi+LVSOupxLZdQ2fPnnKxV3Hg3lkOc0=";
+    };
+  };
   lombok = {
     pname = "lombok";
     version = "1.18.46";

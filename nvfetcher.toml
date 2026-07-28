@@ -3,6 +3,30 @@ src.github = "manaflow-ai/cmux"
 src.prefix = "v"
 fetch.url = "https://github.com/manaflow-ai/cmux/releases/download/v$ver/cmux-macos.dmg"
 
+# Logseq desktop app (the 2.x "DB version") macOS arm64 .dmg. nixpkgs carries
+# only 0.10.15 (the legacy file-based version), so 2.x is repackaged here.
+#
+# `src.github_tag` (max tag), NOT `src.github` (latest release): the tag source
+# is the only one that accepts nvchecker's list options, and we need
+# `include_regex` to keep the updater on STABLE releases. Logseq's tag namespace
+# is noisy — it carries `nightly`, `daily`, `mobile-0.1.1`, `v0.0.1`,
+# `github-action-repro`, `backup/…` and prerelease tags like `0.10.11-rc1`.
+# `include_regex` is whole-string (nvchecker semantics), so a bare X.Y.Z pattern
+# accepts 2.0.1 / a future 2.1.1 / 2.2.0 and rejects every one of those — the
+# `-rc1` suffix alone breaks the match. Verified against the live tag list:
+# with this regex nvchecker resolves 2.0.1, and a probe restricted to
+# `0\.10\.11` returns `0.10.11` while `0.10.11-rc1` is visible but filtered out.
+# No `src.prefix`: logseq's release tags are bare (`2.0.1`, not `v2.0.1`).
+#
+# The artifact name is capital-L `Logseq-…` — the canonical asset name. GitHub
+# happens to redirect the lowercase spelling too, but `verify-provenance.sh`
+# matches the basename against upstream's SHA256SUMS.txt, which lists the
+# capitalized name, so this MUST stay capitalized.
+[logseq]
+src.github_tag = "logseq/logseq"
+src.include_regex = '[0-9]+\.[0-9]+\.[0-9]+'
+fetch.url = "https://github.com/logseq/logseq/releases/download/$ver/Logseq-darwin-arm64-$ver.dmg"
+
 # Eclipse EPP "Eclipse IDE for Java Developers" macOS .dmg. Pinned to a fixed
 # quarterly release with nvchecker's `manual` source (`src.manual`), so the
 # nightly updater never auto-bumps it — Eclipse releases are quarterly and each
