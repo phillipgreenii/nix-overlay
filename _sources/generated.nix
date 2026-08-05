@@ -32,10 +32,10 @@
   };
   cmux = {
     pname = "cmux";
-    version = "0.64.20";
+    version = "0.64.22";
     src = fetchurl {
-      url = "https://github.com/manaflow-ai/cmux/releases/download/v0.64.20/cmux-macos.dmg";
-      sha256 = "sha256-pq5qsvmBc+W/1Nz0a0Up/iOpynX9yHkxDX5t6CZpPnU=";
+      url = "https://github.com/manaflow-ai/cmux/releases/download/v0.64.22/cmux-macos.dmg";
+      sha256 = "sha256-/RSNujUZ/n0wiEQInOTQYrF3ObpkViPwWPZ6ZHmM6iU=";
     };
   };
   eclipse-java = {
@@ -109,15 +109,15 @@
   };
   tmux-mouse-swipe = {
     pname = "tmux-mouse-swipe";
-    version = "a174109db49f016c7ea449f57d555ff11d22b44c";
+    version = "6d7394923d2c9bda653515e3bd658490ba511c2a";
     src = fetchFromGitHub {
       owner = "jaclu";
       repo = "tmux-mouse-swipe";
-      rev = "a174109db49f016c7ea449f57d555ff11d22b44c";
+      rev = "6d7394923d2c9bda653515e3bd658490ba511c2a";
       fetchSubmodules = false;
-      sha256 = "sha256-Uf5OWOtX2f1X6mkJ6MA0bZyqRFyy01GFqHt/QkZfFE8=";
+      sha256 = "sha256-vLEcaQS/zgcJ5t57MsiY7hMS648l+zwrS1r1v0KZs/4=";
     };
-    date = "2026-07-19";
+    date = "2026-08-01";
   };
   tmux-nerd-font-window-name = {
     pname = "tmux-nerd-font-window-name";
