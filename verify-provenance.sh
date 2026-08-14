@@ -76,6 +76,7 @@ declare -A METHODS=(
   ["bat-gherkin-syntax"]="git-source"
   ["pint"]="git-source"
   ["glowm"]="git-source"
+  ["gomu"]="git-source"
 )
 declare -A REPOS=(
   ["cmux"]="manaflow-ai/cmux"

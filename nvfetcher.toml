@@ -82,6 +82,12 @@ fetch.github = "atani/glowm"
 src.manual = "v0.0.8"
 fetch.github = "github/gh-stack"
 
+# gomu -- Go mutation testing engine, wrapped by pg-go-mutate in nix-repo-base.
+# fetch.github takes rev $ver verbatim, so the leading "v" is kept (see [pint]).
+[gomu]
+src.github = "sivchari/gomu"
+fetch.github = "sivchari/gomu"
+
 [tmux-open-nvim]
 src.git = "https://github.com/trevarj/tmux-open-nvim"
 src.branch = "master"

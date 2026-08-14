@@ -165,6 +165,7 @@
               bat-gherkin-syntax
               gh-stack
               glowm
+              gomu
               pint
               ;
             inherit (extended.tmuxPlugins)
@@ -228,6 +229,7 @@
               bat-gherkin-syntax = final.callPackage ./packages/bat-gherkin-syntax { inherit sources; };
               gh-stack = final.callPackage ./packages/gh-stack { inherit sources; };
               glowm = final.callPackage ./packages/glowm { inherit sources; };
+              gomu = final.callPackage ./packages/gomu { inherit sources; };
               pint = final.callPackage ./packages/pint { inherit sources; };
             }
             // prev.lib.optionalAttrs (prev.stdenv.hostPlatform.system == "aarch64-darwin") {

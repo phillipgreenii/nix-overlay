@@ -68,6 +68,17 @@
       sha256 = "sha256-kyylQrn2OROQe+taGEw0L7q5Y6HW+UqDcA46DOgeOYI=";
     };
   };
+  gomu = {
+    pname = "gomu";
+    version = "v0.2.1";
+    src = fetchFromGitHub {
+      owner = "sivchari";
+      repo = "gomu";
+      rev = "v0.2.1";
+      fetchSubmodules = false;
+      sha256 = "sha256-MYYtqv0q6ExyETxrUMW5KTs87mahik+0RwO9xV3h82I=";
+    };
+  };
   icons-brew = {
     pname = "icons-brew";
     version = "e524eaccce065103774148fcb445621dd5bdc17a";

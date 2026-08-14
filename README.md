@@ -34,6 +34,7 @@ After that, `pkgs.phillipgreenii.bat-gherkin-syntax`, `pkgs.phillipgreenii.pint`
 | `phillipgreenii.eclipse-gradleimport-plugin` | aarch64-darwin | (in this repo, `packages/eclipse-gradleimport-plugin`)                                                 |
 | `phillipgreenii.eclipse-with-gradleimport`   | aarch64-darwin | (composed: `eclipse-java` + `eclipse-gradleimport-plugin`)                                             |
 | `phillipgreenii.glowm`                       | unix           | [atani/glowm](https://github.com/atani/glowm)                                                          |
+| `phillipgreenii.gomu`                        | unix           | [sivchari/gomu](https://github.com/sivchari/gomu)                                                      |
 | `phillipgreenii.pint`                        | unix           | [cloudflare/pint](https://github.com/cloudflare/pint)                                                  |
 | `tmuxPlugins.tmux-open-nvim`                 | unix           | [trevarj/tmux-open-nvim](https://github.com/trevarj/tmux-open-nvim)                                    |
 | `tmuxPlugins.tmux-mouse-swipe`               | unix           | [jaclu/tmux-mouse-swipe](https://github.com/jaclu/tmux-mouse-swipe)                                    |
@@ -68,7 +69,7 @@ Per-upstream method assignment (audit **2026-06-18**):
 | `manaflow-ai/cmux`                    | `none-no-provenance-published` | `cmux-macos.dmg` has no attestation and no `.dmg.sig`. The `cmuxd-remote-checksums.txt` published alongside covers a _different_ product (cmuxd-remote), not the cmux Electron app. Helper logs the gap and continues.                                                         |
 | `download.eclipse.org` (eclipse-java) | `none-no-provenance-published` | Audit 2026-07-21. The Eclipse EPP `.dmg` is served from `download.eclipse.org` (not GitHub, so no `gh attestation`); no `.dmg.sig` / cosign signature is published next to the artifact. Helper logs the gap and continues; the nvfetcher SRI pin remains the integrity proof. |
 
-Git-source packages (`tmux-*`, `bat-gherkin-syntax`, `pint`, `glowm`) are not verified separately — the nvfetcher-pinned commit SHA is the integrity proof. (`pint` and `glowm` are release-tag-pinned `fetchFromGitHub` sources repackaged with `buildGoModule`; there is no release binary to attest.)
+Git-source packages (`tmux-*`, `bat-gherkin-syntax`, `pint`, `glowm`, `gomu`) are not verified separately — the nvfetcher-pinned commit SHA is the integrity proof. (`pint`, `glowm`, and `gomu` are release-tag-pinned `fetchFromGitHub` sources repackaged with `buildGoModule`; there is no release binary to attest.)
 
 When an upstream's release pipeline changes (publishes/withdraws attestation or checksums), the per-upstream `METHODS` table at the top of `verify-provenance.sh` must be re-audited. Search for "audit 2026-06-18" in that file to find the config block.
 
