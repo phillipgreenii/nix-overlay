@@ -132,15 +132,15 @@
   };
   tmux-nerd-font-window-name = {
     pname = "tmux-nerd-font-window-name";
-    version = "0af812a228e1b9f538b8d220c6c59d82d7228973";
+    version = "f464c59e459d91d7b0db702e2f436475c4e9bf4f";
     src = fetchFromGitHub {
       owner = "joshmedeski";
       repo = "tmux-nerd-font-window-name";
-      rev = "0af812a228e1b9f538b8d220c6c59d82d7228973";
+      rev = "f464c59e459d91d7b0db702e2f436475c4e9bf4f";
       fetchSubmodules = false;
-      sha256 = "sha256-b6CQdN33hU5li/0LUOHMs7oN8ffVRVQlSf17Twhz2e8=";
+      sha256 = "sha256-fsfhOmmAVwp/+kUcxi6ZvEfoNL1twJie8MhgNk/+UwE=";
     };
-    date = "2026-04-10";
+    date = "2026-08-20";
   };
   tmux-open-nvim = {
     pname = "tmux-open-nvim";
