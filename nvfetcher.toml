@@ -88,6 +88,17 @@ fetch.github = "github/gh-stack"
 src.github = "sivchari/gomu"
 fetch.github = "sivchari/gomu"
 
+# CleverCloud/mdr -- Rust Markdown/Mermaid viewer. Tracked as `mdr-rs`, NOT
+# `mdr`: nixpkgs already has an unrelated `mdr` (MichaelMure/mdr, a Go
+# terminal renderer) -- same name, different upstream, different language.
+# `mdr-rs` is only the nix attribute; the built binary is still `mdr` (that's
+# the Cargo package name upstream uses). Same pattern as pint/glowm/gomu:
+# release tags carry a `v` (fetch.github fetches rev $ver verbatim, so keep
+# it; packages/mdr-rs strips it for the version).
+[mdr-rs]
+src.github = "CleverCloud/mdr"
+fetch.github = "CleverCloud/mdr"
+
 [tmux-open-nvim]
 src.git = "https://github.com/trevarj/tmux-open-nvim"
 src.branch = "master"

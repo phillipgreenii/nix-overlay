@@ -185,6 +185,27 @@
         },
         "version": "1.18.46"
     },
+    "mdr-rs": {
+        "cargoLock": null,
+        "date": null,
+        "extract": null,
+        "name": "mdr-rs",
+        "passthru": null,
+        "pinned": false,
+        "src": {
+            "deepClone": false,
+            "fetchSubmodules": false,
+            "leaveDotGit": false,
+            "name": null,
+            "owner": "CleverCloud",
+            "repo": "mdr",
+            "rev": "v0.3.2",
+            "sha256": "sha256-Cf07bCdCa9bRO1TiNQPu78aDRE3BQR3YstPr3G+RZUE=",
+            "sparseCheckout": [],
+            "type": "github"
+        },
+        "version": "v0.3.2"
+    },
     "pint": {
         "cargoLock": null,
         "date": null,

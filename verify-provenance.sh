@@ -77,6 +77,7 @@ declare -A METHODS=(
   ["pint"]="git-source"
   ["glowm"]="git-source"
   ["gomu"]="git-source"
+  ["mdr-rs"]="git-source"
 )
 declare -A REPOS=(
   ["cmux"]="manaflow-ai/cmux"

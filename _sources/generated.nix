@@ -107,6 +107,17 @@
       sha256 = "sha256-AfexoBXjPiti1fXzcFMwY1erFBX9GB/Lp3lPXRmMESY=";
     };
   };
+  mdr-rs = {
+    pname = "mdr-rs";
+    version = "v0.3.2";
+    src = fetchFromGitHub {
+      owner = "CleverCloud";
+      repo = "mdr";
+      rev = "v0.3.2";
+      fetchSubmodules = false;
+      sha256 = "sha256-Cf07bCdCa9bRO1TiNQPu78aDRE3BQR3YstPr3G+RZUE=";
+    };
+  };
   pint = {
     pname = "pint";
     version = "v0.87.0";
