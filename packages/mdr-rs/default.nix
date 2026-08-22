@@ -1,7 +1,13 @@
 {
   lib,
+  stdenv,
   rustPlatform,
   pkg-config,
+  wrapGAppsHook3,
+  gtk3,
+  webkitgtk_4_1,
+  libGL,
+  xdotool,
   sources,
 }:
 let
@@ -25,6 +31,11 @@ rustPlatform.buildRustPackage {
   # dependency-changing version bump surfaces as a failing CI check on the
   # auto-opened PR instead of silently going stale, which is the intended
   # fallback.
+  #
+  # The lock resolves every target's dependency graph, not just the host's
+  # (cargo does not prune by target), so the Darwin-generated lock already
+  # carries the Linux-only gtk/webkit2gtk/libxdo crates -- verified present
+  # by name in ./Cargo.lock.
   cargoLock.lockFile = ./Cargo.lock;
 
   # rustPlatform's cargoSetupPostPatchHook diffs the source's own Cargo.lock
@@ -37,23 +48,48 @@ rustPlatform.buildRustPackage {
   # the diff is empty and the check passes.
   cargoPatches = [ ./add-cargo-lock.patch ];
 
-  nativeBuildInputs = [ pkg-config ];
+  nativeBuildInputs = [
+    pkg-config
+  ]
+  ++ lib.optionals stdenv.hostPlatform.isLinux [
+    # The GTK/WebKitGTK webview backend needs its GSettings schemas and
+    # GDK_PIXBUF module path baked into the binary's environment, same as
+    # upstream's own flake.nix. The hook is spelled wrapGAppsHook3 here:
+    # upstream's `wrapGAppsHook` no longer resolves at this repo's pinned
+    # nixpkgs rev -- it throws "'wrapGAppsHook' has been renamed to/replaced
+    # by 'wrapGAppsHook3'" (verified by eval).
+    wrapGAppsHook3
+  ];
 
-  # No buildInputs needed: `darwin.apple_sdk` was removed from nixpkgs
+  # Darwin needs no buildInputs: `darwin.apple_sdk` was removed from nixpkgs
   # (throws in this repo's pinned nixpkgs-26.05-darwin); nixpkgs' own
   # migration guidance is to drop such references outright, since the
   # default SDK already provides WebKit/AppKit/CoreServices for the
   # webview/egui backends.
   #
-  # Darwin-only for now: upstream's own flake also lists Linux buildInputs
-  # (gtk3, webkitgtk_4_1, libxdo, libGL) plus wrapGAppsHook, but at this
-  # repo's pinned nixpkgs rev `libxdo` does not exist as an attribute at all
-  # (verified against github:NixOS/nixpkgs/33da5f36e599b50aa7dbbfacb718254423b18354
-  # -- likely present only in a newer nixpkgs than this stable pin). Rather
-  # than guess at a replacement for a platform nobody here uses yet, this
-  # package is Darwin-only until someone actually wants it on Linux and can
-  # resolve the current dependency names against whatever nixpkgs rev is
-  # pinned then.
+  # Linux mirrors upstream's flake.nix buildInputs with ONE substitution:
+  # upstream lists `libxdo`, which does not exist as an attribute at this
+  # repo's pinned nixpkgs rev. nixpkgs ships that library inside `xdotool`
+  # -- verified: the xdotool output carries lib/libxdo.so,
+  # lib/pkgconfig/libxdo.pc and include/xdo.h, which is what the
+  # libxdo-sys crate's pkg-config probe resolves against.
+  #
+  # Scope on Linux: this is the BUILD dependency set (upstream's), and all
+  # three backends compile -- `mdr --list-backends` reports egui, webview and
+  # tui all `[compiled]`, and `ldd` resolves every linked library including
+  # libxdo.so.3. The two GRAPHICAL backends additionally dlopen libEGL.so.1
+  # and libxkbcommon.so.0 at RUN time; those are deliberately not wired into
+  # the runpath here, because the consumer that needs this on Linux
+  # (monorepod, headless) uses the tui backend. Wiring them up
+  # (addDriverRunpath + an LD_LIBRARY_PATH wrap) belongs with the first
+  # machine that actually runs mdr's GUI on Linux and can test it against a
+  # display.
+  buildInputs = lib.optionals stdenv.hostPlatform.isLinux [
+    gtk3
+    webkitgtk_4_1
+    libGL
+    xdotool
+  ];
 
   # Skip upstream's test suite: the default feature set builds a GUI/webview
   # toolkit whose tests expect a display; the nvfetcher-pinned SHA plus the
@@ -66,6 +102,6 @@ rustPlatform.buildRustPackage {
     homepage = "https://github.com/CleverCloud/mdr";
     license = lib.licenses.mit;
     mainProgram = "mdr";
-    platforms = lib.platforms.darwin;
+    platforms = lib.platforms.darwin ++ lib.platforms.linux;
   };
 }

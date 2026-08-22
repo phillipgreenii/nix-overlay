@@ -166,6 +166,7 @@
               gh-stack
               glowm
               gomu
+              mdr-rs
               pint
               ;
             inherit (extended.tmuxPlugins)
@@ -179,13 +180,6 @@
             # fix-lint + install-pre-commit-hooks REMOVED — pre-commit module
             # auto-contributes both (bead pg2-7vhvn). This flake's cwd-correct
             # fix-lint variant is the one now shipped from base.
-          }
-          // pkgs.lib.optionalAttrs pkgs.stdenv.hostPlatform.isDarwin {
-            # mdr-rs builds on any Darwin arch (source build, no prebuilt-binary
-            # arch lock-in) but not yet on Linux — see packages/mdr-rs/default.nix
-            # for why. isDarwin, not the aarch64-darwin exact-match below, which
-            # exists for prebuilt-binary repackages that genuinely are single-arch.
-            inherit (extended.phillipgreenii) mdr-rs;
           }
           // pkgs.lib.optionalAttrs (pkgs.stdenv.hostPlatform.system == "aarch64-darwin") {
             inherit (extended.phillipgreenii)
@@ -237,12 +231,10 @@
               gh-stack = final.callPackage ./packages/gh-stack { inherit sources; };
               glowm = final.callPackage ./packages/glowm { inherit sources; };
               gomu = final.callPackage ./packages/gomu { inherit sources; };
-              pint = final.callPackage ./packages/pint { inherit sources; };
-            }
-            // prev.lib.optionalAttrs prev.stdenv.hostPlatform.isDarwin {
-              # Darwin-only for now (any arch, not just aarch64-darwin) -- see
-              # packages/mdr-rs/default.nix for why Linux isn't wired up yet.
+              # Cross-platform (darwin + linux); the linux-only buildInputs live
+              # in packages/mdr-rs/default.nix and self-gate on hostPlatform.
               mdr-rs = final.callPackage ./packages/mdr-rs { inherit sources; };
+              pint = final.callPackage ./packages/pint { inherit sources; };
             }
             // prev.lib.optionalAttrs (prev.stdenv.hostPlatform.system == "aarch64-darwin") {
               cmux = final.callPackage ./packages/cmux { inherit sources; };
