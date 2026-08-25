@@ -49,6 +49,52 @@
         inputs.phillipgreenii-nix-base.flakeModules.checks
       ];
 
+      # run-unit-tests: gate commits with the repo's unit tests, directly from
+      # source, with NO nix build (pg-test-runner design,
+      # phillipg-nix-repo-base docs/superpowers/specs/2026-08-24-pg-test-runner-design.md,
+      # section 3, workstream 5). This repo's root `tests/verify-provenance.bats`
+      # already carries `# bats file_tags=type:unit` (bead pg2-06e5n), so the
+      # unit-tier selection covers it with no further labeling here.
+      #
+      # Function form (pkgs -> hooks), per the `extraHooks` option doc: the
+      # wrapper script is built for whichever system is doing the
+      # committing/building, rather than one statically pinned system (see
+      # phillipgreenii-nix-agent-support's extraHooks for the same pattern).
+      phillipgreenii.pre-commit.extraHooks = pkgs: {
+        run-unit-tests = {
+          enable = true;
+          name = "unit tests (changed projects)";
+          # Inside the sandboxed `checks.pre-commit` (nix build), the hermetic
+          # checks.* tier (verify-provenance-tests, above) already covers this
+          # suite, so skip there — but ONLY on a POSITIVE sandbox indicator
+          # (IN_NIX_BUILD / NIX_BUILD_TOP actually set), never on pg-test-runner
+          # merely being absent: an absence-keyed skip would let any PATH
+          # breakage silently no-op the only commit-time test gate, which this
+          # workspace treats as hook bypassing. Outside the sandbox, exec
+          # pg-test-runner directly against the staged files; a missing
+          # pg-test-runner FAILS LOUDLY (exit 11, matching pg-test-runner's own
+          # "required tool missing from PATH" code) rather than skipping.
+          entry = "${
+            pkgs.writeShellApplication {
+              name = "run-unit-tests-hook";
+              text = ''
+                if [ -n "''${IN_NIX_BUILD:-}" ] || [ -n "''${NIX_BUILD_TOP:-}" ]; then
+                  echo "run-unit-tests: inside the nix sandbox (IN_NIX_BUILD/NIX_BUILD_TOP set); the hermetic checks.* tier already covers this suite -- skipping." >&2
+                  exit 0
+                fi
+                if ! command -v pg-test-runner >/dev/null 2>&1; then
+                  echo "run-unit-tests: pg-test-runner not found on PATH. Provision it via the home-manager profile (phillipg-nix-repo-base pg-test-runner module) before committing -- this hook MUST NOT skip silently." >&2
+                  exit 11
+                fi
+                exec pg-test-runner --labels unit --files "$@"
+              '';
+            }
+          }/bin/run-unit-tests-hook";
+          pass_filenames = true;
+          require_serial = true;
+        };
+      };
+
       perSystem =
         {
           pkgs,
