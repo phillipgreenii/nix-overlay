@@ -1,4 +1,5 @@
 #!/usr/bin/env bats
+# bats file_tags=type:unit
 # Tests for verify-provenance.sh (standalone update-locks helper).
 #
 # The script is sourced so its functions and config arrays are exercised in
