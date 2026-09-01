@@ -8,7 +8,7 @@ buildGoModule {
   version = lib.removePrefix "v" sources.gh-stack.version;
   src = sources.gh-stack.src;
 
-  vendorHash = "sha256-CxsHRC5AbApxcsavyaBmoPtTUHy5jlaQ7BLvgE6mJJ4=";
+  vendorHash = "sha256-0Xtr/MOpX4u5GnbRdNxKPA0GpSzi8PIbVc9MmP05De4=";
 
   doCheck = false;
 

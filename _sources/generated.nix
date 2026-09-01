@@ -48,13 +48,13 @@
   };
   gh-stack = {
     pname = "gh-stack";
-    version = "v0.0.8";
+    version = "v0.1.0";
     src = fetchFromGitHub {
       owner = "github";
       repo = "gh-stack";
-      rev = "v0.0.8";
+      rev = "v0.1.0";
       fetchSubmodules = false;
-      sha256 = "sha256-N0S/zQ+JsFAKzC780m3lwiZgsCoCjtcWgDB/MJy6jYU=";
+      sha256 = "sha256-48JkOeqbvHlCZ2u3LnwJymw55xMQWLTPJLDbV44clGI=";
     };
   };
   glowm = {

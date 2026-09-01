@@ -79,7 +79,7 @@ fetch.github = "atani/glowm"
 # auto-bumps it to an unreviewed preview release, and let fetch.github fetch
 # that exact tag.
 [gh-stack]
-src.manual = "v0.0.8"
+src.manual = "v0.1.0"
 fetch.github = "github/gh-stack"
 
 # gomu -- Go mutation testing engine, wrapped by pg-go-mutate in nix-repo-base.
