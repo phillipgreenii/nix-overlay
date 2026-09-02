@@ -74,7 +74,7 @@ fetch.github = "cloudflare/pint"
 src.github = "atani/glowm"
 fetch.github = "atani/glowm"
 
-# github/gh-stack is a private-preview `gh` extension; pin the release tag
+# github/gh-stack is a public-preview `gh` extension; pin the release tag
 # manually (like eclipse-java/cmux above) so the nightly updater never
 # auto-bumps it to an unreviewed preview release, and let fetch.github fetch
 # that exact tag.

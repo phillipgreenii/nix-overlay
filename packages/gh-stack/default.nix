@@ -13,7 +13,7 @@ buildGoModule {
   doCheck = false;
 
   meta = {
-    description = "GitHub CLI extension for managing stacked branches and pull requests (private preview)";
+    description = "GitHub CLI extension for managing stacked branches and pull requests (public preview)";
     homepage = "https://github.com/github/gh-stack";
     license = lib.licenses.mit;
     mainProgram = "gh-stack";
