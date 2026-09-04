@@ -101,10 +101,10 @@
   };
   lombok = {
     pname = "lombok";
-    version = "1.18.46";
+    version = "1.18.48";
     src = fetchurl {
-      url = "https://repo1.maven.org/maven2/org/projectlombok/lombok/1.18.46/lombok-1.18.46.jar";
-      sha256 = "sha256-AfexoBXjPiti1fXzcFMwY1erFBX9GB/Lp3lPXRmMESY=";
+      url = "https://repo1.maven.org/maven2/org/projectlombok/lombok/1.18.48/lombok-1.18.48.jar";
+      sha256 = "sha256-hUd6RlXrssB0qQmc+3Sb5FREn+5WTUKCYQ3xuF98UIs=";
     };
   };
   mdr-rs = {
