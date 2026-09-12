@@ -220,12 +220,12 @@
             "name": null,
             "owner": "cloudflare",
             "repo": "pint",
-            "rev": "v0.87.0",
-            "sha256": "sha256-gQosR2LovEEw0AOzIf91AJAL2cMvygMEsYGszvSYFps=",
+            "rev": "v0.88.0",
+            "sha256": "sha256-q+WRozSL8DIM6ff5PKNSFabKh7vJu5TSTPdM0YMwTSw=",
             "sparseCheckout": [],
             "type": "github"
         },
-        "version": "v0.87.0"
+        "version": "v0.88.0"
     },
     "tmux-mouse-swipe": {
         "cargoLock": null,

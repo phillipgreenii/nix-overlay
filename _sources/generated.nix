@@ -120,13 +120,13 @@
   };
   pint = {
     pname = "pint";
-    version = "v0.87.0";
+    version = "v0.88.0";
     src = fetchFromGitHub {
       owner = "cloudflare";
       repo = "pint";
-      rev = "v0.87.0";
+      rev = "v0.88.0";
       fetchSubmodules = false;
-      sha256 = "sha256-gQosR2LovEEw0AOzIf91AJAL2cMvygMEsYGszvSYFps=";
+      sha256 = "sha256-q+WRozSL8DIM6ff5PKNSFabKh7vJu5TSTPdM0YMwTSw=";
     };
   };
   tmux-mouse-swipe = {
