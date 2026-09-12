@@ -1,6 +1,6 @@
 {
   lib,
-  buildGoModule,
+  buildGo127Module,
   sources,
 }:
 let
@@ -9,13 +9,19 @@ let
   # user-facing version and the `main.version` ldflag.
   version = lib.removePrefix "v" sources.pint.version;
 in
-buildGoModule {
+# pint v0.88.0's go.mod requires go >= 1.27.0; nixpkgs' default `go` (via
+# buildGoModule) is still 1.26.x on this branch and GOTOOLCHAIN=local blocks
+# auto-fetching a newer toolchain during the sandboxed build. Pin the builder
+# to the versioned buildGo127Module instead of overriding `go` by hand.
+buildGo127Module {
   pname = "pint";
   inherit version;
   src = sources.pint.src;
 
   # pint has no in-tree `vendor/` dir; deps are fetched and vendored by nix.
-  vendorHash = "sha256-BjFX0RWvNQq6BCR24FpIWT2CTJkRK5mkg3kCEInGE2E=";
+  # Re-hashed for buildGo127Module (2026-09-12): the go1.27 module resolver
+  # produced a different vendor tree than go1.26 did for the same go.sum.
+  vendorHash = "sha256-JqA+2nGwdsQrx+NfVFTww1pcRCmbcrdsyK7Ixvvm14U=";
 
   subPackages = [ "cmd/pint" ];
 
