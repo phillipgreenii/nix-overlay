@@ -1,6 +1,6 @@
 {
   lib,
-  buildGo127Module,
+  buildGoModuleFor,
   sources,
 }:
 let
@@ -8,12 +8,17 @@ let
   # fetches rev `$ver` and pint's tags carry the `v`. Strip it for the
   # user-facing version and the `main.version` ldflag.
   version = lib.removePrefix "v" sources.pint.version;
+
+  # pint v0.88.0's go.mod requires go >= 1.27.0; nixpkgs' default `go` (via
+  # buildGoModule) is still 1.26.x on this branch and GOTOOLCHAIN=local blocks
+  # auto-fetching a newer toolchain during the sandboxed build. Declare the
+  # go.mod minimum here and let buildGoModuleFor (tc-32sf5,
+  # lib/versioned-go-module.nix) resolve the matching buildGoNNNModule,
+  # instead of hand-picking `buildGo127Module` as a package argument -- bump
+  # this string, not the builder name, next time pint's go.mod moves.
+  goVersion = "1.27";
 in
-# pint v0.88.0's go.mod requires go >= 1.27.0; nixpkgs' default `go` (via
-# buildGoModule) is still 1.26.x on this branch and GOTOOLCHAIN=local blocks
-# auto-fetching a newer toolchain during the sandboxed build. Pin the builder
-# to the versioned buildGo127Module instead of overriding `go` by hand.
-buildGo127Module {
+(buildGoModuleFor goVersion) {
   pname = "pint";
   inherit version;
   src = sources.pint.src;

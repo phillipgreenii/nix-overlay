@@ -272,6 +272,15 @@
                 nurpkgs = final;
               }).repos.rycee.firefox-addons;
 
+            # tc-32sf5: `buildGoModuleFor <goVersion>` resolves to the
+            # buildGoNNNModule matching a package's own go.mod minimum (or
+            # plain `buildGoModule` for `null`), so a package pins its go
+            # requirement declaratively instead of a hand-edited builder
+            # name (see lib/versioned-go-module.nix). A top-level attribute
+            # (like `buildGoModule` itself) so callPackage auto-wires it into
+            # any package default.nix that declares it as an argument.
+            buildGoModuleFor = import ./lib/versioned-go-module.nix { inherit (final) lib; } final;
+
             phillipgreenii = {
               bat-gherkin-syntax = final.callPackage ./packages/bat-gherkin-syntax { inherit sources; };
               gh-stack = final.callPackage ./packages/gh-stack { inherit sources; };
