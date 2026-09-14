@@ -32,10 +32,10 @@
   };
   cmux = {
     pname = "cmux";
-    version = "0.64.22";
+    version = "0.64.23";
     src = fetchurl {
-      url = "https://github.com/manaflow-ai/cmux/releases/download/v0.64.22/cmux-macos.dmg";
-      sha256 = "sha256-/RSNujUZ/n0wiEQInOTQYrF3ObpkViPwWPZ6ZHmM6iU=";
+      url = "https://github.com/manaflow-ai/cmux/releases/download/v0.64.23/cmux-macos.dmg";
+      sha256 = "sha256-gKNXLLrJNxSf8WOHcZUhBf6daFGYOV/98q3fkvUlqb0=";
     };
   };
   eclipse-java = {
