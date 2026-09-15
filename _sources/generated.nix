@@ -109,13 +109,13 @@
   };
   mdr-rs = {
     pname = "mdr-rs";
-    version = "v0.5.1";
+    version = "v0.6.1";
     src = fetchFromGitHub {
       owner = "CleverCloud";
       repo = "mdr";
-      rev = "v0.5.1";
+      rev = "v0.6.1";
       fetchSubmodules = false;
-      sha256 = "sha256-40w4v4LG6+FIDs/zstJhegks7YznOsGtGPBjm0DXhdw=";
+      sha256 = "sha256-/jnjfcw+CqHMrz+QNDQ+zVbQmFLB1MooUDzq8ADCY5U=";
     };
   };
   pint = {

@@ -199,12 +199,12 @@
             "name": null,
             "owner": "CleverCloud",
             "repo": "mdr",
-            "rev": "v0.5.1",
-            "sha256": "sha256-40w4v4LG6+FIDs/zstJhegks7YznOsGtGPBjm0DXhdw=",
+            "rev": "v0.6.1",
+            "sha256": "sha256-/jnjfcw+CqHMrz+QNDQ+zVbQmFLB1MooUDzq8ADCY5U=",
             "sparseCheckout": [],
             "type": "github"
         },
-        "version": "v0.5.1"
+        "version": "v0.6.1"
     },
     "pint": {
         "cargoLock": null,
