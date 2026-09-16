@@ -4,9 +4,11 @@
   rustPlatform,
   pkg-config,
   wrapGAppsHook3,
+  addDriverRunpath,
   gtk3,
   webkitgtk_4_1,
   libGL,
+  libxkbcommon,
   xdotool,
   sources,
 }:
@@ -54,6 +56,11 @@ rustPlatform.buildRustPackage {
     # nixpkgs rev -- it throws "'wrapGAppsHook' has been renamed to/replaced
     # by 'wrapGAppsHook3'" (verified by eval).
     wrapGAppsHook3
+
+    # Setup hook providing the `addDriverRunpath` shell function used in
+    # postFixup below to wire the GL/EGL driver runpath for the egui/webview
+    # backends (see buildInputs comment and postFixup for the full story).
+    addDriverRunpath
   ];
 
   # Darwin needs no buildInputs: `darwin.apple_sdk` was removed from nixpkgs
@@ -73,18 +80,59 @@ rustPlatform.buildRustPackage {
   # three backends compile -- `mdr --list-backends` reports egui, webview and
   # tui all `[compiled]`, and `ldd` resolves every linked library including
   # libxdo.so.3. The two GRAPHICAL backends additionally dlopen libEGL.so.1
-  # and libxkbcommon.so.0 at RUN time; those are deliberately not wired into
-  # the runpath here, because the consumer that needs this on Linux
-  # (monorepod, headless) uses the tui backend. Wiring them up
-  # (addDriverRunpath + an LD_LIBRARY_PATH wrap) belongs with the first
-  # machine that actually runs mdr's GUI on Linux and can test it against a
-  # display.
+  # and libxkbcommon.so.0 / libxkbcommon-x11.so.0 at RUN time -- none of
+  # those are DT_NEEDED at link time (dlopen, not link), so they never show
+  # up in `ldd` and plain buildInputs membership does not put them in the
+  # runpath (nix's RPATH-shrinking in fixup strips any store path that isn't
+  # actually referenced by a DT_NEEDED entry). Wired up in postFixup below:
+  # addDriverRunpath for the GL/EGL driver, an LD_LIBRARY_PATH wrap for
+  # libxkbcommon. This is documentation, not a claim it's been display-tested
+  # -- this sandbox has no display, so `mdr --backend egui/webview <file>`
+  # actually opening a window still needs verifying on a machine that has
+  # one; only the wiring itself (paths resolve to real store paths / a real
+  # runtime search path) has been confirmed here.
   buildInputs = lib.optionals stdenv.hostPlatform.isLinux [
     gtk3
     webkitgtk_4_1
     libGL
     xdotool
   ];
+
+  # wrapGAppsHook3 (nativeBuildInputs, Linux only) would otherwise wrap
+  # $out/bin/mdr itself: it renames the real ELF binary to
+  # $out/bin/.mdr-wrapped and replaces $out/bin/mdr with a wrapper script,
+  # which would leave nothing left for addDriverRunpath below to patchelf
+  # (isELF check on a shell script is a silent no-op) short of chasing the
+  # renamed path. Deferring to a single manual wrapProgram call in postFixup
+  # -- using gappsWrapperArgs, which wrapGAppsHook3's setup hook still
+  # populates with the GSettings/GDK_PIXBUF/XDG_DATA_DIRS entries regardless
+  # of dontWrapGApps -- keeps that GTK/webview wiring intact while adding our
+  # own args in the same wrap. Same pattern nixpkgs' own mission-center
+  # package uses to combine wrapGAppsHook-style wrapping with
+  # addDriverRunpath.
+  dontWrapGApps = true;
+
+  postFixup = lib.optionalString stdenv.hostPlatform.isLinux ''
+    # libEGL.so.1 is hardware/driver-specific, same as every other
+    # addDriverRunpath consumer in nixpkgs: set DT_RUNPATH to
+    # /run/opengl-driver(-32)/lib on the real ELF binary so a bare
+    # dlopen("libEGL.so.1") resolves against whatever GL driver the target
+    # NixOS machine has installed. Must run in postFixup (RUNPATH-shrinking
+    # earlier in fixup would strip it right back out -- see
+    # addDriverRunpath's own setup-hook comment) and must run before
+    # wrapProgram below renames the binary out from under $out/bin/mdr.
+    addDriverRunpath "$out/bin/mdr"
+
+    # libxkbcommon.so.0 / libxkbcommon-x11.so.0 are plain nix store
+    # libraries, not driver-specific, so an LD_LIBRARY_PATH wrap (rather
+    # than a runpath patch) is the right mechanism -- and the one
+    # documented above. A single pkgs.libxkbcommon output provides both
+    # sonames (its pkgConfigModules list both "xkbcommon" and
+    # "xkbcommon-x11").
+    wrapProgram "$out/bin/mdr" \
+      "''${gappsWrapperArgs[@]}" \
+      --prefix LD_LIBRARY_PATH : ${lib.makeLibraryPath [ libxkbcommon ]}
+  '';
 
   # Skip upstream's test suite: the default feature set builds a GUI/webview
   # toolkit whose tests expect a display; the nvfetcher-pinned SHA plus the
