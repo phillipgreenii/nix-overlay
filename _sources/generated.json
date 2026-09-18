@@ -50,11 +50,11 @@
         "pinned": false,
         "src": {
             "name": null,
-            "sha256": "sha256-gKNXLLrJNxSf8WOHcZUhBf6daFGYOV/98q3fkvUlqb0=",
+            "sha256": "sha256-zTAwDBAJXmIZchxl3SbKKphvjgChD5YNusn+++SHccE=",
             "type": "url",
-            "url": "https://github.com/manaflow-ai/cmux/releases/download/v0.64.23/cmux-macos.dmg"
+            "url": "https://github.com/manaflow-ai/cmux/releases/download/v0.64.25/cmux-macos.dmg"
         },
-        "version": "0.64.23"
+        "version": "0.64.25"
     },
     "eclipse-java": {
         "cargoLock": null,
