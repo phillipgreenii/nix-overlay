@@ -250,7 +250,7 @@
     },
     "tmux-nerd-font-window-name": {
         "cargoLock": null,
-        "date": "2026-08-20",
+        "date": "2026-09-21",
         "extract": null,
         "name": "tmux-nerd-font-window-name",
         "passthru": null,
@@ -262,12 +262,12 @@
             "name": null,
             "owner": "joshmedeski",
             "repo": "tmux-nerd-font-window-name",
-            "rev": "f464c59e459d91d7b0db702e2f436475c4e9bf4f",
-            "sha256": "sha256-fsfhOmmAVwp/+kUcxi6ZvEfoNL1twJie8MhgNk/+UwE=",
+            "rev": "c4a8baf3dc35707aa568eb2a69e270fc16728b71",
+            "sha256": "sha256-9bLwV3Z3RYFqqlwy6WpKbyYs52bw4IFtmynkp7Hmzlo=",
             "sparseCheckout": [],
             "type": "github"
         },
-        "version": "f464c59e459d91d7b0db702e2f436475c4e9bf4f"
+        "version": "c4a8baf3dc35707aa568eb2a69e270fc16728b71"
     },
     "tmux-open-nvim": {
         "cargoLock": null,
