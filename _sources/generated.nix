@@ -35,7 +35,7 @@
     version = "0.64.25";
     src = fetchurl {
       url = "https://github.com/manaflow-ai/cmux/releases/download/v0.64.25/cmux-macos.dmg";
-      sha256 = "sha256-zTAwDBAJXmIZchxl3SbKKphvjgChD5YNusn+++SHccE=";
+      sha256 = "sha256-Cvsvj/m/7xDwPmH/EuZc4C28pclsuQRxGOE0g6xbCK0=";
     };
   };
   eclipse-java = {
