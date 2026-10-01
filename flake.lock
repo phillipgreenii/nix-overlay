@@ -152,11 +152,11 @@
         "uv2nix": "uv2nix"
       },
       "locked": {
-        "lastModified": 1790731583,
-        "narHash": "sha256-QFE1d3FOiT6qdsdFx3obfASsjyMQkOTuWRZJ3p1a4Qw=",
+        "lastModified": 1790797216,
+        "narHash": "sha256-XuBKO9aXdt/NfuxSXxAYeMc8ub70ivwiv4JeQx6vIvg=",
         "owner": "phillipgreenii",
         "repo": "nix-repo-base",
-        "rev": "f84080b796052e850789a402e4bc2906ee325b69",
+        "rev": "1813df68f957356790fe89168a0b716bc7412ecb",
         "type": "github"
       },
       "original": {
