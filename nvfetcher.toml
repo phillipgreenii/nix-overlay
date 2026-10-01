@@ -131,3 +131,12 @@ fetch.github = "stelcodes/bunny.yazi"
 src.git = "https://github.com/lpnh/icons-brew.yazi"
 src.branch = "main"
 fetch.github = "lpnh/icons-brew.yazi"
+
+# mermaid-js/mermaid-live-editor -- SvelteKit static site, packaged for a
+# locally-hosted, privacy-preserving build. Upstream publishes NO tags or
+# releases, so track the `develop` branch head (version is the commit; the
+# package derives 0-unstable-<date>). Same shape as [tmux-open-nvim].
+[mermaid-live-editor]
+src.git = "https://github.com/mermaid-js/mermaid-live-editor"
+src.branch = "develop"
+fetch.github = "mermaid-js/mermaid-live-editor"

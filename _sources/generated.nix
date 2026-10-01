@@ -118,6 +118,18 @@
       sha256 = "sha256-/jnjfcw+CqHMrz+QNDQ+zVbQmFLB1MooUDzq8ADCY5U=";
     };
   };
+  mermaid-live-editor = {
+    pname = "mermaid-live-editor";
+    version = "5db1112e6a3cc5df76f070256a39fbd902e9b30d";
+    src = fetchFromGitHub {
+      owner = "mermaid-js";
+      repo = "mermaid-live-editor";
+      rev = "5db1112e6a3cc5df76f070256a39fbd902e9b30d";
+      fetchSubmodules = false;
+      sha256 = "sha256-hjseb1wBKbJ/V8nFDtQU+MhS3iFWkmHYS9zSGh8o98Q=";
+    };
+    date = "2026-09-30";
+  };
   pint = {
     pname = "pint";
     version = "v0.88.0";

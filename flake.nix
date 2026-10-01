@@ -213,6 +213,7 @@
               glowm
               gomu
               mdr-rs
+              mermaid-live-editor
               pint
               ;
             inherit (extended.tmuxPlugins)
@@ -289,6 +290,7 @@
               # Cross-platform (darwin + linux); the linux-only buildInputs live
               # in packages/mdr-rs/default.nix and self-gate on hostPlatform.
               mdr-rs = final.callPackage ./packages/mdr-rs { inherit sources; };
+              mermaid-live-editor = final.callPackage ./packages/mermaid-live-editor { inherit sources; };
               pint = final.callPackage ./packages/pint { inherit sources; };
             }
             // prev.lib.optionalAttrs (prev.stdenv.hostPlatform.system == "aarch64-darwin") {
