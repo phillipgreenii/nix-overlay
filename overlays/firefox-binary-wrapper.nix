@@ -17,26 +17,37 @@ prev.lib.optionalAttrs prev.stdenv.hostPlatform.isDarwin {
     {
       nativeBuildInputs = oldAttrs.nativeBuildInputs ++ [
         prev.makeBinaryWrapper
+        prev.rcodesign
       ];
       buildCommand =
         builtins.replaceStrings [ sentinel ] [ ''makeBinaryWrapper "$oldExe"'' ] oldAttrs.buildCommand
         + ''
           # Re-sign the .app bundle so macOS binds Info.plist and sealed resources
-          # (icon, bundle ID) to the binary wrapper for correct TCC icon display.
-          # codesign requires Info.plist to be a regular file, not a symlink.
-          appDir="$out/Applications/Firefox.app/Contents"
-          if [ -L "$appDir/Info.plist" ]; then
-            target=$(readlink -f "$appDir/Info.plist")
-            rm -f "$appDir/Info.plist"
-            cp -f "$target" "$appDir/Info.plist"
-          fi
-          # Use the system codesign: sigtool's codesign (c7cb263) only signs
-          # individual Mach-O files, so signing the .app *bundle* throws
-          # SigTool::NotAMachOFileException. Real /usr/bin/codesign signs
-          # bundles and is available here (nix sandbox = false). This re-impurifies
-          # the build (the deepdive flagged hardcoded /usr/bin/codesign); the
-          # proper sandbox-safe fix belongs to the overlay-rework initiative.
-          /usr/bin/codesign --force --sign - "$out/Applications/Firefox.app"
+          # (firefox.icns, bundle ID) to the binary wrapper; without it TCC shows a
+          # generic executable icon (pg2-1h7c, personal c408fe3). Acceptance
+          # criterion and evidence: docs/adr/0002-firefox-binary-wrapper-rcodesign-signing.md.
+          #
+          # Sandbox-safe (bead pg2-inqwy): uses nixpkgs' rcodesign, never the host's
+          # system codesign, so the build works with sandbox = true. nixpkgs'
+          # sigtool codesign cannot sign a bundle (c7cb263 / 35c95f5). The flake
+          # check firefox-binary-wrapper-no-system-codesign enforces this.
+          #
+          # The bundle's Contents/{MacOS,Resources,...} entries are symlinks into the
+          # read-only firefox-unwrapped store path. Signing in place fails (EACCES
+          # through the links), and sealing symlinks leaves a bundle that
+          # `codesign --verify` rejects ("Too many levels of symbolic links"). So:
+          # copy the bundle with every symlink resolved into a real file, sign that
+          # copy to a SEPARATE output path, then swap it into $out.
+          app="$out/Applications/Firefox.app"
+          work="$TMPDIR/firefox-codesign"
+          mkdir -p "$work/resolved" "$work/signed"
+          cp -RL "$app" "$work/resolved/Firefox.app"
+          chmod -R u+w "$work/resolved"
+          rm -rf "$work/resolved/Firefox.app/Contents/_CodeSignature"
+          rcodesign sign "$work/resolved/Firefox.app" "$work/signed/Firefox.app"
+          chmod -R u+w "$app"
+          rm -rf "$app"
+          cp -R "$work/signed/Firefox.app" "$app"
         '';
     }
   );

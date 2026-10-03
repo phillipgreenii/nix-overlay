@@ -194,10 +194,9 @@
               # command string): `nix flake check` realizes only the trivial
               # marker, never the 3.7 GiB firefox closure.
               #
-              # This does NOT cover the /usr/bin/codesign impurity that the same
-              # buildCommand shells out to (it breaks under sandbox=true); the
-              # sandbox-safe rework (rcodesign/sigtool) is deferred to the
-              # overlay-rework initiative, per the note in the overlay itself.
+              # The /usr/bin/codesign sandbox-purity guard is the separate
+              # firefox-binary-wrapper-no-system-codesign check below
+              # (bead pg2-inqwy, ADR 0002).
               firefox-binary-wrapper-eval =
                 let
                   pkgsFx = pkgs.extend self.overlays.firefox-binary-wrapper;
@@ -211,6 +210,33 @@
                     echo "firefox-binary-wrapper overlay evaluated (sentinel assertion held)" >"$out"
                   ''
                 );
+
+              # Sandbox-purity guard (bead pg2-inqwy, ADR 0002): the Firefox.app
+              # bundle MUST be signed by the sandbox-safe `rcodesign`, never the
+              # host's /usr/bin/codesign (which forces `sandbox = false`). Inspects
+              # the overlay's own buildCommand text at EVAL time (so the script
+              # MUST NOT even name the path in a comment). The positive control
+              # makes an emptied-out signing step fail rather than pass vacuously. Like the eval check above, the
+              # firefox derivation is never a build input: only booleans are forced,
+              # so the 3.7 GiB closure is not realized.
+              firefox-binary-wrapper-no-system-codesign =
+                let
+                  pkgsFx = pkgs.extend self.overlays.firefox-binary-wrapper;
+                  script = builtins.unsafeDiscardStringContext pkgsFx.firefox.buildCommand;
+                  usesSystemCodesign = pkgs.lib.hasInfix "/usr/bin/codesign" script;
+                  usesRcodesign = pkgs.lib.hasInfix "rcodesign sign" script;
+                in
+                pkgs.runCommand "firefox-binary-wrapper-no-system-codesign" { } ''
+                  ${pkgs.lib.optionalString usesSystemCodesign ''
+                    echo "firefox-binary-wrapper: buildCommand references /usr/bin/codesign; that needs sandbox = false. Sign with rcodesign (ADR 0002)." >&2
+                    exit 1
+                  ''}
+                  ${pkgs.lib.optionalString (!usesRcodesign) ''
+                    echo "firefox-binary-wrapper: no 'rcodesign sign' step in buildCommand (positive control failed); the check is vacuous." >&2
+                    exit 1
+                  ''}
+                  touch "$out"
+                '';
             };
 
           packages = {
