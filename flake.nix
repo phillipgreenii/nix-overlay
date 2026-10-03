@@ -95,6 +95,13 @@
         };
       };
 
+      # Per-clone hook bundle (pg2-pla9d, T20 wave 1, bead pg2-uq1km): the
+      # commit hook runs a GC-rooted bundle instead of pinning one generated
+      # config store path that a later reinstall can orphan ("config file not
+      # found"). No stampPaths: every hook is defined in flake.nix, which the
+      # staleness stamp already covers.
+      phillipgreenii.pre-commit.bundle.enable = true;
+
       perSystem =
         {
           pkgs,
