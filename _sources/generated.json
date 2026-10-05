@@ -208,7 +208,7 @@
     },
     "mermaid-live-editor": {
         "cargoLock": null,
-        "date": "2026-10-01",
+        "date": "2026-10-05",
         "extract": null,
         "name": "mermaid-live-editor",
         "passthru": null,
@@ -220,12 +220,12 @@
             "name": null,
             "owner": "mermaid-js",
             "repo": "mermaid-live-editor",
-            "rev": "b3c0ebd325c030b0f567aba0c54b66ba8f3218c1",
-            "sha256": "sha256-R60lk+9tbzxSla4sxkCAC7308cghyUY57gIyLGTM+30=",
+            "rev": "6a612aa996cde944394710232998bfec14f7a213",
+            "sha256": "sha256-JWlB4N30wsCvLWXJRpfbeH0LgfNT7wTOYIdDqjKgDOY=",
             "sparseCheckout": [],
             "type": "github"
         },
-        "version": "b3c0ebd325c030b0f567aba0c54b66ba8f3218c1"
+        "version": "6a612aa996cde944394710232998bfec14f7a213"
     },
     "pint": {
         "cargoLock": null,
