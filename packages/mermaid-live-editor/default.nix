@@ -2,7 +2,7 @@
   lib,
   stdenvNoCC,
   nodejs_24,
-  pnpm_10,
+  pnpm_11,
   fetchPnpmDeps,
   pnpmConfigHook,
   sources,
@@ -34,16 +34,21 @@ stdenvNoCC.mkDerivation (finalAttrs: {
   # auto-opened PR instead of silently going stale. To refresh: set `hash` to
   # lib.fakeHash, run `nix build .#mermaid-live-editor`, and paste the
   # "got:" hash from the mismatch error.
+  #
+  # pnpm is pnpm_11 because nixpkgs flags pnpm_8/9/10 as insecure (known CVEs,
+  # 2026-10-05); it is only a build-time tool here. Upstream's lockfile is
+  # lockfileVersion 9.0, which pnpm 11 reads. The pnpm used by fetchPnpmDeps is
+  # part of the fixed-output hash, so changing it means refreshing `hash`.
   pnpmDeps = fetchPnpmDeps {
     inherit (finalAttrs) pname version src;
-    pnpm = pnpm_10;
+    pnpm = pnpm_11;
     fetcherVersion = 4;
-    hash = "sha256-toMd/MwKS30WapUQBDoJfXK3PGHSdwg/hzs8vI+u9X0=";
+    hash = "sha256-8PWEYJPjE5IblG5P+6uGNXyg8eQzKl+XntW5NM8OV7s=";
   };
 
   nativeBuildInputs = [
     nodejs_24
-    pnpm_10
+    pnpm_11
     pnpmConfigHook
   ];
 
