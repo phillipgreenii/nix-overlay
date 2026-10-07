@@ -140,3 +140,14 @@ fetch.github = "lpnh/icons-brew.yazi"
 src.git = "https://github.com/mermaid-js/mermaid-live-editor"
 src.branch = "develop"
 fetch.github = "mermaid-js/mermaid-live-editor"
+
+# jihchi/mermaid.ink -- the open-source mermaid.ink render service (Koa +
+# Puppeteer), run as a LOOPBACK service so mermaid-live-editor's image export
+# (`<rendererUrl>/img/..`, `/svg/..`) never sends diagram text off the machine
+# (operator ruling 2026-10-06, bead pg2-aq0t7). Upstream publishes no
+# releases we track, so follow the default branch head (version is the commit;
+# the package derives 0-unstable-<date>). Same shape as [mermaid-live-editor].
+[mermaid-ink]
+src.git = "https://github.com/jihchi/mermaid.ink"
+src.branch = "main"
+fetch.github = "jihchi/mermaid.ink"

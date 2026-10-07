@@ -12,10 +12,19 @@
   # its published image bakes those defaults, hence our own build. Override via
   # `.override { krokiRendererUrl = "..."; }`.
   #
-  # rendererUrl is deliberately KEPT at mermaid.ink (operator ruling
-  # 2026-10-01: wants image export). Diagram text is sent to that host whenever
-  # an image URL is fetched.
-  rendererUrl ? "https://mermaid.ink",
+  # rendererUrl points at a LOCAL, mermaid.ink-compatible renderer (the
+  # `mermaid-ink` package in this repo, run as a loopback service): the editor
+  # builds its image-export URLs as `<rendererUrl>/img/<state>?type=png` and
+  # `<rendererUrl>/svg/<state>`, which upstream mermaid.ink (jihchi/mermaid.ink)
+  # implements, so image export keeps working with no diagram text leaving the
+  # machine. Operator ruling 2026-10-06 (Phillip, IT-audit handoff pg2-c83co
+  # item C.7, bead pg2-aq0t7), which SUPERSEDES the 2026-10-01 ruling that kept
+  # https://mermaid.ink for image export. The default is the loopback address
+  # of the service's default port (38474, packages/mermaid-ink); the service
+  # definition itself (launchd agent) lives with the consumer, not here. The
+  # URL is baked into the bundle, so pass the same value the service listens
+  # on via `.override { rendererUrl = "..."; }` if it differs.
+  rendererUrl ? "http://127.0.0.1:38474",
   krokiRendererUrl ? "",
   analyticsUrl ? "",
   enableMermaidChartLinks ? false,

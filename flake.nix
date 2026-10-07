@@ -246,6 +246,7 @@
               glowm
               gomu
               mdr-rs
+              mermaid-ink
               mermaid-live-editor
               pint
               ;
@@ -323,6 +324,7 @@
               # Cross-platform (darwin + linux); the linux-only buildInputs live
               # in packages/mdr-rs/default.nix and self-gate on hostPlatform.
               mdr-rs = final.callPackage ./packages/mdr-rs { inherit sources; };
+              mermaid-ink = final.callPackage ./packages/mermaid-ink { inherit sources; };
               mermaid-live-editor = final.callPackage ./packages/mermaid-live-editor { inherit sources; };
               pint = final.callPackage ./packages/pint { inherit sources; };
             }

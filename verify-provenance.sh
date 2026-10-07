@@ -78,6 +78,7 @@ declare -A METHODS=(
   ["glowm"]="git-source"
   ["gomu"]="git-source"
   ["mdr-rs"]="git-source"
+  ["mermaid-ink"]="git-source"
   ["mermaid-live-editor"]="git-source"
 )
 declare -A REPOS=(
