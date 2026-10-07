@@ -86,4 +86,18 @@ ul_run_step "nix-flake-update" \
   "update-locks: update nix flake.lock" \
   nix flake update
 
+# Refresh the SHA pins of every `uses: owner/repo@<sha> # <ref>` in .github/workflows
+# (ul_refresh_action_pins, shared step from nix-repo-base lib/scripts/update-action-pins-lib.bash;
+# beads pg2-ehu9q, pg2-z82la). Mutable refs are reported, not rewritten.
+# TRANSITIONAL GUARD: flake.lock still pins a nix-repo-base rev that predates the step. Until
+# the next cross-repo relock picks it up, skip LOUDLY rather than fail with "command not found";
+# drop the guard (keep the bare ul_run_step) once flake.lock's phillipgreenii-nix-base contains it.
+if declare -F ul_refresh_action_pins >/dev/null 2>&1; then
+  ul_run_step "github-action-pins" \
+    "update-locks: refresh GitHub Action SHA pins" \
+    ul_refresh_action_pins
+else
+  echo "WARN: ul_refresh_action_pins not in the resolved update-locks lib (flake.lock nix-repo-base predates it); skipping github-action-pins step" >&2
+fi
+
 ul_finalize
