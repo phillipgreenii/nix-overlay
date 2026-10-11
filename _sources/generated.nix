@@ -32,10 +32,10 @@
   };
   cmux = {
     pname = "cmux";
-    version = "0.64.25";
+    version = "0.65.0";
     src = fetchurl {
-      url = "https://github.com/manaflow-ai/cmux/releases/download/v0.64.25/cmux-macos.dmg";
-      sha256 = "sha256-Cvsvj/m/7xDwPmH/EuZc4C28pclsuQRxGOE0g6xbCK0=";
+      url = "https://github.com/manaflow-ai/cmux/releases/download/v0.65.0/cmux-macos.dmg";
+      sha256 = "sha256-r9zpBM+VeYkXzFezL8LzslS+faHql7zV56vUm6DQhq0=";
     };
   };
   eclipse-java = {
@@ -93,10 +93,10 @@
   };
   logseq = {
     pname = "logseq";
-    version = "2.0.1";
+    version = "2.0.2";
     src = fetchurl {
-      url = "https://github.com/logseq/logseq/releases/download/2.0.1/Logseq-darwin-arm64-2.0.1.dmg";
-      sha256 = "sha256-t2ryU4T4qqC6Mi+LVSOupxLZdQ2fPnnKxV3Hg3lkOc0=";
+      url = "https://github.com/logseq/logseq/releases/download/2.0.2/Logseq-darwin-arm64-2.0.2.dmg";
+      sha256 = "sha256-uaFrbd7xZZqjwjAc43oDNjd2RLvxAWBR49GdGmZ3YxQ=";
     };
   };
   lombok = {
@@ -120,37 +120,37 @@
   };
   mermaid-ink = {
     pname = "mermaid-ink";
-    version = "e75b3ac46313887d6ed6266e3c6834179c76281d";
+    version = "bff76dfc273c9c54e59d6e5843cd6a8fc22baa5d";
     src = fetchFromGitHub {
       owner = "jihchi";
       repo = "mermaid.ink";
-      rev = "e75b3ac46313887d6ed6266e3c6834179c76281d";
+      rev = "bff76dfc273c9c54e59d6e5843cd6a8fc22baa5d";
       fetchSubmodules = false;
-      sha256 = "sha256-7mVoOgSM8D583/XSClvFw630R0tGCYMLoJ0Z3PPfNcw=";
+      sha256 = "sha256-gVaAW4CPeUp7/h5SpmyD2pQho0XZMqySln4pYU/bWXY=";
     };
-    date = "2026-10-03";
+    date = "2026-10-10";
   };
   mermaid-live-editor = {
     pname = "mermaid-live-editor";
-    version = "6a612aa996cde944394710232998bfec14f7a213";
+    version = "86112a244a98794bf9444d9ff83a6ab88ada9a9b";
     src = fetchFromGitHub {
       owner = "mermaid-js";
       repo = "mermaid-live-editor";
-      rev = "6a612aa996cde944394710232998bfec14f7a213";
+      rev = "86112a244a98794bf9444d9ff83a6ab88ada9a9b";
       fetchSubmodules = false;
-      sha256 = "sha256-JWlB4N30wsCvLWXJRpfbeH0LgfNT7wTOYIdDqjKgDOY=";
+      sha256 = "sha256-U0T7PJ5LO9IKHIKEiR3MB0/ABI9lb/21lahCYyRFC1c=";
     };
-    date = "2026-10-05";
+    date = "2026-10-09";
   };
   pint = {
     pname = "pint";
-    version = "v0.88.0";
+    version = "v0.89.2";
     src = fetchFromGitHub {
       owner = "cloudflare";
       repo = "pint";
-      rev = "v0.88.0";
+      rev = "v0.89.2";
       fetchSubmodules = false;
-      sha256 = "sha256-q+WRozSL8DIM6ff5PKNSFabKh7vJu5TSTPdM0YMwTSw=";
+      sha256 = "sha256-QZqbpyKegsMycb5CkROCFG/OS++SaBGknxjn2E9MS24=";
     };
   };
   tmux-mouse-swipe = {
