@@ -26,7 +26,7 @@ in
   # pint has no in-tree `vendor/` dir; deps are fetched and vendored by nix.
   # Re-hashed for buildGo127Module (2026-09-12): the go1.27 module resolver
   # produced a different vendor tree than go1.26 did for the same go.sum.
-  vendorHash = "sha256-JqA+2nGwdsQrx+NfVFTww1pcRCmbcrdsyK7Ixvvm14U=";
+  vendorHash = "sha256-Mje4BSChu9wHOcdK/LWTsp7Dc8foLmDydT9gGITuJ/o=";
 
   subPackages = [ "cmd/pint" ];
 
