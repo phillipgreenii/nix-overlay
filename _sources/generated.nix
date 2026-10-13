@@ -32,10 +32,10 @@
   };
   cmux = {
     pname = "cmux";
-    version = "0.65.0";
+    version = "0.65.1";
     src = fetchurl {
-      url = "https://github.com/manaflow-ai/cmux/releases/download/v0.65.0/cmux-macos.dmg";
-      sha256 = "sha256-r9zpBM+VeYkXzFezL8LzslS+faHql7zV56vUm6DQhq0=";
+      url = "https://github.com/manaflow-ai/cmux/releases/download/v0.65.1/cmux-macos.dmg";
+      sha256 = "sha256-Jkkzvh23cGZ99bbPCQRf9IID+Z3ZatX4Af9nb5FbWFA=";
     };
   };
   eclipse-java = {
@@ -132,15 +132,15 @@
   };
   mermaid-live-editor = {
     pname = "mermaid-live-editor";
-    version = "86112a244a98794bf9444d9ff83a6ab88ada9a9b";
+    version = "dd95c0328556e83ae42f6ee58d294c0badd922d9";
     src = fetchFromGitHub {
       owner = "mermaid-js";
       repo = "mermaid-live-editor";
-      rev = "86112a244a98794bf9444d9ff83a6ab88ada9a9b";
+      rev = "dd95c0328556e83ae42f6ee58d294c0badd922d9";
       fetchSubmodules = false;
-      sha256 = "sha256-U0T7PJ5LO9IKHIKEiR3MB0/ABI9lb/21lahCYyRFC1c=";
+      sha256 = "sha256-yEDge/3nE2gzhWDZGDlr7YaQZHJGLRHKjCycwY6Vu90=";
     };
-    date = "2026-10-09";
+    date = "2026-10-13";
   };
   pint = {
     pname = "pint";
