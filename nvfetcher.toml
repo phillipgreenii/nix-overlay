@@ -1,6 +1,16 @@
+# cmux macOS .dmg. PINNED to 0.65.0 with nvchecker's `manual` source
+# (`src.manual`), so the nightly updater does not auto-bump it (operator ruling
+# 2026-10-13, bead pg2-ybbs8). Starting with 0.65.1, the APFS image contains
+# relative symlinks inside the app bundle, e.g.
+# `cmux.app/Contents/Resources/bin/PostHog_PostHog.bundle -> ../PostHog_PostHog.bundle`.
+# packages/cmux unpacks with `7zz x`, whose dangerous-link check rejects them
+# ("Dangerous link path was ignored") and exits 2, which fails the whole system
+# build. Allowing them (`7zz -snld`) turns the check off entirely, so the fix
+# needs more thought. Do NOT bump this pin until bead pg2-uc997 decides the
+# approach; to unpin, restore `src.github = "manaflow-ai/cmux"` and
+# `src.prefix = "v"`.
 [cmux]
-src.github = "manaflow-ai/cmux"
-src.prefix = "v"
+src.manual = "0.65.0"
 fetch.url = "https://github.com/manaflow-ai/cmux/releases/download/v$ver/cmux-macos.dmg"
 
 # Logseq desktop app (the 2.x "DB version") macOS arm64 .dmg. nixpkgs carries
