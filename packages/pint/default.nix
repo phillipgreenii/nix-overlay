@@ -26,6 +26,9 @@ in
   # pint has no in-tree `vendor/` dir; deps are fetched and vendored by nix.
   # Re-hashed for buildGo127Module (2026-09-12): the go1.27 module resolver
   # produced a different vendor tree than go1.26 did for the same go.sum.
+  # Re-hashed again for v0.89.2 (2026-10-14, pg2-c3p5s): the nvfetcher bump to
+  # v0.89.2 refreshes the source pin only, not this vendorHash, so go.sum moved
+  # and the old hash became a fixed-output mismatch.
   vendorHash = "sha256-Mje4BSChu9wHOcdK/LWTsp7Dc8foLmDydT9gGITuJ/o=";
 
   subPackages = [ "cmd/pint" ];
