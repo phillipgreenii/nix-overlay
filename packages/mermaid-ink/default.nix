@@ -39,10 +39,9 @@ stdenvNoCC.mkDerivation (finalAttrs: {
   pnpmInstallFlags = [ "--prod" ];
 
   # Hardcoded fixed-output hash of the pnpm store; same refresh procedure and
-  # same reasoning as packages/mermaid-live-editor (NOT refreshed by the
-  # nightly update-locks.sh, so a bump that changes pnpm-lock.yaml surfaces as
-  # a failing check): set `hash` to lib.fakeHash, run
-  # `nix build .#mermaid-ink`, paste the "got:" hash. pnpm_11 because
+  # same reasoning as packages/mermaid-live-editor (recomputed, or the bump
+  # held, by the nightly update-locks.sh via refresh-dependent-hashes.sh;
+  # by hand: `./refresh-dependent-hashes.sh --force mermaid-ink`). pnpm_11 because
   # nixpkgs flags the older pnpm majors as insecure; upstream's lockfile
   # (lockfileVersion 9.0) is read by pnpm 11.
   pnpmDeps = fetchPnpmDeps {

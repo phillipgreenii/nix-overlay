@@ -36,13 +36,13 @@ stdenvNoCC.mkDerivation (finalAttrs: {
   version = "0-unstable-${sources.mermaid-live-editor.date}";
   src = sources.mermaid-live-editor.src;
 
-  # Hardcoded fixed-output hash of the pnpm store. NOT refreshed by the nightly
-  # update-locks.sh (verified: neither it nor nix-repo-base's
-  # update-locks-lib.bash has a step for it, same as mdr-rs's Cargo.lock): a
-  # bump that changes pnpm-lock.yaml surfaces as a failing CI check on the
-  # auto-opened PR instead of silently going stale. To refresh: set `hash` to
-  # lib.fakeHash, run `nix build .#mermaid-live-editor`, and paste the
-  # "got:" hash from the mismatch error.
+  # Hardcoded fixed-output hash of the pnpm store. The nightly update-locks.sh
+  # recomputes it after every nvfetcher bump (refresh-dependent-hashes.sh,
+  # bead pg2-g39wh), builds the package, and holds the bump back when the hash
+  # cannot be computed (e.g. pnpm minimumReleaseAge) or the build fails. To
+  # refresh by hand: `./refresh-dependent-hashes.sh --force mermaid-live-editor`
+  # (or set `hash` to lib.fakeHash, build, and paste the "got:" hash). See
+  # docs/update-locks-dependent-hashes.md.
   #
   # pnpm is pnpm_11 because nixpkgs flags pnpm_8/9/10 as insecure (known CVEs,
   # 2026-10-05); it is only a build-time tool here. Upstream's lockfile is

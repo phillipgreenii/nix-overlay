@@ -74,8 +74,15 @@ else
   echo "update-locks.sh: nvfetcher not on PATH (devShell unavailable?); falling back to unpinned nix run nixpkgs#nvfetcher" >&2
   nvfetcher_cmd=(nix run nixpkgs#nvfetcher --)
 fi
+# The step runs nvfetcher THROUGH refresh-dependent-hashes.sh (pg2-g39wh): for each
+# source that moved it runs the provenance gate, recomputes the dependent
+# fixed-output hashes (pnpmDeps, vendorHash), builds the package, and HOLDS
+# (reverts) any bump that cannot be refreshed or no longer builds -- including a
+# pnpm minimumReleaseAge refusal -- instead of landing a broken lock. The
+# separate verify-provenance step below stays as the idempotent every-run check.
 ul_run_step "nvfetcher" \
   "update-locks: update sources via nvfetcher" \
+  "$SCRIPT_DIR/refresh-dependent-hashes.sh" --gate "$SCRIPT_DIR/verify-provenance.sh" -- \
   "${nvfetcher_cmd[@]}" --build-dir _sources --config nvfetcher.toml
 
 ul_run_step "verify-provenance" \

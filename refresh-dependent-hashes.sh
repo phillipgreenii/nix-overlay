@@ -1,0 +1,452 @@
+#!/usr/bin/env bash
+# Refresh (or hold) the fixed-output hashes that DEPEND on an nvfetcher source
+# bump (bead pg2-g39wh).
+#
+# Problem: nvfetcher moves a package's source (rev + source SRI) but the hashes
+# derived FROM that source -- fetchPnpmDeps `hash`, buildGoModule `vendorHash`,
+# ... -- stay at their old values. When upstream changed its dependencies the
+# auto-landed bump then breaks the system build (mermaid-live-editor,
+# 2026-10-13: ERR_PNPM_NO_OFFLINE_TARBALL), and a bumped package can also just
+# stop building (cmux 0.65.1, 2026-10-13, pg2-ybbs8).
+#
+# This script wraps the nvfetcher step (update-locks.sh runs it as the step
+# command) and, for every source whose entry in _sources/generated.json
+# changed:
+#
+#   1. GATE   Runs the optional --gate command (verify-provenance.sh) BEFORE any
+#             build, so no unverified binary artifact is unpacked/built first. A
+#             failing gate fails the step; the framework rolls everything back.
+#   2. REFRESH  For each dependent fixed-output hash (HASH_DEPS): writes a
+#             placeholder hash, builds the package, and takes nix's own
+#             `got:` value as the new hash. A placeholder is REQUIRED -- with the
+#             stale hash the FOD output path already exists in the store, nix
+#             never refetches, and the stale dependency tree is silently reused
+#             (the very failure above). The `specified:` value in the mismatch
+#             MUST equal the placeholder, so the `got:` of an unrelated fixed-
+#             output derivation (e.g. the source itself) is never written.
+#   3. VERIFY Builds every package registered for the key (BUILD_ATTRS) with the
+#             refreshed hashes. A package that does not build is not landed.
+#   4. HOLD   When 2 or 3 fails, that key's bump is reverted (its _sources entry
+#             in generated.json AND generated.nix, and its hash files, restored
+#             from the pre-update snapshot) and the run CONTINUES with the other
+#             keys: one broken upstream must not freeze every other update. Held
+#             keys are retried automatically on the next run.
+#
+# pnpm minimumReleaseAge (supply-chain policy that rejects dependencies
+# published within about a day): a build that dies with
+# ERR_PNPM_MINIMUM_RELEASE_AGE_VIOLATION is reported as such and the key is
+# HELD. The policy is NEVER overridden and no guessed hash is written; the next
+# run retries once the dependency has aged (bead pg2-kwuw0).
+#
+# Sources whose key is absent from the snapshot (brand-new) cannot be reverted
+# to anything, so a failure there exits 1.
+#
+# Usage:
+#   refresh-dependent-hashes.sh [--gate CMD] [--force KEY]... [-- UPDATER [ARGS...]]
+#
+#   --gate CMD     run CMD (no arguments) after UPDATER and before any build,
+#                  but only when at least one key changed.
+#   --force KEY    treat KEY as changed even if UPDATER did not change it. Use it
+#                  to recompute a dependent hash by hand
+#                  (`./refresh-dependent-hashes.sh --force pint`).
+#   -- UPDATER...  the command that bumps sources (nvfetcher); omit it to only
+#                  reconcile --force'd keys.
+#
+# Environment (all optional; tests use them to run the REAL step on a fixture):
+#   RDH_FLAKE_REF      flake ref the builds use                (default: .)
+#   RDH_SOURCES_DIR    nvfetcher output dir                    (default: _sources)
+#   RDH_REGISTRY       bash file sourced after the built-in registry below to
+#                      replace BUILD_ATTRS / HASH_DEPS / MANUAL_DEPS
+#
+# Inventory of source-dependent inputs: docs/update-locks-dependent-hashes.md.
+set -euo pipefail
+
+# --- registry (keep in sync with docs/update-locks-dependent-hashes.md; the bats
+# --- suite fails when a nvfetcher.toml key or a hash-bearing package is missing)
+
+# nvfetcher key -> space-separated flake `packages.<system>` attrs built after a
+# bump. Attrs not exposed on the current system (the aarch64-darwin-only
+# packages on linux) are skipped with a log line, not failed. An empty value
+# means "registered, but nothing to build" (none today).
+declare -gA BUILD_ATTRS=(
+  ["bat-gherkin-syntax"]="bat-gherkin-syntax"
+  ["bunny"]="yaziPlugins-bunny"
+  ["cmux"]="cmux"
+  ["eclipse-java"]="eclipse-java eclipse-with-gradleimport"
+  ["gh-stack"]="gh-stack"
+  ["glowm"]="glowm"
+  ["gomu"]="gomu"
+  ["icons-brew"]="yaziPlugins-icons-brew"
+  ["logseq"]="logseq"
+  ["lombok"]="eclipse-with-gradleimport"
+  ["mdr-rs"]="mdr-rs"
+  ["mermaid-ink"]="mermaid-ink"
+  ["mermaid-live-editor"]="mermaid-live-editor"
+  ["pint"]="pint"
+  ["tmux-mouse-swipe"]="tmux-mouse-swipe"
+  ["tmux-nerd-font-window-name"]="tmux-nerd-font-window-name"
+  ["tmux-open-nvim"]="tmux-open-nvim"
+)
+
+# nvfetcher key -> space-separated "<file>:<hash attribute>:<flake attr>"
+# entries: the fixed-output hash literal that depends on the key's source, and
+# the package to build to recompute it.
+declare -gA HASH_DEPS=(
+  ["gh-stack"]="packages/gh-stack/default.nix:vendorHash:gh-stack"
+  ["glowm"]="packages/glowm/default.nix:vendorHash:glowm"
+  ["gomu"]="packages/gomu/default.nix:vendorHash:gomu"
+  ["mermaid-ink"]="packages/mermaid-ink/default.nix:hash:mermaid-ink"
+  ["mermaid-live-editor"]="packages/mermaid-live-editor/default.nix:hash:mermaid-live-editor"
+  ["pint"]="packages/pint/default.nix:vendorHash:pint"
+)
+
+# nvfetcher key -> source-dependent input that is NOT a hash literal and so is
+# not refreshed here: a hand-copied upstream lock file. A bump that breaks it
+# fails the VERIFY build and is HELD (never landed).
+declare -gA MANUAL_DEPS=(
+  ["mdr-rs"]="packages/mdr-rs/Cargo.lock"
+)
+
+# Placeholder == nixpkgs' lib.fakeHash.
+RDH_PLACEHOLDER='sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA='
+
+if [ -n "${RDH_REGISTRY:-}" ]; then
+  # shellcheck disable=SC1090  # runtime-computed path (test registry)
+  source "$RDH_REGISTRY"
+fi
+
+rdh_log() { echo "refresh-dependent-hashes: $*"; }
+
+# --- hash literal helpers -----------------------------------------------------
+
+# Print the value of `<attr> = "sha256-...";` in <file>; fail unless EXACTLY
+# one such line exists (a second match would make the rewrite ambiguous).
+rdh_get_hash() {
+  local file="$1" attr="$2" matches
+  matches=$(sed -nE "s|^[[:space:]]*${attr} = \"(sha256-[^\"]*)\";.*|\1|p" "$file")
+  [ -n "$matches" ] && [ "$(printf '%s\n' "$matches" | wc -l)" -eq 1 ] || return 1
+  printf '%s\n' "$matches"
+}
+
+# Rewrite the value of `<attr> = "sha256-...";` in <file> in place.
+rdh_set_hash() {
+  local file="$1" attr="$2" value="$3" tmp
+  tmp=$(mktemp)
+  sed -E "s|^([[:space:]]*${attr} = \")sha256-[^\"]*(\";)|\1${value}\2|" "$file" >"$tmp"
+  cat "$tmp" >"$file" # keep the original file's mode/inode
+  rm -f "$tmp"
+}
+
+# --- build log classification --------------------------------------------------
+
+# Classify a failed `nix build` log: age | mismatch | other.
+#   age       pnpm's minimumReleaseAge supply-chain policy rejected a dependency
+#             published too recently. Checked FIRST: it is a policy refusal, not
+#             a hash problem, and must never be "fixed" by guessing.
+#   mismatch  nix reported a fixed-output hash mismatch (`specified:`/`got:`).
+rdh_classify_log() {
+  local log="$1"
+  if grep -qE 'ERR_PNPM_MINIMUM_RELEASE_AGE_VIOLATION|minimumReleaseAge' "$log"; then
+    echo age
+  elif grep -qE '^[[:space:]]*got:[[:space:]]+sha256-' "$log"; then
+    echo mismatch
+  else
+    echo other
+  fi
+}
+
+# Print "<specified> <got>" of the LAST fixed-output mismatch in the log.
+rdh_mismatch_pair() {
+  awk '
+    /^[[:space:]]*specified:[[:space:]]+sha256-/ { spec = $2 }
+    /^[[:space:]]*got:[[:space:]]+sha256-/       { got = $2 }
+    END { if (spec != "" && got != "") print spec, got }
+  ' "$1"
+}
+
+# --- per-key revert ------------------------------------------------------------
+
+# Replace key's block in a generated.nix with its block from the snapshot copy.
+# Blocks are nvfetcher's `  <key> = {` ... `  };` (two-space indent).
+rdh_restore_nix_block() {
+  local key="$1" base_file="$2" cur_file="$3" blockfile tmp
+  blockfile=$(mktemp)
+  awk -v k="$key" '
+    $0 == "  " k " = {" { inb = 1 }
+    inb { print }
+    inb && $0 == "  };" { exit }
+  ' "$base_file" >"$blockfile"
+  if [ ! -s "$blockfile" ]; then
+    rm -f "$blockfile"
+    return 1
+  fi
+  tmp=$(mktemp)
+  # The block goes through a file: BSD awk rejects newlines inside -v values.
+  awk -v k="$key" -v blockfile="$blockfile" '
+    $0 == "  " k " = {" {
+      while ((getline line < blockfile) > 0) print line
+      skip = 1
+      next
+    }
+    skip && $0 == "  };" { skip = 0; next }
+    skip { next }
+    { print }
+  ' "$cur_file" >"$tmp"
+  cat "$tmp" >"$cur_file"
+  rm -f "$tmp" "$blockfile"
+}
+
+# Replace key's entry in a generated.json with its entry from the snapshot copy
+# (nvfetcher's format: 4-space indent, sorted keys, no trailing newline).
+rdh_restore_json_entry() {
+  local key="$1" base_file="$2" cur_file="$3" out
+  out=$(jq --indent 4 -S --arg k "$key" --slurpfile b "$base_file" '.[$k] = $b[0][$k]' "$cur_file")
+  printf '%s' "$out" >"$cur_file"
+}
+
+# Revert one key to its snapshot state: both generated files and its hash files.
+rdh_restore_key() {
+  local key="$1" entry file
+  rdh_restore_json_entry "$key" "$RDH_BASE/generated.json" "$RDH_SOURCES_DIR/generated.json"
+  rdh_restore_nix_block "$key" "$RDH_BASE/generated.nix" "$RDH_SOURCES_DIR/generated.nix"
+  for entry in ${HASH_DEPS[$key]:-}; do
+    file="${entry%%:*}"
+    cat "$RDH_BASE/files/$file" >"$file"
+  done
+}
+
+# --- build helper --------------------------------------------------------------
+
+# Build packages.<system>.<attr>; full build logs go to <log> (-L) so the
+# classification sees pnpm's own error line, not just nix's last 25 lines.
+rdh_build() {
+  local attr="$1" log="$2"
+  nix build --no-link -L "${RDH_FLAKE_REF}#${attr}" >/dev/null 2>"$log"
+}
+
+# --- per-key processing --------------------------------------------------------
+
+HOLD_REASON=""
+
+# Recompute one dependent hash. Sets HOLD_REASON and returns 1 when the hash
+# cannot be computed (the caller holds the key).
+rdh_refresh_hash() {
+  local file="$1" attr="$2" flake_attr="$3" old log spec got
+  if ! old=$(rdh_get_hash "$file" "$attr"); then
+    HOLD_REASON="cannot find exactly one '$attr = \"sha256-...\";' line in $file"
+    return 1
+  fi
+  rdh_set_hash "$file" "$attr" "$RDH_PLACEHOLDER"
+  log=$(mktemp)
+  if rdh_build "$flake_attr" "$log"; then
+    HOLD_REASON="$flake_attr built with the placeholder hash in $file; refusing to trust that"
+    rm -f "$log"
+    return 1
+  fi
+  case "$(rdh_classify_log "$log")" in
+  age)
+    HOLD_REASON="pnpm minimumReleaseAge: $(grep -m1 -E 'ERR_PNPM_MINIMUM_RELEASE_AGE_VIOLATION|minimumReleaseAge' "$log" | sed -E 's/^[^ ]*> //') (a dependency was published too recently; the policy is not overridden, the bump is retried on the next run)"
+    rm -f "$log"
+    return 1
+    ;;
+  mismatch)
+    read -r spec got < <(rdh_mismatch_pair "$log")
+    if [ "$spec" != "$RDH_PLACEHOLDER" ]; then
+      HOLD_REASON="fixed-output mismatch in $flake_attr was not the placeholder in $file (specified $spec); not writing its got: hash"
+      rm -f "$log"
+      return 1
+    fi
+    rdh_set_hash "$file" "$attr" "$got"
+    if [ "$got" = "$old" ]; then
+      rdh_log "  $file: $attr unchanged ($got)"
+    else
+      rdh_log "  $file: $attr $old -> $got"
+    fi
+    ;;
+  *)
+    HOLD_REASON="$flake_attr failed before its hash could be computed: $(tail -n 15 "$log" | tr '\n' '|')"
+    rm -f "$log"
+    return 1
+    ;;
+  esac
+  rm -f "$log"
+}
+
+# Refresh hashes (once) and build-verify one changed key. Returns 1 (with
+# HOLD_REASON set) when the key must be held.
+rdh_process_key() {
+  local key="$1" attrs entry file rest attr flake_attr log built=0
+  read -r -a attrs <<<"${BUILD_ATTRS[$key]:-}"
+
+  if [ -z "${BUILD_ATTRS[$key]+x}" ]; then
+    rdh_log "$key: WARNING no build check registered in BUILD_ATTRS; its bump is NOT verified"
+    return 0
+  fi
+
+  if [ -n "${MANUAL_DEPS[$key]:-}" ]; then
+    rdh_log "$key: ${MANUAL_DEPS[$key]} is a hand-copied lock, not refreshed here; the build below decides whether the bump lands"
+  fi
+
+  if [ -z "${RDH_REFRESHED[$key]:-}" ]; then
+    for entry in ${HASH_DEPS[$key]:-}; do
+      file="${entry%%:*}"
+      rest="${entry#*:}"
+      attr="${rest%%:*}"
+      flake_attr="${rest#*:}"
+      if ! grep -qxF "$flake_attr" <<<"$RDH_AVAILABLE"; then
+        rdh_log "$key: $flake_attr is not built on $RDH_SYSTEM; hash in $file NOT refreshed"
+        continue
+      fi
+      rdh_refresh_hash "$file" "$attr" "$flake_attr" || return 1
+    done
+    RDH_REFRESHED[$key]=1
+  fi
+
+  for flake_attr in "${attrs[@]}"; do
+    if ! grep -qxF "$flake_attr" <<<"$RDH_AVAILABLE"; then
+      rdh_log "$key: skipping build of $flake_attr (not a $RDH_SYSTEM package)"
+      continue
+    fi
+    log=$(mktemp)
+    if ! rdh_build "$flake_attr" "$log"; then
+      HOLD_REASON="$flake_attr does not build after the bump: $(tail -n 15 "$log" | tr '\n' '|')"
+      rm -f "$log"
+      return 1
+    fi
+    rm -f "$log"
+    built=1
+    rdh_log "$key: $flake_attr builds"
+  done
+  [ "$built" -eq 1 ] || rdh_log "$key: nothing was built on $RDH_SYSTEM; the bump is NOT verified"
+}
+
+# Snapshot everything a hold may need to restore.
+rdh_snapshot() {
+  local key entry file
+  mkdir -p "$RDH_BASE/files"
+  cp "$RDH_SOURCES_DIR/generated.json" "$RDH_BASE/generated.json"
+  cp "$RDH_SOURCES_DIR/generated.nix" "$RDH_BASE/generated.nix"
+  for key in "${!HASH_DEPS[@]}"; do
+    for entry in ${HASH_DEPS[$key]}; do
+      file="${entry%%:*}"
+      mkdir -p "$RDH_BASE/files/$(dirname "$file")"
+      cp "$file" "$RDH_BASE/files/$file"
+    done
+  done
+}
+
+rdh_usage() {
+  echo "Usage: $0 [--gate CMD] [--force KEY]... [-- UPDATER [ARGS...]]"
+}
+
+main() {
+  local gate="" key rc
+  local -a forced=() changed=() active=() held=() verified=()
+  while [ "$#" -gt 0 ]; do
+    case "$1" in
+    --gate)
+      gate="${2:?--gate needs a command}"
+      shift 2
+      ;;
+    --force)
+      forced+=("${2:?--force needs a key}")
+      shift 2
+      ;;
+    --)
+      shift
+      break
+      ;;
+    -h | --help)
+      rdh_usage
+      return 0
+      ;;
+    *)
+      rdh_usage >&2
+      return 2
+      ;;
+    esac
+  done
+
+  RDH_FLAKE_REF="${RDH_FLAKE_REF:-.}"
+  RDH_SOURCES_DIR="${RDH_SOURCES_DIR:-_sources}"
+  RDH_BASE=$(mktemp -d)
+  # shellcheck disable=SC2064  # expand-now is intentional: RDH_BASE is set just above.
+  trap "rm -rf '$RDH_BASE'" EXIT
+  declare -gA RDH_REFRESHED=()
+
+  rdh_snapshot
+
+  if [ "$#" -gt 0 ]; then
+    rc=0
+    "$@" || rc=$?
+    if [ "$rc" -ne 0 ]; then
+      echo "refresh-dependent-hashes: updater failed with exit $rc; nothing refreshed" >&2
+      return "$rc"
+    fi
+  fi
+
+  # Keys whose generated.json entry differs from the snapshot (jq -S: stable).
+  while IFS= read -r key; do
+    [ -n "$key" ] || continue
+    if [ "$(jq -cS --arg k "$key" '.[$k]' "$RDH_BASE/generated.json")" != "$(jq -cS --arg k "$key" '.[$k]' "$RDH_SOURCES_DIR/generated.json")" ]; then
+      changed+=("$key")
+    fi
+  done < <(jq -r 'keys[]' "$RDH_SOURCES_DIR/generated.json")
+  for key in "${forced[@]}"; do
+    [[ " ${changed[*]} " == *" $key "* ]] || changed+=("$key")
+  done
+
+  if [ "${#changed[@]}" -eq 0 ]; then
+    rdh_log "no source changed; nothing to refresh or verify."
+    return 0
+  fi
+  rdh_log "changed sources: ${changed[*]}"
+
+  if [ -n "$gate" ]; then
+    rdh_log "running gate before any build: $gate"
+    "$gate" || {
+      echo "refresh-dependent-hashes: gate '$gate' failed; refusing to build or land the bump" >&2
+      return 1
+    }
+  fi
+
+  RDH_SYSTEM=$(nix eval --impure --raw --expr builtins.currentSystem)
+  RDH_AVAILABLE=$(nix eval --json "${RDH_FLAKE_REF}#packages.${RDH_SYSTEM}" --apply builtins.attrNames | jq -r '.[]')
+
+  # Process every still-active key; a hold may invalidate an earlier key's
+  # verification (packages composed from several sources, e.g. eclipse-java +
+  # lombok), so after any hold re-verify the survivors until a pass is clean.
+  active=("${changed[@]}")
+  local hard_fail=0 held_in_pass remaining
+  while [ "${#active[@]}" -gt 0 ]; do
+    held_in_pass=0
+    remaining=()
+    for key in "${active[@]}"; do
+      HOLD_REASON=""
+      if rdh_process_key "$key"; then
+        remaining+=("$key")
+        continue
+      fi
+      held_in_pass=1
+      if [ "$(jq -e --arg k "$key" 'has($k)' "$RDH_BASE/generated.json")" != "true" ]; then
+        echo "refresh-dependent-hashes: ERROR $key is new (no earlier entry to restore) and cannot be held: $HOLD_REASON" >&2
+        hard_fail=1
+        continue
+      fi
+      rdh_restore_key "$key"
+      held+=("$key")
+      echo "refresh-dependent-hashes: HELD $key (bump reverted, retried next run): $HOLD_REASON"
+    done
+    active=("${remaining[@]}")
+    [ "$held_in_pass" -eq 1 ] || break
+  done
+  verified=("${active[@]}")
+
+  rdh_log "summary: verified/refreshed: ${verified[*]:-none}; held: ${held[*]:-none}"
+  [ "$hard_fail" -eq 0 ] || return 1
+}
+
+# Only run when executed directly; sourcing (bats) defines the functions only.
+if [[ ${BASH_SOURCE[0]} == "${0}" ]]; then
+  main "$@"
+fi

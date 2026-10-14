@@ -53,7 +53,7 @@ After that, `pkgs.phillipgreenii.bat-gherkin-syntax`, `pkgs.phillipgreenii.pint`
 
 ## Update automation
 
-`update-locks.sh` (run by `.github/workflows/update-flakes.yml` nightly) bumps package sources via `nvfetcher`, runs the provenance hook (`verify-provenance.sh`; see below), then bumps `flake.lock`. The workflow opens a PR and enables auto-merge (rebase). `main` is intentionally not a protected branch and has no required status checks, so the merge is **not** gated on CI — `ci.yml` runs for visibility only, and direct pushes to `main` are allowed.
+`update-locks.sh` (run by `.github/workflows/update-flakes.yml` nightly) bumps package sources via `nvfetcher` (through `refresh-dependent-hashes.sh`, which recomputes the dependent `vendorHash`/pnpm `hash` literals, builds each bumped package, and holds back any bump that cannot be refreshed or no longer builds; see [`docs/update-locks-dependent-hashes.md`](docs/update-locks-dependent-hashes.md)), runs the provenance hook (`verify-provenance.sh`; see below), then bumps `flake.lock`. The workflow opens a PR and enables auto-merge (rebase). `main` is intentionally not a protected branch and has no required status checks, so the merge is **not** gated on CI — `ci.yml` runs for visibility only, and direct pushes to `main` are allowed.
 
 ### Integrity and provenance
 

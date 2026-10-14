@@ -180,6 +180,42 @@
                     bats suite/tests
                     touch "$out"
                   '';
+
+              # The pure (no-nix) half of the refresh-dependent-hashes.sh suite
+              # (bead pg2-g39wh): text helpers, revert logic, and the registry
+              # drift guards that keep docs/update-locks-dependent-hashes.md and
+              # the registry complete against nvfetcher.toml, packages/ and
+              # flake.nix -- so those files are staged beside the script. The
+              # real-nix half (tests/refresh-dependent-hashes-nix.bats) needs a
+              # daemon that can run a builder and skips itself in this sandbox;
+              # it runs from source via the run-unit-tests commit hook.
+              refresh-dependent-hashes-tests =
+                pkgs.runCommand "refresh-dependent-hashes-tests"
+                  {
+                    nativeBuildInputs = [
+                      pkgs.bats
+                      pkgs.jq
+                      pkgs.coreutils
+                      pkgs.gnugrep
+                      pkgs.gnused
+                      pkgs.gawk
+                      pkgs.findutils
+                    ];
+                  }
+                  ''
+                    export HOME="$TMPDIR/home"
+                    mkdir -p "$HOME"
+                    mkdir -p suite/tests suite/docs
+                    cp ${./refresh-dependent-hashes.sh} suite/refresh-dependent-hashes.sh
+                    cp ${./update-locks.sh} suite/update-locks.sh
+                    cp ${./flake.nix} suite/flake.nix
+                    cp ${./nvfetcher.toml} suite/nvfetcher.toml
+                    cp ${./docs/update-locks-dependent-hashes.md} suite/docs/update-locks-dependent-hashes.md
+                    cp -r ${./packages} suite/packages
+                    cp ${./tests/refresh-dependent-hashes.bats} suite/tests/refresh-dependent-hashes.bats
+                    bats suite/tests
+                    touch "$out"
+                  '';
             }
             // pkgs.lib.optionalAttrs pkgs.stdenv.hostPlatform.isDarwin {
               # Eval-only smoke check for the opt-in firefox-binary-wrapper

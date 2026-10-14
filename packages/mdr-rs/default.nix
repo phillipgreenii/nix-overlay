@@ -27,9 +27,9 @@ rustPlatform.buildRustPackage {
   # package's pinned version bumps and the build starts failing with a
   # Cargo.lock mismatch: `cp <fetched source>/Cargo.lock ./Cargo.lock`. Unlike
   # gomu/pint/glowm's mechanical vendorHash bump, this step can't be automated
-  # by the nightly update-locks.sh run -- a dependency-changing version bump
-  # surfaces as a failing CI check on the auto-opened PR instead of silently
-  # going stale, which is the intended fallback.
+  # by the nightly update-locks.sh run -- but refresh-dependent-hashes.sh
+  # (pg2-g39wh) builds the package after every bump and HOLDS the bump back
+  # when the stale lock breaks the build, so it never lands silently stale.
   #
   # If upstream ever again ships a tag with NO Cargo.lock, cargoSetupPostPatchHook
   # will fail with "Missing Cargo.lock from src... Hint: You can use the
