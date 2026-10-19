@@ -2,6 +2,19 @@
 
 This project uses **bd** (beads) for issue tracking. Run `bd prime` for full workflow context.
 
+## Beads Labels
+
+Every bead filed against this repo MUST carry the repo label `overlay`.
+
+If the bead concerns one specific package, it MUST also carry that package's label. The project
+label is the basename of the top-level directory under `packages/` that the bead's subject matter
+lives in (e.g. `packages/cmux` → `cmux`, `packages/gh-stack` → `gh-stack`). Run `ls packages` for
+the current valid set: that directory listing IS the source of truth, not an enumerated table
+here, so it cannot go stale as packages are added, removed, or renamed.
+
+A bead about repo-wide or cross-cutting concerns (flake-level, CI, update-locks, docs shared across
+packages) MUST carry only the repo label, no project label.
+
 ## Quick Reference
 
 ```bash
