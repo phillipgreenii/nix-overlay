@@ -216,6 +216,45 @@
                     bats suite/tests
                     touch "$out"
                   '';
+
+              # The REAL gomu engine (this flake's packages.gomu) driven through
+              # pg-go-mutate, which this flake takes from its nix-base input.
+              # nix-base cannot run this itself -- it cannot read this overlay
+              # (that would be an input cycle) -- and its own suites use a stub
+              # engine, so this is the only place a gomu bump that changes the
+              # version line, the flags or the report shape is caught before a
+              # consumer's `pn workspace build`. It fails (rather than passes
+              # vacuously) if any of the tooling below goes missing:
+              # GOMU_CONTRACT_REQUIRED turns the suite's skips into failures.
+              # The Go project it mutates is generated into a temp dir by the
+              # suite itself; no .go file is committed for other tooling to find.
+              #
+              # This check also fails when nix-base's locked pg-go-mutate pins a
+              # different gomu than packages.gomu builds -- the exact skew that
+              # broke `pn workspace build` -- until the nix-base input is relocked.
+              gomu-engine-contract-tests =
+                pkgs.runCommand "gomu-engine-contract-tests"
+                  {
+                    nativeBuildInputs = [
+                      pkgs.bats
+                      pkgs.jq
+                      pkgs.go
+                      pkgs.coreutils
+                      pkgs.findutils
+                    ];
+                    GOMU_CONTRACT_PG_GO_MUTATE = "${
+                      inputs.phillipgreenii-nix-base.packages.${pkgs.stdenv.hostPlatform.system}.pg-go-mutate
+                    }/bin/pg-go-mutate";
+                    PG_GO_MUTATE_GOMU = "${config.packages.gomu}/bin/gomu";
+                    GOMU_CONTRACT_REQUIRED = "1";
+                  }
+                  ''
+                    export HOME="$TMPDIR/home"
+                    mkdir -p "$HOME" suite/tests
+                    cp ${./tests/gomu-engine-contract.bats} suite/tests/gomu-engine-contract.bats
+                    bats suite/tests
+                    touch "$out"
+                  '';
             }
             // pkgs.lib.optionalAttrs pkgs.stdenv.hostPlatform.isDarwin {
               # Eval-only smoke check for the opt-in firefox-binary-wrapper
