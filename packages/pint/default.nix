@@ -29,7 +29,7 @@ in
   # Re-hashed again for v0.89.2 (2026-10-14, pg2-c3p5s): the nvfetcher bump to
   # v0.89.2 refreshes the source pin only, not this vendorHash, so go.sum moved
   # and the old hash became a fixed-output mismatch.
-  vendorHash = "sha256-Mje4BSChu9wHOcdK/LWTsp7Dc8foLmDydT9gGITuJ/o=";
+  vendorHash = "sha256-yvWc5V2yVjNVXvUmqRmHp+6k3HBKdlqHfmX8vUUFuSI=";
 
   subPackages = [ "cmd/pint" ];
 

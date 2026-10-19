@@ -70,13 +70,13 @@
   };
   gomu = {
     pname = "gomu";
-    version = "v0.2.1";
+    version = "v0.3.0";
     src = fetchFromGitHub {
       owner = "sivchari";
       repo = "gomu";
-      rev = "v0.2.1";
+      rev = "v0.3.0";
       fetchSubmodules = false;
-      sha256 = "sha256-MYYtqv0q6ExyETxrUMW5KTs87mahik+0RwO9xV3h82I=";
+      sha256 = "sha256-WSsWMEOSCmVMSAtsBIbUPojB7KpnzJvjVEAX+yqMDPw=";
     };
   };
   icons-brew = {
@@ -120,15 +120,15 @@
   };
   mermaid-ink = {
     pname = "mermaid-ink";
-    version = "bff76dfc273c9c54e59d6e5843cd6a8fc22baa5d";
+    version = "4642d4f5062515b04eba82ec68199757784c0e75";
     src = fetchFromGitHub {
       owner = "jihchi";
       repo = "mermaid.ink";
-      rev = "bff76dfc273c9c54e59d6e5843cd6a8fc22baa5d";
+      rev = "4642d4f5062515b04eba82ec68199757784c0e75";
       fetchSubmodules = false;
-      sha256 = "sha256-gVaAW4CPeUp7/h5SpmyD2pQho0XZMqySln4pYU/bWXY=";
+      sha256 = "sha256-6+pPbzHB4tM+PPNvjhpBcDSOSc3o2z4vHY3TClbrYw0=";
     };
-    date = "2026-10-10";
+    date = "2026-10-17";
   };
   mermaid-live-editor = {
     pname = "mermaid-live-editor";
@@ -144,13 +144,13 @@
   };
   pint = {
     pname = "pint";
-    version = "v0.89.2";
+    version = "v0.89.3";
     src = fetchFromGitHub {
       owner = "cloudflare";
       repo = "pint";
-      rev = "v0.89.2";
+      rev = "v0.89.3";
       fetchSubmodules = false;
-      sha256 = "sha256-QZqbpyKegsMycb5CkROCFG/OS++SaBGknxjn2E9MS24=";
+      sha256 = "sha256-i8WHrU5KT2vpt9AnWWqliD7jiIMJ8Ie34RxTFDNKmdk=";
     };
   };
   tmux-mouse-swipe = {
