@@ -207,6 +207,28 @@ EOF
   done
 }
 
+@test "registry: every PIN_GUARDS entry has a BUILD_ATTRS entry, a real flake.lock input, and a doc mention" {
+  local key spec input file doc="${REPO_ROOT}/docs/update-locks-dependent-hashes.md"
+  [ "${#PIN_GUARDS[@]}" -gt 0 ]
+  for key in "${!PIN_GUARDS[@]}"; do
+    spec="${PIN_GUARDS[$key]}"
+    input="${spec%%:*}"
+    file="${spec#*:}"
+    [ -n "${BUILD_ATTRS[$key]+x}" ] || {
+      echo "PIN_GUARDS[$key] has no BUILD_ATTRS entry" >&2
+      return 1
+    }
+    jq -e --arg i "$input" '.nodes.root.inputs[$i] as $n | ($n | type) == "string" and .nodes[$n].locked != null' "${REPO_ROOT}/flake.lock" >/dev/null || {
+      echo "PIN_GUARDS[$key]: flake.lock has no locked input '$input'" >&2
+      return 1
+    }
+    grep -qF "$file" "$doc" || {
+      echo "docs/update-locks-dependent-hashes.md does not mention the pin file $file" >&2
+      return 1
+    }
+  done
+}
+
 @test "update-locks.sh runs the nvfetcher step through refresh-dependent-hashes.sh with the provenance gate" {
   grep -qE 'refresh-dependent-hashes\.sh"? +--gate' "${REPO_ROOT}/update-locks.sh"
 }

@@ -17,6 +17,7 @@ it.
 - A held bump MUST be reported with its reason and MUST be retried by the next run.
 - The step MUST NOT override pnpm's `minimumReleaseAge` policy and MUST NOT write a guessed hash.
 - A source that is new (no earlier entry to revert to) MUST fail the step when it does not build.
+- A source whose version the locked `nix-repo-base` does not pin MUST be held (see "Pin guard").
 - The provenance gate (`verify-provenance.sh`) MUST run before any build of a bumped source, and it
   is unchanged. The separate `verify-provenance` step still runs every time.
 
@@ -30,7 +31,9 @@ flowchart TD
   C -- yes --> D["gate: verify-provenance.sh"]
   D -- fails --> F["step fails, framework rolls back"]
   D -- passes --> E["per changed key"]
-  E --> G["write placeholder hash, build package"]
+  E --> P{"pin guard: version equals locked pin?"}
+  P -- no --> J
+  P -- yes --> G["write placeholder hash, build package"]
   G --> H{"outcome"}
   H -- "hash mismatch, specified is the placeholder" --> I["write got: hash"]
   H -- "ERR_PNPM_MINIMUM_RELEASE_AGE_VIOLATION" --> J["HOLD: revert key"]
@@ -48,6 +51,42 @@ is already in the store, so nix never refetches and the stale dependency tree is
 then appears only in the consuming build. Only a build whose hash is unknown forces a fresh fetch and
 gives nix's own `got:` value. The `specified:` value in the mismatch MUST equal the placeholder, so
 the `got:` of an unrelated fixed-output derivation (such as the source itself) is never written.
+
+## Pin guard (bead pg2-bvudh)
+
+Some sources must stay in lockstep with a version another repo pins. `gomu` is the case:
+`nix-repo-base`'s `pg-go-mutate` pins the engine version in
+`modules/pg-go-mutate/pg-go-mutate/gomu-pin.nix`, and `home/pg-go-mutate` asserts at eval time that
+the engine built from `sources.gomu` reports that same string. On 2026-10-19 `nvfetcher` moved gomu
+v0.2.1 -> v0.3.0 while the pin still said 0.2.1; the eval assertion then aborted
+`pn workspace build`, and the skew was only found in a downstream consumer build.
+
+The overlay consumes `nix-repo-base` (flake input), never the reverse (spec W6, an input cycle), so the
+sweep cannot bump both. The two repos need a coordinated bump (spec W16): pin first in `nix-repo-base`,
+push, relock here, and only then may the source move.
+
+- A source registered in `PIN_GUARDS` MUST NOT land a version that differs from the version pinned in
+  the named file of the flake input **as locked in `flake.lock`**. A leading `v` on the source version
+  is ignored (the tag is `v0.3.0`, the pin is `0.3.0`).
+- A mismatching bump MUST be held: that key's `_sources` entry (and its hash files) are restored from
+  the snapshot and the run reports `HELD <key> ...` naming both versions and the coordinated bump
+  needed. Other keys' bumps MUST still land.
+- A pin that cannot be read (no lock entry, tree not fetchable, file missing) MUST hold the bump too.
+  An unreadable pin is not a match.
+- The check MUST be the cheap version-string comparison and MUST NOT build anything. It runs before
+  the hash refresh and the build of the key.
+- A held bump is retried on every run. It lands on the first run whose locked `nix-repo-base` pins the
+  new version, which is the operator's push-then-relock; the `nix-flake-update` step runs after the
+  `nvfetcher` step, so a pin pushed just before a run is seen by the following run.
+
+The pin is read with `builtins.fetchTree` of the input's `locked` attributes from `flake.lock`
+(`RDH_LOCK_FILE` overrides the file in tests). That reads exactly the bytes the consumer build sees,
+and works offline whenever that tree is already in the store (a github lock carries a `narHash`). It
+costs well under a second there.
+
+| nvfetcher key | Flake input               | Pin file                                         |
+| ------------- | ------------------------- | ------------------------------------------------ |
+| `gomu`        | `phillipgreenii-nix-base` | `modules/pg-go-mutate/pg-go-mutate/gomu-pin.nix` |
 
 ## pnpm minimumReleaseAge
 

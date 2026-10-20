@@ -30,7 +30,7 @@ setup() {
   mkdir -p "${FX}/_sources"
   write_flake
   # key=version
-  write_state fresh=v1 aged=a1 plain=p1 stable=s1 offsys=o1
+  write_state fresh=v1 aged=a1 plain=p1 stable=s1 offsys=o1 pinned=v1.1.0
   local k
   for k in fresh aged stable; do
     mkdir -p "${FX}/packages/${k}"
@@ -45,6 +45,7 @@ BUILD_ATTRS=(
   [stable]="stable"
   [offsys]="not-a-package-here"
   [brandnew]="brandnew"
+  [pinned]="pinned"
 )
 HASH_DEPS=(
   [fresh]="packages/fresh/default.nix:hash:fresh"
@@ -52,7 +53,19 @@ HASH_DEPS=(
   [stable]="packages/stable/default.nix:hash:stable"
 )
 MANUAL_DEPS=()
+PIN_GUARDS=([pinned]="fxbase:pin.nix")
 EOF
+
+  # A stand-in for the locked nix-repo-base: a real directory holding a pin file,
+  # reached through a real lock-file node, read by the real rdh_read_pin
+  # (builtins.fetchTree of the node's `locked` attrs). Kept out of flake.lock so
+  # the fixture flake itself stays input-free.
+  mkdir -p "${FX}/fxbase"
+  write_pin 1.1.0
+  jq -n --arg p "${FX}/fxbase" \
+    '{nodes: {root: {inputs: {fxbase: "fxbase"}}, fxbase: {locked: {type: "path", path: $p}}}, root: "root", version: 7}' \
+    >"${FX}/fx.lock"
+  export RDH_LOCK_FILE="${FX}/fx.lock"
 
   # Stand-in for nvfetcher: rewrite versions in both generated files.
   # usage: bump.sh key=version...   (a key not yet present is added)
@@ -100,6 +113,12 @@ hash_of() {
 
 version_of() {
   jq -r --arg k "$1" '.[$k].version' "${FX}/_sources/generated.json"
+}
+
+# The pin file of the fixture "locked nix-repo-base": a Nix expression for a
+# version string WITHOUT the tag's leading "v" (like gomu-pin.nix).
+write_pin() {
+  printf 'let\n  pin = "%s";\nin\npin\n' "$1" >"${FX}/fxbase/pin.nix"
 }
 
 write_state() {
@@ -296,4 +315,51 @@ EOF
   # The framework rolls the step back; this script must not have started
   # rewriting hashes.
   cmp packages/fresh/default.nix _baseline_packages/fresh/default.nix
+}
+
+# --- pin guard (pg2-bvudh): a bump the locked input does not pin never lands ---
+
+@test "a bump the locked input does not pin is held: source restored, reason names both versions" {
+  run "$SCRIPT" -- "${FX}/bump.sh" pinned=v1.2.0
+  echo "$output"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"HELD pinned"* ]]
+  [[ "$output" == *"pinned 1.2.0 is not the version the locked fxbase pins (1.1.0"* ]]
+  [[ "$output" == *"coordinated bump"* ]]
+  # The previous source is restored byte-for-byte (generated.json and .nix).
+  cmp _sources/generated.json _baseline_sources/generated.json
+  cmp _sources/generated.nix _baseline_sources/generated.nix
+  [ "$(jq -r '.pinned.version' _sources/generated.json)" = "v1.1.0" ]
+}
+
+@test "a bump whose version the locked input pins lands as before (v prefix ignored)" {
+  write_pin 1.2.0
+  run "$SCRIPT" -- "${FX}/bump.sh" pinned=v1.2.0
+  echo "$output"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"pinned: 1.2.0 matches the pin in locked fxbase"* ]]
+  [[ "$output" == *"pinned: pinned builds"* ]]
+  [[ "$output" != *"HELD pinned"* ]]
+  [ "$(jq -r '.pinned.version' _sources/generated.json)" = "v1.2.0" ]
+  [ "$(cat "$(build_out pinned)")" = "v1.2.0" ]
+}
+
+@test "an unreadable pin holds the bump rather than letting it through" {
+  rm -f "${FX}/fxbase/pin.nix"
+  run "$SCRIPT" -- "${FX}/bump.sh" pinned=v1.2.0
+  echo "$output"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"HELD pinned"* ]]
+  [[ "$output" == *"cannot read the version pinned by fxbase:pin.nix"* ]]
+  cmp _sources/generated.json _baseline_sources/generated.json
+}
+
+@test "a pin-held key does not block the others" {
+  run "$SCRIPT" -- "${FX}/bump.sh" pinned=v1.2.0 fresh=v2
+  echo "$output"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"HELD pinned"* ]]
+  [[ "$output" != *"HELD fresh"* ]]
+  [ "$(jq -r '.pinned.version' _sources/generated.json)" = "v1.1.0" ]
+  [ "$(jq -r '.fresh.version' _sources/generated.json)" = "v2" ]
 }

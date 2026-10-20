@@ -32,6 +32,12 @@
 #             keys: one broken upstream must not freeze every other update. Held
 #             keys are retried automatically on the next run.
 #
+# PIN GUARD (bead pg2-bvudh): a key registered in PIN_GUARDS is HELD before any
+# hash is rewritten or anything is built when its source version is not the
+# version pinned by the locked flake input (gomu vs nix-repo-base's
+# gomu-pin.nix; the two need a coordinated bump, spec W16). See the "Pin guard"
+# section of docs/update-locks-dependent-hashes.md.
+#
 # pnpm minimumReleaseAge (supply-chain policy that rejects dependencies
 # published within about a day): a build that dies with
 # ERR_PNPM_MINIMUM_RELEASE_AGE_VIOLATION is reported as such and the key is
@@ -55,8 +61,9 @@
 # Environment (all optional; tests use them to run the REAL step on a fixture):
 #   RDH_FLAKE_REF      flake ref the builds use                (default: .)
 #   RDH_SOURCES_DIR    nvfetcher output dir                    (default: _sources)
+#   RDH_LOCK_FILE      lock file the PIN_GUARDS read the locked input from (default: flake.lock)
 #   RDH_REGISTRY       bash file sourced after the built-in registry below to
-#                      replace BUILD_ATTRS / HASH_DEPS / MANUAL_DEPS
+#                      replace BUILD_ATTRS / HASH_DEPS / MANUAL_DEPS / PIN_GUARDS
 #
 # Inventory of source-dependent inputs: docs/update-locks-dependent-hashes.md.
 set -euo pipefail
@@ -105,6 +112,17 @@ declare -gA HASH_DEPS=(
 # fails the VERIFY build and is HELD (never landed).
 declare -gA MANUAL_DEPS=(
   ["mdr-rs"]="packages/mdr-rs/Cargo.lock"
+)
+
+# nvfetcher key -> "<flake input>:<file>": the source's version MUST equal the
+# version recorded in <file> of that flake input AS LOCKED in flake.lock
+# (bead pg2-bvudh). A bump the locked input does not pin is HELD, never landed:
+# gomu v0.3.0 landed while nix-repo-base's gomu-pin.nix still said 0.2.1 and
+# home/pg-go-mutate's eval assertion broke `pn workspace build` (2026-10-19).
+# The pin file is a Nix expression evaluating to a version string WITHOUT the
+# tag's leading "v"; a leading "v" on the source version is ignored here.
+declare -gA PIN_GUARDS=(
+  ["gomu"]="phillipgreenii-nix-base:modules/pg-go-mutate/pg-go-mutate/gomu-pin.nix"
 )
 
 # Placeholder == nixpkgs' lib.fakeHash.
@@ -215,6 +233,50 @@ rdh_restore_key() {
   done
 }
 
+# --- pin guard -----------------------------------------------------------------
+
+# Print the version string a flake input pins, read from <file> of that input AS
+# LOCKED in the lock file (RDH_LOCK_FILE, default flake.lock). Fetches the exact
+# locked tree with builtins.fetchTree, so it reads the same bytes the consumer
+# build will see, and is offline whenever that tree is already in the store
+# (a github lock carries a narHash). Prints nothing and fails when the input,
+# the tree or the file cannot be read.
+rdh_read_pin() {
+  local input="$1" file="$2" lock="${RDH_LOCK_FILE:-flake.lock}" node locked
+  [ -f "$lock" ] || return 1
+  node=$(jq -er --arg i "$input" '.nodes.root.inputs[$i] | strings' "$lock") || return 1
+  locked=$(jq -ce --arg n "$node" '.nodes[$n].locked' "$lock") || return 1
+  # shellcheck disable=SC2016  # ${...} is Nix string interpolation, not shell
+  RDH_PIN_LOCKED="$locked" RDH_PIN_FILE="$file" nix eval --impure --raw --expr '
+    let
+      src = builtins.fetchTree (builtins.fromJSON (builtins.getEnv "RDH_PIN_LOCKED"));
+    in
+    import "${src}/${builtins.getEnv "RDH_PIN_FILE"}"
+  ' 2>/dev/null
+}
+
+# Check one key against its PIN_GUARDS entry. Sets HOLD_REASON and returns 1
+# when the key's source version is not the version the locked input pins (or the
+# pin cannot be read: fail closed, an unreadable pin is not "matches").
+rdh_check_pin() {
+  local key="$1" spec input file version pin
+  spec="${PIN_GUARDS[$key]:-}"
+  [ -n "$spec" ] || return 0
+  input="${spec%%:*}"
+  file="${spec#*:}"
+  version=$(jq -r --arg k "$key" '.[$k].version' "$RDH_SOURCES_DIR/generated.json")
+  version="${version#v}"
+  if ! pin=$(rdh_read_pin "$input" "$file") || [ -z "$pin" ]; then
+    HOLD_REASON="cannot read the version pinned by $input:$file from ${RDH_LOCK_FILE:-flake.lock}; not landing a $key bump it cannot be checked against"
+    return 1
+  fi
+  if [ "$version" != "$pin" ]; then
+    HOLD_REASON="$key $version is not the version the locked $input pins ($pin, $file); a coordinated bump is needed: set the pin to $version in $input, push it, relock this flake ($input), then rerun (the next run retries this bump)"
+    return 1
+  fi
+  rdh_log "$key: $version matches the pin in locked $input ($file)"
+}
+
 # --- build helper --------------------------------------------------------------
 
 # Build packages.<system>.<attr>; full build logs go to <log> (-L) so the
@@ -277,6 +339,10 @@ rdh_refresh_hash() {
 rdh_process_key() {
   local key="$1" attrs entry file rest attr flake_attr log built=0
   read -r -a attrs <<<"${BUILD_ATTRS[$key]:-}"
+
+  # Cheapest check first: a version the locked input does not pin is held before
+  # any hash is rewritten or anything is built.
+  rdh_check_pin "$key" || return 1
 
   if [ -z "${BUILD_ATTRS[$key]+x}" ]; then
     rdh_log "$key: WARNING no build check registered in BUILD_ATTRS; its bump is NOT verified"
