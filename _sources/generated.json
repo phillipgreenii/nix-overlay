@@ -85,12 +85,12 @@
             "name": null,
             "owner": "github",
             "repo": "gh-stack",
-            "rev": "v0.1.0",
-            "sha256": "sha256-48JkOeqbvHlCZ2u3LnwJymw55xMQWLTPJLDbV44clGI=",
+            "rev": "v0.2.1",
+            "sha256": "sha256-Mq4jAqeSHDuCiDYSa40okrq06UhC3dZGjgCXJKMbgzU=",
             "sparseCheckout": [],
             "type": "github"
         },
-        "version": "v0.1.0"
+        "version": "v0.2.1"
     },
     "glowm": {
         "cargoLock": null,

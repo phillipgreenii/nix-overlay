@@ -84,12 +84,15 @@ fetch.github = "cloudflare/pint"
 src.github = "atani/glowm"
 fetch.github = "atani/glowm"
 
-# github/gh-stack is a public-preview `gh` extension; pin the release tag
-# manually (like eclipse-java/cmux above) so the nightly updater never
-# auto-bumps it to an unreviewed preview release, and let fetch.github fetch
-# that exact tag.
+# github/gh-stack is a `gh` extension (native Stacked PRs went GA 2026-10-06,
+# but the stack CLI is still a separate 0.x extension, not part of core gh).
+# Pin the release tag manually (like eclipse-java/cmux above) so the nightly
+# updater never auto-bumps it: 0.x releases can change behaviour and on-disk
+# state (v0.2.0 moved stack tracking storage) and the vendored ZR SKILL.md is
+# hand-synced, so bumps are reviewed together. fetch.github fetches that exact
+# tag.
 [gh-stack]
-src.manual = "v0.1.0"
+src.manual = "v0.2.1"
 fetch.github = "github/gh-stack"
 
 # gomu -- Go mutation testing engine, wrapped by pg-go-mutate in nix-repo-base.

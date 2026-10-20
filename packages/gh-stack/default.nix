@@ -8,12 +8,12 @@ buildGoModule {
   version = lib.removePrefix "v" sources.gh-stack.version;
   src = sources.gh-stack.src;
 
-  vendorHash = "sha256-0Xtr/MOpX4u5GnbRdNxKPA0GpSzi8PIbVc9MmP05De4=";
+  vendorHash = "sha256-TC1mSXYjOQo00fb2yuGdk1rl6z6rp0WT3AmzXomPzis=";
 
   doCheck = false;
 
   meta = {
-    description = "GitHub CLI extension for managing stacked branches and pull requests (public preview)";
+    description = "GitHub CLI extension for managing stacked branches and pull requests";
     homepage = "https://github.com/github/gh-stack";
     license = lib.licenses.mit;
     mainProgram = "gh-stack";
