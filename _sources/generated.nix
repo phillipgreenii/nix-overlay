@@ -20,15 +20,15 @@
   };
   bunny = {
     pname = "bunny";
-    version = "71b14a3d624572f4884354c2e218296e9ece07cc";
+    version = "8f3f84e20ea0545d032c134cf184784eaff55d13";
     src = fetchFromGitHub {
       owner = "stelcodes";
       repo = "bunny.yazi";
-      rev = "71b14a3d624572f4884354c2e218296e9ece07cc";
+      rev = "8f3f84e20ea0545d032c134cf184784eaff55d13";
       fetchSubmodules = false;
-      sha256 = "sha256-uQO0C00yOFPWq8KEO/kEZM6tFZRc9SiXfgN7kzlwDeA=";
+      sha256 = "sha256-AX7ILZTXPKqvEI3jgVADsfVeSR39qHB7Ti6NGHL0yag=";
     };
-    date = "2026-03-08";
+    date = "2026-10-20";
   };
   cmux = {
     pname = "cmux";
@@ -132,25 +132,25 @@
   };
   mermaid-live-editor = {
     pname = "mermaid-live-editor";
-    version = "dd95c0328556e83ae42f6ee58d294c0badd922d9";
+    version = "eb4141dd51247259e95ecd890c1bf3dabf314913";
     src = fetchFromGitHub {
       owner = "mermaid-js";
       repo = "mermaid-live-editor";
-      rev = "dd95c0328556e83ae42f6ee58d294c0badd922d9";
+      rev = "eb4141dd51247259e95ecd890c1bf3dabf314913";
       fetchSubmodules = false;
-      sha256 = "sha256-yEDge/3nE2gzhWDZGDlr7YaQZHJGLRHKjCycwY6Vu90=";
+      sha256 = "sha256-T2vTgAu+vVyMyHiv3Fhws6GLbcQks+ulvxSb2u5/4WE=";
     };
-    date = "2026-10-13";
+    date = "2026-10-21";
   };
   pint = {
     pname = "pint";
-    version = "v0.89.3";
+    version = "v0.89.4";
     src = fetchFromGitHub {
       owner = "cloudflare";
       repo = "pint";
-      rev = "v0.89.3";
+      rev = "v0.89.4";
       fetchSubmodules = false;
-      sha256 = "sha256-i8WHrU5KT2vpt9AnWWqliD7jiIMJ8Ie34RxTFDNKmdk=";
+      sha256 = "sha256-2xdPv03AkbAlPV+1azBHYMvPnAxZS77c0wW5rj/HvcM=";
     };
   };
   tmux-mouse-swipe = {
