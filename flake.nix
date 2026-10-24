@@ -208,7 +208,9 @@
                     mkdir -p suite/tests suite/docs
                     cp ${./refresh-dependent-hashes.sh} suite/refresh-dependent-hashes.sh
                     cp ${./update-locks.sh} suite/update-locks.sh
+                    # Every repo file a registry test reads MUST be staged into suite/.
                     cp ${./flake.nix} suite/flake.nix
+                    cp ${./flake.lock} suite/flake.lock
                     cp ${./nvfetcher.toml} suite/nvfetcher.toml
                     cp ${./docs/update-locks-dependent-hashes.md} suite/docs/update-locks-dependent-hashes.md
                     cp -r ${./packages} suite/packages
