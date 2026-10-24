@@ -174,9 +174,11 @@
                     export HOME="$TMPDIR/home"
                     mkdir -p "$HOME"
                     export NIX_CONFIG="experimental-features = nix-command"
-                    mkdir -p suite/tests
+                    mkdir -p suite/tests suite/_sources
                     cp ${./verify-provenance.sh} suite/verify-provenance.sh
                     cp ${./tests/verify-provenance.bats} suite/tests/verify-provenance.bats
+                    # The METHODS drift guard reads the configured source keys.
+                    cp ${./_sources/generated.json} suite/_sources/generated.json
                     bats suite/tests
                     touch "$out"
                   '';

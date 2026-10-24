@@ -312,3 +312,31 @@ write_manifest_for() {
   [ "${METHODS[logseq]}" = "checksums" ]
   [ "${CHECKSUM_FILES[logseq]}" = "SHA256SUMS.txt" ]
 }
+
+# --- METHODS drift guard ---
+#
+# main() only visits the keys of METHODS, so an nvfetcher source with no entry
+# is never verified, never logged as skipped, and never reaches the `unknown
+# method` branch: the run still ends "all upstreams verified". This guard keeps
+# METHODS equal to the set of configured nvfetcher sources (pg2-kfo7h), in both
+# directions, and names the offending key on failure.
+
+@test "config: every nvfetcher source has a METHODS entry and vice versa" {
+  # See the scoping note above: re-source so the config arrays are in scope.
+  # shellcheck disable=SC1090  # runtime-computed path
+  source "$SCRIPT"
+  local generated="${BATS_TEST_DIRNAME}/../_sources/generated.json"
+  [ -f "$generated" ]
+
+  local source_keys methods_keys missing extra
+  source_keys=$(jq -r 'keys[]' "$generated" | sort)
+  methods_keys=$(printf '%s\n' "${!METHODS[@]}" | sort)
+  missing=$(comm -23 <(printf '%s\n' "$source_keys") <(printf '%s\n' "$methods_keys"))
+  extra=$(comm -13 <(printf '%s\n' "$source_keys") <(printf '%s\n' "$methods_keys"))
+
+  if [ -n "$missing" ] || [ -n "$extra" ]; then
+    echo "nvfetcher sources with no METHODS entry: ${missing:-<none>}" >&2
+    echo "METHODS keys with no nvfetcher source: ${extra:-<none>}" >&2
+    return 1
+  fi
+}

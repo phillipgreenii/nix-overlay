@@ -41,7 +41,8 @@
 #                  CHECKSUM_FILES below exists. No REPOS entry (only
 #                  verify_attestation consults it).
 #
-# Git-source packages (tmux-*, bat-gherkin-syntax, pint) use method
+# Git-source packages (tmux-*, bat-gherkin-syntax, pint, gh-stack, bunny,
+# icons-brew) use method
 # `git-source` — explicitly skipped because the nvfetcher-pinned SHA is the
 # integrity. (pint is a rev-pinned fetchFromGitHub source repackaged with
 # buildGoModule; the source pin, not a release binary, is what is verified.)
@@ -80,6 +81,9 @@ declare -A METHODS=(
   ["mdr-rs"]="git-source"
   ["mermaid-ink"]="git-source"
   ["mermaid-live-editor"]="git-source"
+  ["gh-stack"]="git-source"
+  ["bunny"]="git-source"
+  ["icons-brew"]="git-source"
 )
 declare -A REPOS=(
   ["cmux"]="manaflow-ai/cmux"
