@@ -10,7 +10,7 @@ derivation's plugins jars, jdk17) and composed into Eclipse.app by
 - Bundle: `zr.eclipse.gradleimport`; application id: `zr.eclipse.gradleimport.headless`.
 - Invocation:
   `eclipse -noSplash -data <ws> -application zr.eclipse.gradleimport.headless <projectRoot>` —
-  registers the whole Gradle composite (verified: 133 projects for `finance/api_parent`), prints
+  registers the whole Gradle composite, prints
   `[gradle-import] status: OK`, exit 0.
 
 ## Two hard-won production learnings — do NOT regress

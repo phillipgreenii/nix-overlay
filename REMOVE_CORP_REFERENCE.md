@@ -83,6 +83,19 @@ is not fixable by editing files.
 
 - [ ] **C1** — Rewrite this commit message in the §E history rewrite.
 
+The plugin README (`packages/eclipse-gradleimport-plugin/README.md`) also carried a
+parenthetical on its Invocation bullet that disclosed an employer-internal Gradle project path
+and the project count of the employer's build. It was introduced by commit `33b15b7`
+(2026-08-17), after this tracker was first written, so none of the §Provenance sweeps match it.
+The text is deliberately not repeated here; read it at that README's Invocation bullet in
+commit `4b652b0`.
+
+- [x] **C2** — Forward edit: the parenthetical is removed from the plugin README (the
+      Invocation bullet keeps the operational facts: whole Gradle composite, status OK line,
+      exit 0).
+- [ ] **C3** — History item: purge the plugin README content introduced by `33b15b7` (and
+      carried by every later commit until the forward edit) in the §E history rewrite.
+
 ### D. Filename / path references
 
 - [ ] **D1** — `packages/eclipse-gradleimport-plugin/src/zr/` (see §A1)
@@ -101,8 +114,8 @@ These survive any content edit and MUST be handled explicitly.
 | **Commit messages**     | §C above.                                                                                                                                                                                                                                                |
 | **Unreachable objects** | None carrying `ziprecruiter` — this repo's 160 unreachable objects are clean. It is the only contaminated repo where that is true.                                                                                                                       |
 
-- [ ] **E1** — Rewrite history (`git filter-repo`) to purge the §B comment and the §C commit
-      message.
+- [ ] **E1** — Rewrite history (`git filter-repo`) to purge the §B comment, the §C commit
+      message, and the plugin README content introduced by `33b15b7` (§C3).
 - [ ] **E2** — Rewrite commit authorship to the personal identity in the same pass.
 - [ ] **E3** — After rewrite, run `git reflog expire --expire=now --all` followed by
       `git gc --prune=now --aggressive`, then re-run the §Provenance sweeps to confirm 0
