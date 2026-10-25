@@ -120,15 +120,15 @@
   };
   mermaid-ink = {
     pname = "mermaid-ink";
-    version = "4642d4f5062515b04eba82ec68199757784c0e75";
+    version = "29bc4af320049191774c1cd79af2f0c1f9f15a59";
     src = fetchFromGitHub {
       owner = "jihchi";
       repo = "mermaid.ink";
-      rev = "4642d4f5062515b04eba82ec68199757784c0e75";
+      rev = "29bc4af320049191774c1cd79af2f0c1f9f15a59";
       fetchSubmodules = false;
-      sha256 = "sha256-6+pPbzHB4tM+PPNvjhpBcDSOSc3o2z4vHY3TClbrYw0=";
+      sha256 = "sha256-NkPX5UHNLSH0xn1qnCTCePugxZfTNzHlDgPGMRtpNH0=";
     };
-    date = "2026-10-17";
+    date = "2026-10-24";
   };
   mermaid-live-editor = {
     pname = "mermaid-live-editor";
