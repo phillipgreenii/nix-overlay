@@ -132,15 +132,15 @@
   };
   mermaid-live-editor = {
     pname = "mermaid-live-editor";
-    version = "eb4141dd51247259e95ecd890c1bf3dabf314913";
+    version = "b54ef0beb3b80115dc08b56da5862fdf7c74e484";
     src = fetchFromGitHub {
       owner = "mermaid-js";
       repo = "mermaid-live-editor";
-      rev = "eb4141dd51247259e95ecd890c1bf3dabf314913";
+      rev = "b54ef0beb3b80115dc08b56da5862fdf7c74e484";
       fetchSubmodules = false;
-      sha256 = "sha256-T2vTgAu+vVyMyHiv3Fhws6GLbcQks+ulvxSb2u5/4WE=";
+      sha256 = "sha256-YpNIVmLkm/2kOh216lp7XDqDvPas629igasyekboZ6Y=";
     };
-    date = "2026-10-21";
+    date = "2026-10-26";
   };
   pint = {
     pname = "pint";
