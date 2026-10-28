@@ -114,6 +114,32 @@
           # two different pkgs scopes (plain pkgs vs pkgs.extend) and drift
           # apart (pg2-24530).
           extended = pkgs.extend self.overlays.default;
+
+          # Version smoke tests (pg2-ow25c7, deepdive T3): a fetch-and-install
+          # build only proves the hash matched, so exec each CLI and assert its
+          # reported version still contains the package version. Only packages
+          # whose binary really reports their version are listed; a package
+          # that is not built on this system (e.g. cmux off aarch64-darwin) is
+          # skipped by the `hasAttr` filter. `command` defaults to
+          # `<mainProgram> --version`; gomu and pint expose a `version`
+          # subcommand instead (they reject `--version`). Not listed, by design:
+          # the non-binary packages (plugins, syntax, editor/eclipse bundles),
+          # mermaid-ink / mermaid-live-editor (servers; no version flag), and
+          # logseq (an Electron .app bundle, not a CLI).
+          versionSmokeTests = {
+            gh-stack = { }; # needs the cmd.Version ldflag in packages/gh-stack
+            glowm = { };
+            gomu.command = "gomu version";
+            mdr-rs.command = "mdr --version";
+            pint.command = "pint version";
+            cmux.command = "cmux --version";
+          };
+          versionChecks = pkgs.lib.mapAttrs' (
+            name: args:
+            pkgs.lib.nameValuePair "${name}-version" (
+              pkgs.testers.testVersion ({ package = config.packages.${name}; } // args)
+            )
+          ) (pkgs.lib.filterAttrs (name: _: config.packages ? ${name}) versionSmokeTests);
         in
         {
           # formatter, devShells.default, packages.install-pre-commit-hooks,
@@ -143,6 +169,7 @@
           # cycle through flake-parts' mkPerSystemFile.
           checks =
             config.packages
+            // versionChecks
             // {
               # Run the verify-provenance.sh bats suite as a CI check so a
               # regression in the provenance helper — including the SRI-pin
