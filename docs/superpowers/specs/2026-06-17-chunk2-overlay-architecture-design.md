@@ -1,7 +1,7 @@
 # Chunk 2: Overlay Architecture — Design
 
 **Date:** 2026-06-17
-**Source review:** [`2026-06-12-nix-overlay-deepdive.md`](../../../2026-06-12-nix-overlay-deepdive.md)
+**Source review:** [`2026-06-12-nix-overlay-deepdive.md`](../../reviews/2026-06-12-nix-overlay-deepdive.md)
 **Findings addressed:** A1 (overlay inversion), A2 (granular dependency injection)
 **Estimated effort:** ~75 min implementation + CI cycles
 

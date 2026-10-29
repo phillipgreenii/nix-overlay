@@ -9,7 +9,7 @@
 **Tech Stack:** Nix flakes (nixpkgs-26.05-darwin), `flake-utils.lib.eachDefaultSystem`, the existing overlay/`callPackage` mechanism.
 
 **Source spec:** `docs/superpowers/specs/2026-06-17-chunk2-overlay-architecture-design.md`
-**Source review:** `2026-06-12-nix-overlay-deepdive.md` (findings A1, A2)
+**Source review:** `docs/reviews/2026-06-12-nix-overlay-deepdive.md` (findings A1, A2)
 
 ## Global Constraints
 

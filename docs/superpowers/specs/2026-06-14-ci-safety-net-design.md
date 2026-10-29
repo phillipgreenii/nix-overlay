@@ -1,7 +1,7 @@
 # Chunk 1: CI Safety Net — Design
 
 **Date:** 2026-06-14
-**Source review:** [`2026-06-12-nix-overlay-deepdive.md`](../../../2026-06-12-nix-overlay-deepdive.md)
+**Source review:** [`2026-06-12-nix-overlay-deepdive.md`](../../reviews/2026-06-12-nix-overlay-deepdive.md)
 **Findings addressed:** S1, S2 (Part A only — see below), B1, B3, T1 (+ T4 bundled with S1; T2 resolved as side-effect of B3)
 **Estimated effort:** 2–3 hours including waits for CI between branches
 

@@ -9,7 +9,7 @@
 **Tech Stack:** TOML (nvfetcher manifest), Nix (overlay + package files), Bash (updater script). nvfetcher itself is invoked via `nix run nixpkgs#nvfetcher` (bootstrap-safe; same pattern as `nix run nixpkgs#nix-prefetch-github` it replaces).
 
 **Source spec:** `docs/superpowers/specs/2026-06-17-chunk5-nvfetcher-migration-design.md`
-**Source review:** `2026-06-12-nix-overlay-deepdive.md` (findings M1, A3, B7)
+**Source review:** `docs/reviews/2026-06-12-nix-overlay-deepdive.md` (findings M1, A3, B7)
 
 ## Global Constraints
 

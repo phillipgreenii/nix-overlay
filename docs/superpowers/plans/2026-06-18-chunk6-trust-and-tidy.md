@@ -9,7 +9,7 @@
 **Tech Stack:** Nix (flake + overlay), nvfetcher (already integrated post-Chunk-5), Bash (`update-locks.sh`, new `verify-provenance.sh`), `gh attestation verify` / `cosign verify-blob` / `curl + sha256sum` for provenance methods (per-upstream-audit-driven).
 
 **Source spec:** `docs/superpowers/specs/2026-06-18-chunk6-trust-and-tidy-design.md`
-**Source review:** `2026-06-12-nix-overlay-deepdive.md`
+**Source review:** `docs/reviews/2026-06-12-nix-overlay-deepdive.md`
 
 ## Global Constraints
 

@@ -9,7 +9,7 @@
 **Tech Stack:** Nix flakes (nixpkgs-26.05-darwin), `flake-utils.lib.eachDefaultSystem`, `pkgs.undmg`, `pkgs.darwin.sigtool`, bash for updater scripts.
 
 **Source spec:** `docs/superpowers/specs/2026-06-17-chunk3-honesty-and-correctness-design.md`
-**Source review:** `2026-06-12-nix-overlay-deepdive.md` (findings B5, B6, S4, B10, B2, S5)
+**Source review:** `docs/reviews/2026-06-12-nix-overlay-deepdive.md` (findings B5, B6, S4, B10, B2, S5)
 
 ## Global Constraints
 
@@ -145,7 +145,7 @@ ul_run_step "update-c9watch" \
 - [ ] **Step 1.8: Sanity-check that no c9watch references remain**
 
 ```bash
-grep -RIn c9watch . --exclude-dir=.git --exclude-dir=docs --exclude-dir=.update-locks --exclude=2026-06-12-nix-overlay-deepdive.md
+grep -RIn c9watch . --exclude-dir=.git --exclude-dir=docs --exclude-dir=.update-locks
 ```
 
 Expected: no output. If any reference appears outside docs/historical files, investigate and remove. (The deepdive review doc and Chunk 1/2 specs/plans naturally still mention c9watch as historical context — those are out of scope.)
@@ -1057,7 +1057,7 @@ After all three branches are merged, run this checklist:
   # Expected: no output
 
   # 8. No c9watch references in code
-  grep -RIn c9watch . --exclude-dir=.git --exclude-dir=docs --exclude=2026-06-12-nix-overlay-deepdive.md
+  grep -RIn c9watch . --exclude-dir=.git --exclude-dir=docs
   # Expected: no output
 
   # 9. CI on main green

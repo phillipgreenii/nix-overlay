@@ -1,7 +1,7 @@
 # Chunk 3: Honesty & Correctness — Design
 
 **Date:** 2026-06-17
-**Source review:** [`2026-06-12-nix-overlay-deepdive.md`](../../../2026-06-12-nix-overlay-deepdive.md)
+**Source review:** [`2026-06-12-nix-overlay-deepdive.md`](../../reviews/2026-06-12-nix-overlay-deepdive.md)
 **Findings addressed:** B5 (dishonest meta.platforms), B6 (updaters that prefetch but don't write fakeHash), S4 (impure host-tool usage), B10 (firefox overlay silent-no-op), B2 (fix-lint broken), S5 (invalid-hash fallback). Plus c9watch removal (housekeeping).
 **Estimated effort:** ~90 min implementation + CI cycles
 

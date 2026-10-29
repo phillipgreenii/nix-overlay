@@ -1,7 +1,7 @@
 # Chunk 6: Trust & Tidy — Design
 
 **Date:** 2026-06-18
-**Source review:** [`2026-06-12-nix-overlay-deepdive.md`](../../../2026-06-12-nix-overlay-deepdive.md)
+**Source review:** [`2026-06-12-nix-overlay-deepdive.md`](../../reviews/2026-06-12-nix-overlay-deepdive.md)
 **Findings addressed:**
 
 - **A5** top-level attribute squatting — hard cutover to `phillipgreenii.{...}` namespace

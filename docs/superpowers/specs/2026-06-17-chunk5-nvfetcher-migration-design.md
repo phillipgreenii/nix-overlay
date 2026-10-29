@@ -1,7 +1,7 @@
 # Chunk 5: nvfetcher Migration — Design
 
 **Date:** 2026-06-17
-**Source review:** [`2026-06-12-nix-overlay-deepdive.md`](../../../2026-06-12-nix-overlay-deepdive.md)
+**Source review:** [`2026-06-12-nix-overlay-deepdive.md`](../../reviews/2026-06-12-nix-overlay-deepdive.md)
 **Findings addressed:** M1 (nvfetcher adoption — replaces ~400 lines of bespoke updater shell), A3 (four near-identical updater scripts + two near-identical sed functions), B7 (comment-as-data and grep/sed-based Nix editing).
 **Estimated effort:** ~3–4 hours implementation + CI cycle
 

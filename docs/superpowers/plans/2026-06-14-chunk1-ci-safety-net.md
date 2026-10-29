@@ -9,7 +9,7 @@
 **Tech Stack:** Nix flakes (nixpkgs-26.05-darwin), bash (`update-locks.sh`), GitHub Actions (`.github/workflows/{ci,update-flakes}.yml`), `gh` CLI for branch protection.
 
 **Source spec:** `docs/superpowers/specs/2026-06-14-ci-safety-net-design.md`
-**Source review:** `2026-06-12-nix-overlay-deepdive.md`
+**Source review:** `docs/reviews/2026-06-12-nix-overlay-deepdive.md`
 
 ---
 

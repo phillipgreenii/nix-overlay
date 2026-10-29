@@ -1,7 +1,7 @@
 # Chunk 4: README & Hygiene — Design
 
 **Date:** 2026-06-17
-**Source review:** [`2026-06-12-nix-overlay-deepdive.md`](../../../2026-06-12-nix-overlay-deepdive.md)
+**Source review:** [`2026-06-12-nix-overlay-deepdive.md`](../../reviews/2026-06-12-nix-overlay-deepdive.md)
 **Findings addressed:** U1 (no README), U2 (`.update-locks/steps/` not gitignored), U4 (`.pre-commit-config.yaml` symlink committed).
 **Estimated effort:** ~30 min implementation + CI cycle
 

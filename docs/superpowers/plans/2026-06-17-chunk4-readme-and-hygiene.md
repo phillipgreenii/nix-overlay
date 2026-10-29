@@ -9,7 +9,7 @@
 **Tech Stack:** Markdown for README; `.gitignore` syntax; `git rm` / `git rm --cached` for file-tracking changes. No Nix code changes (`nix flake check` is a sanity-check, not a behavior change).
 
 **Source spec:** `docs/superpowers/specs/2026-06-17-chunk4-readme-and-hygiene-design.md`
-**Source review:** `2026-06-12-nix-overlay-deepdive.md` (findings U1, U2, U4)
+**Source review:** `docs/reviews/2026-06-12-nix-overlay-deepdive.md` (findings U1, U2, U4)
 
 ## Global Constraints
 

@@ -7,7 +7,7 @@
 
 ## Context
 
-Finding U6 of `2026-06-12-nix-overlay-deepdive.md` ("No binary cache for consumers", Low) says CI
+Finding U6 of `docs/reviews/2026-06-12-nix-overlay-deepdive.md` ("No binary cache for consumers", Low) says CI
 builds and pushes nothing, so consumers rebuild this repo's packages locally. Its recommendation was
 "once T1 makes CI build packages, push to Cachix or FlakeHub Cache". The bead asks for a first
 re-verification of U6 and T1 against current HEAD, then a recorded decision.
