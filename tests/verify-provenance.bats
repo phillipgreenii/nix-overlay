@@ -340,3 +340,47 @@ write_manifest_for() {
     return 1
   fi
 }
+
+# --- per-key mode (bead pg2-yfre4n): hold only the failing key ---
+
+@test "main KEY...: reports per-key results and does not abort at the first failing key" {
+  # shellcheck disable=SC2034  # read by main() via dynamic scope after `run`
+  declare -A METHODS=([bad]=bogus-method [good]=git-source [other]=none-no-provenance-published)
+  run main bad good other
+  [ "$status" -eq 1 ]
+  # The failing key is named, and the keys AFTER it were still verified.
+  [[ "$output" == *"verify-provenance: bad: FAILED"* ]]
+  [[ "$output" == *"good: skipped (git source"* ]]
+  [[ "$output" == *"other: skipped (no upstream provenance"* ]]
+  [[ "$output" != *"good: FAILED"* ]]
+  [[ "$output" != *"other: FAILED"* ]]
+}
+
+@test "main KEY...: verifies only the named keys, so a failing key outside the list does not fail the run" {
+  # shellcheck disable=SC2034  # read by main() via dynamic scope after `run`
+  declare -A METHODS=([bad]=bogus-method [good]=git-source)
+  run main good
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"verified: good"* ]]
+  [[ "$output" != *"bad"* ]]
+}
+
+@test "main KEY...: a key with no METHODS entry fails closed" {
+  # shellcheck disable=SC2034  # read by main() via dynamic scope after `run`
+  declare -A METHODS=([good]=git-source)
+  run main nosuch
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"nosuch: no METHODS entry"* ]]
+  [[ "$output" == *"nosuch: FAILED"* ]]
+}
+
+@test "main (no args): the idempotent every-run step still checks every key and fails on any failure" {
+  # A held key's entry is restored to the previously landed one before this
+  # step runs, so it passes; a key that really fails still fails the step.
+  # shellcheck disable=SC2034  # read by main() via dynamic scope after `run`
+  declare -A METHODS=([bad]=bogus-method [good]=git-source)
+  run main
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"bad: FAILED"* ]]
+  [[ "$output" == *"good: skipped"* ]]
+}

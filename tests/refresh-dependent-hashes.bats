@@ -232,3 +232,166 @@ EOF
 @test "update-locks.sh runs the nvfetcher step through refresh-dependent-hashes.sh with the provenance gate" {
   grep -qE 'refresh-dependent-hashes\.sh"? +--gate' "${REPO_ROOT}/update-locks.sh"
 }
+
+# --- per-key provenance hold (bead pg2-yfre4n), pure tier: nix and the updater are stubs ---
+#
+# Operator ruling 2026-10-28: "nightly updates should be able to update as much
+# as possible. it isn't all or nothing." A key failing the provenance gate is
+# held alone; the others land; the run exits non-zero.
+
+# Fixture: keys a, b (each with a hash file and an earlier snapshot entry), a
+# stub `nix` (a build fails with a got: mismatch while the package file holds
+# the placeholder, succeeds otherwise), a stub updater bumping the keys named in
+# BUMP, and a gate that fails for the keys named in GATE_FAIL.
+prov_fixture() {
+  mkdir -p "${TEST_DIR}/_sources" "${TEST_DIR}/packages/a" "${TEST_DIR}/packages/b" "${TEST_DIR}/bin"
+  cd "${TEST_DIR}" || return 1
+  jq --indent 4 -S -n '{a:{pname:"a",version:"1"},b:{pname:"b",version:"1"}}' | tr -d '\n' >_sources/generated.json
+  cat >_sources/generated.nix <<'NIX'
+{
+  a = {
+    pname = "a";
+    version = "1";
+  };
+  b = {
+    pname = "b";
+    version = "1";
+  };
+}
+NIX
+  printf 'hash = "sha256-OLDA";\n' >packages/a/default.nix
+  printf 'hash = "sha256-OLDB";\n' >packages/b/default.nix
+  cat >bin/nix <<'EOF'
+#!/usr/bin/env bash
+case "$*" in
+*builtins.currentSystem*)
+  echo x86_64-linux
+  exit 0
+  ;;
+*attrNames*)
+  echo '["a","b","c"]'
+  exit 0
+  ;;
+esac
+if [ "$1" = build ]; then
+  attr="${*: -1}"
+  attr="${attr#*#}"
+  if grep -q 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=' "packages/${attr}/default.nix"; then
+    echo "         specified: sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=" >&2
+    echo "            got:    sha256-NEW${attr}" >&2
+    exit 1
+  fi
+fi
+exit 0
+EOF
+  cat >bump.sh <<'EOF'
+#!/usr/bin/env bash
+# bump the keys named in $BUMP (space separated) to version 2
+for k in $BUMP; do
+  out=$(jq --indent 4 -S --arg k "$k" '.[$k].version = "2"' _sources/generated.json)
+  printf '%s' "$out" >_sources/generated.json
+  sed -i.bak "/^  $k = {/,/^  };/ s/version = \"1\"/version = \"2\"/" _sources/generated.nix
+  rm -f _sources/generated.nix.bak
+done
+EOF
+  cat >gate.sh <<'EOF'
+#!/usr/bin/env bash
+# fail for the keys named in $GATE_FAIL
+for k in $GATE_FAIL; do
+  if [ "$1" = "$k" ]; then
+    echo "verify-provenance: $1: hash mismatch (fixture)" >&2
+    exit 1
+  fi
+done
+echo "verify-provenance: verified: $1"
+EOF
+  chmod +x bin/nix bump.sh gate.sh
+  PATH="${TEST_DIR}/bin:${PATH}"
+  # shellcheck disable=SC2034  # read by main()
+  BUILD_ATTRS=(["a"]="a" ["b"]="b")
+  # shellcheck disable=SC2034
+  HASH_DEPS=(["a"]="packages/a/default.nix:hash:a" ["b"]="packages/b/default.nix:hash:b")
+  # shellcheck disable=SC2034
+  MANUAL_DEPS=()
+  # shellcheck disable=SC2034
+  PIN_GUARDS=()
+}
+
+@test "provenance hold: the failing key is reverted, the passing key lands, PROVENANCE-HELD is printed, exit non-zero" {
+  prov_fixture
+  export BUMP="a b" GATE_FAIL="a"
+  run main --gate "${TEST_DIR}/gate.sh" -- "${TEST_DIR}/bump.sh"
+  echo "$output"
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"PROVENANCE-HELD a: "*"hash mismatch (fixture)"* ]]
+  [[ "$output" != *"PROVENANCE-HELD b"* ]]
+  # a: back to the snapshot (entries and hash file); b: bump and refreshed hash kept.
+  [ "$(jq -r '.a.version' _sources/generated.json)" = "1" ]
+  awk '/^  a = \{/,/^  \};/' _sources/generated.nix | grep -qF 'version = "1"'
+  [ "$(rdh_get_hash packages/a/default.nix hash)" = "sha256-OLDA" ]
+  [ "$(jq -r '.b.version' _sources/generated.json)" = "2" ]
+  awk '/^  b = \{/,/^  \};/' _sources/generated.nix | grep -qF 'version = "2"'
+  [ "$(rdh_get_hash packages/b/default.nix hash)" = "sha256-NEWb" ]
+}
+
+@test "provenance hold: every key passing leaves behavior unchanged and exits 0" {
+  prov_fixture
+  export BUMP="a b" GATE_FAIL=""
+  run main --gate "${TEST_DIR}/gate.sh" -- "${TEST_DIR}/bump.sh"
+  echo "$output"
+  [ "$status" -eq 0 ]
+  [[ "$output" != *"PROVENANCE-HELD"* ]]
+  [ "$(jq -r '.a.version' _sources/generated.json)" = "2" ]
+  [ "$(jq -r '.b.version' _sources/generated.json)" = "2" ]
+  [ "$(rdh_get_hash packages/a/default.nix hash)" = "sha256-NEWa" ]
+  [ "$(rdh_get_hash packages/b/default.nix hash)" = "sha256-NEWb" ]
+}
+
+@test "provenance hold: every key failing reverts all bumps, exits non-zero, one PROVENANCE-HELD line per key" {
+  prov_fixture
+  export BUMP="a b" GATE_FAIL="a b"
+  run main --gate "${TEST_DIR}/gate.sh" -- "${TEST_DIR}/bump.sh"
+  echo "$output"
+  [ "$status" -ne 0 ]
+  [ "$(grep -c '^refresh-dependent-hashes: PROVENANCE-HELD a: ' <<<"$output")" -eq 1 ]
+  [ "$(grep -c '^refresh-dependent-hashes: PROVENANCE-HELD b: ' <<<"$output")" -eq 1 ]
+  [ "$(jq -r '.a.version' _sources/generated.json)" = "1" ]
+  [ "$(jq -r '.b.version' _sources/generated.json)" = "1" ]
+  [ "$(rdh_get_hash packages/a/default.nix hash)" = "sha256-OLDA" ]
+  [ "$(rdh_get_hash packages/b/default.nix hash)" = "sha256-OLDB" ]
+}
+
+@test "provenance hold: a failing key with no earlier entry is a hard failure with an ERROR line" {
+  prov_fixture
+  # key c is brand new: the updater adds it, the snapshot has no entry for it.
+  cat >bump.sh <<'EOF'
+#!/usr/bin/env bash
+out=$(jq --indent 4 -S '.c = {pname:"c",version:"1"}' _sources/generated.json)
+printf '%s' "$out" >_sources/generated.json
+EOF
+  export GATE_FAIL="c"
+  # shellcheck disable=SC2034
+  BUILD_ATTRS=(["a"]="a" ["b"]="b" ["c"]="")
+  run main --gate "${TEST_DIR}/gate.sh" -- "${TEST_DIR}/bump.sh"
+  echo "$output"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"ERROR c is new (no earlier entry to restore) and cannot be held: provenance failed"* ]]
+  [[ "$output" != *"PROVENANCE-HELD c"* ]]
+}
+
+@test "provenance hold: --held-report records the held lines and exits 0 so the framework keeps the other keys" {
+  prov_fixture
+  export BUMP="a b" GATE_FAIL="a"
+  run main --gate "${TEST_DIR}/gate.sh" --held-report "${TEST_DIR}/held.txt" -- "${TEST_DIR}/bump.sh"
+  echo "$output"
+  [ "$status" -eq 0 ]
+  grep -q '^PROVENANCE-HELD a: ' "${TEST_DIR}/held.txt"
+  [ "$(wc -l <"${TEST_DIR}/held.txt")" -eq 1 ]
+  [ "$(jq -r '.b.version' _sources/generated.json)" = "2" ]
+}
+
+@test "docs: nothing says a provenance failure rolls back the whole run" {
+  ! grep -nE 'rolls everything back|step fails, framework rolls back|refusing to build or land' \
+    "${REPO_ROOT}/refresh-dependent-hashes.sh" "${REPO_ROOT}/docs/update-locks-dependent-hashes.md" \
+    "${REPO_ROOT}/README.md" "${REPO_ROOT}/verify-provenance.sh"
+}

@@ -75,19 +75,32 @@ else
   nvfetcher_cmd=(nix run nixpkgs#nvfetcher --)
 fi
 # The step runs nvfetcher THROUGH refresh-dependent-hashes.sh (pg2-g39wh): for each
-# source that moved it runs the provenance gate, recomputes the dependent
-# fixed-output hashes (pnpmDeps, vendorHash), builds the package, and HOLDS
-# (reverts) any bump that cannot be refreshed or no longer builds -- including a
-# pnpm minimumReleaseAge refusal -- instead of landing a broken lock. The
-# separate verify-provenance step below stays as the idempotent every-run check.
+# source that moved it runs the provenance gate (verify-provenance.sh KEY), recomputes
+# the dependent fixed-output hashes (pnpmDeps, vendorHash), builds the package, and
+# HOLDS (reverts) ONLY the keys that fail provenance, cannot be refreshed or no longer
+# build -- including a pnpm minimumReleaseAge refusal -- instead of landing a broken
+# lock; the other keys land (pg2-yfre4n). The framework rolls back every change of a
+# step that exits non-zero, so the step exits 0 and records its PROVENANCE-HELD lines
+# in a report file; the "provenance-held" step below then fails (changing nothing) so
+# the run is visibly flagged while the passing keys' commits stay. The separate
+# verify-provenance step stays as the idempotent every-run check: a held key's entry
+# is already restored to the previously landed one, so it does not re-fail there.
+rdh_held_report="$(mktemp)"
 ul_run_step "nvfetcher" \
   "update-locks: update sources via nvfetcher" \
-  "$SCRIPT_DIR/refresh-dependent-hashes.sh" --gate "$SCRIPT_DIR/verify-provenance.sh" -- \
+  "$SCRIPT_DIR/refresh-dependent-hashes.sh" --gate "$SCRIPT_DIR/verify-provenance.sh" \
+  --held-report "$rdh_held_report" -- \
   "${nvfetcher_cmd[@]}" --build-dir _sources --config nvfetcher.toml
 
 ul_run_step "verify-provenance" \
   "update-locks: verify provenance of nvfetcher source updates" \
   "$SCRIPT_DIR/verify-provenance.sh"
+
+# Flag the run when any key was held for provenance. Changes nothing, so its
+# non-zero exit rolls back nothing; it only marks the run failed.
+ul_run_step "provenance-held" \
+  "update-locks: report provenance-held keys" \
+  bash -c 'if [ -s "$1" ]; then cat "$1" >&2; exit 1; fi' _ "$rdh_held_report"
 
 ul_run_step "nix-flake-update" \
   "update-locks: update nix flake.lock" \

@@ -13,9 +13,13 @@
 # command) and, for every source whose entry in _sources/generated.json
 # changed:
 #
-#   1. GATE   Runs the optional --gate command (verify-provenance.sh) BEFORE any
-#             build, so no unverified binary artifact is unpacked/built first. A
-#             failing gate fails the step; the framework rolls everything back.
+#   1. GATE   Runs the optional --gate command (verify-provenance.sh) once per
+#             changed key, with the key as its only argument, BEFORE any build,
+#             so no unverified binary artifact is unpacked/built first. A key
+#             whose gate fails is HELD alone (bump reverted, exactly like step
+#             4), a `PROVENANCE-HELD <key>: <reason>` line is printed, and the
+#             other keys continue and land (bead pg2-yfre4n). The run exits
+#             non-zero so it is visibly flagged (see --held-report).
 #   2. REFRESH  For each dependent fixed-output hash (HASH_DEPS): writes a
 #             placeholder hash, builds the package, and takes nix's own
 #             `got:` value as the new hash. A placeholder is REQUIRED -- with the
@@ -45,13 +49,19 @@
 # run retries once the dependency has aged (bead pg2-kwuw0).
 #
 # Sources whose key is absent from the snapshot (brand-new) cannot be reverted
-# to anything, so a failure there exits 1.
+# to anything, so a failure there (provenance included) exits 1.
 #
 # Usage:
-#   refresh-dependent-hashes.sh [--gate CMD] [--force KEY]... [-- UPDATER [ARGS...]]
+#   refresh-dependent-hashes.sh [--gate CMD] [--held-report FILE] [--force KEY]... [-- UPDATER [ARGS...]]
 #
-#   --gate CMD     run CMD (no arguments) after UPDATER and before any build,
-#                  but only when at least one key changed.
+#   --gate CMD     run `CMD KEY` for each changed key after UPDATER and before
+#                  any build; a non-zero exit holds that key only.
+#   --held-report FILE
+#                  write the PROVENANCE-HELD lines to FILE and exit 0 for them
+#                  (a hard failure still exits 1). update-locks.sh uses this:
+#                  its framework rolls back every change of a step that exits
+#                  non-zero, so a later step flags the run from FILE instead.
+#                  Without it a provenance hold exits 1.
 #   --force KEY    treat KEY as changed even if UPDATER did not change it. Use it
 #                  to recompute a dependent hash by hand
 #                  (`./refresh-dependent-hashes.sh --force pint`).
@@ -402,14 +412,18 @@ rdh_snapshot() {
 }
 
 rdh_usage() {
-  echo "Usage: $0 [--gate CMD] [--force KEY]... [-- UPDATER [ARGS...]]"
+  echo "Usage: $0 [--gate CMD] [--held-report FILE] [--force KEY]... [-- UPDATER [ARGS...]]"
 }
 
 main() {
-  local gate="" key rc
-  local -a forced=() changed=() active=() held=() verified=()
+  local gate="" key rc held_report=""
+  local -a forced=() changed=() active=() held=() verified=() prov_held=()
   while [ "$#" -gt 0 ]; do
     case "$1" in
+    --held-report)
+      held_report="${2:?--held-report needs a file}"
+      shift 2
+      ;;
     --gate)
       gate="${2:?--gate needs a command}"
       shift 2
@@ -468,12 +482,32 @@ main() {
   fi
   rdh_log "changed sources: ${changed[*]}"
 
+  # Provenance gate, per key, BEFORE any build: a failing key is held (restored
+  # from the snapshot) and the others continue. A key with no earlier entry
+  # cannot be held and stays a hard failure.
+  local hard_fail=0 gate_out gate_reason
   if [ -n "$gate" ]; then
-    rdh_log "running gate before any build: $gate"
-    "$gate" || {
-      echo "refresh-dependent-hashes: gate '$gate' failed; refusing to build or land the bump" >&2
-      return 1
-    }
+    active=()
+    for key in "${changed[@]}"; do
+      rdh_log "running gate before any build: $gate $key"
+      if gate_out=$("$gate" "$key" 2>&1); then
+        printf '%s\n' "$gate_out"
+        active+=("$key")
+        continue
+      fi
+      printf '%s\n' "$gate_out" >&2
+      gate_reason="gate '$gate' failed for $key: $(printf '%s\n' "$gate_out" | grep -v '^[[:space:]]*$' | tail -n 5 | tr '\n' '|')"
+      if [ "$(jq -e --arg k "$key" 'has($k)' "$RDH_BASE/generated.json")" != "true" ]; then
+        echo "refresh-dependent-hashes: ERROR $key is new (no earlier entry to restore) and cannot be held: provenance failed: $gate_reason" >&2
+        hard_fail=1
+        continue
+      fi
+      rdh_restore_key "$key"
+      held+=("$key")
+      prov_held+=("PROVENANCE-HELD $key: $gate_reason")
+      echo "refresh-dependent-hashes: PROVENANCE-HELD $key: $gate_reason (bump reverted, retried next run)" >&2
+    done
+    changed=("${active[@]}")
   fi
 
   RDH_SYSTEM=$(nix eval --impure --raw --expr builtins.currentSystem)
@@ -483,7 +517,7 @@ main() {
   # verification (packages composed from several sources, e.g. eclipse-java +
   # lombok), so after any hold re-verify the survivors until a pass is clean.
   active=("${changed[@]}")
-  local hard_fail=0 held_in_pass remaining
+  local held_in_pass remaining
   while [ "${#active[@]}" -gt 0 ]; do
     held_in_pass=0
     remaining=()
@@ -509,7 +543,24 @@ main() {
   verified=("${active[@]}")
 
   rdh_log "summary: verified/refreshed: ${verified[*]:-none}; held: ${held[*]:-none}"
+  if [ "${#prov_held[@]}" -gt 0 ]; then
+    local line
+    for line in "${prov_held[@]}"; do
+      echo "refresh-dependent-hashes: summary: $line" >&2
+    done
+    if [ -n "$held_report" ]; then
+      printf '%s\n' "${prov_held[@]}" >"$held_report"
+    fi
+  fi
   [ "$hard_fail" -eq 0 ] || return 1
+  # A provenance hold flags the run non-zero, but the other keys have landed.
+  # With --held-report the caller (update-locks.sh) flags the run itself, in a
+  # later step, because the framework rolls back EVERY change of a step that
+  # exits non-zero.
+  if [ "${#prov_held[@]}" -gt 0 ] && [ -z "$held_report" ]; then
+    return 1
+  fi
+  return 0
 }
 
 # Only run when executed directly; sourcing (bats) defines the functions only.

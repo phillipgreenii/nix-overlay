@@ -55,10 +55,15 @@
 #
 # When ANY upstream method fails (attestation/checksums/sigstore
 # verification mismatch, or an `unknown method` entry), the helper exits
-# non-zero and does NOT touch git history itself. It runs as a step under
-# nix-repo-base's update-locks framework (ul_run_step): a non-zero exit makes
-# the framework roll back that step and mark the whole run failed, so the
-# workflow's PR step never fires. A self-managed `git reset --hard HEAD~1`
+# non-zero and does NOT touch git history itself. With no arguments it checks
+# every key; with `KEY...` it checks only those keys, never stopping at the
+# first failure, and names each failed key (`<key>: FAILED`). The per-key mode
+# is the gate of refresh-dependent-hashes.sh, which holds ONLY the failed keys
+# (PROVENANCE-HELD) so the other keys' bumps still land (bead pg2-yfre4n). The
+# no-argument run is also the standalone idempotent step in update-locks.sh (a
+# ul_run_step step: a non-zero exit there rolls back that step only). A held
+# key's entry is restored to the previously landed, previously verified one
+# before that step runs, so a held bump does not re-fail it. A self-managed `git reset --hard HEAD~1`
 # was removed (bead pg2-iy3yf): it assumed HEAD was always the nvfetcher
 # commit, but when the nvfetcher step is TTL-skipped HEAD~1 is an unrelated
 # (possibly unpushed) commit the reset would silently destroy. This helper is
@@ -249,66 +254,91 @@ verify_sigstore() {
   fi
 }
 
-# --- main loop: verify every configured key every run ---
+# --- per-key verification ---
+
+# Verify ONE key by its METHODS entry. Prints a verified/skipped line on stdout
+# and the failure reason on stderr; returns 0 when the key passes (or is
+# intentionally skipped) and 1 when it fails. A key without a METHODS entry
+# fails closed.
+verify_key() {
+  local key="$1" method
+  if [ -z "${METHODS[$key]+x}" ]; then
+    echo "verify-provenance: $key: no METHODS entry (unknown upstream)" >&2
+    return 1
+  fi
+  method="${METHODS[$key]}"
+  case "$method" in
+  # The verifying methods are silent on success, so log an explicit PASS line
+  # for each. Without it a run shows only `skipped` lines plus a blanket
+  # "all upstreams verified", making a genuinely-verified upstream
+  # indistinguishable from one that was never configured.
+  attestation)
+    verify_attestation "$key" || return 1
+    echo "verify-provenance: $key: verified (GitHub attestation)"
+    ;;
+  checksums)
+    verify_checksums "$key" || return 1
+    echo "verify-provenance: $key: verified (pinned hash matches upstream $(checksum_file_for "$key"))"
+    ;;
+  sigstore)
+    verify_sigstore "$key" || return 1
+    echo "verify-provenance: $key: verified (cosign signature)"
+    ;;
+  git-source)
+    # Intentional no-op: git-fetched sources have no separate provenance
+    # artifact; the nvfetcher-pinned commit SHA is the integrity proof.
+    echo "verify-provenance: $key: skipped (git source, SHA pin is integrity)"
+    ;;
+  none-no-provenance-published)
+    # Intentional no-op with explicit gap log. Audit 2026-06-18: this
+    # upstream publishes neither GitHub attestations, checksums.txt, nor
+    # cosign signatures. Re-audit if upstream changes their release
+    # pipeline (see this file's header comment for context).
+    echo "verify-provenance: $key: skipped (no upstream provenance as of 2026-06-18 audit)"
+    ;;
+  *)
+    echo "verify-provenance: $key: unknown method '$method'" >&2
+    return 1
+    ;;
+  esac
+}
+
+# Usage: verify-provenance.sh [KEY...]
+#   no KEY   verify every configured key (the idempotent every-run step).
+#   KEY...   verify only those keys (the per-key gate of
+#            refresh-dependent-hashes.sh). Every named key is verified even
+#            after one fails; each failure prints a
+#            `verify-provenance: <key>: FAILED` line on stderr, so a caller
+#            reads per-key results. The exit is non-zero when any key failed.
 main() {
-  local fail=0 key method
-  for key in "${!METHODS[@]}"; do
-    method="${METHODS[$key]}"
-    case "$method" in
-    # The verifying methods are silent on success, so log an explicit PASS line
-    # for each. Without it a run shows only `skipped` lines plus a blanket
-    # "all upstreams verified", making a genuinely-verified upstream
-    # indistinguishable from one that was never configured.
-    attestation)
-      if verify_attestation "$key"; then
-        echo "verify-provenance: $key: verified (GitHub attestation)"
-      else
-        fail=1
-      fi
-      ;;
-    checksums)
-      if verify_checksums "$key"; then
-        echo "verify-provenance: $key: verified (pinned hash matches upstream $(checksum_file_for "$key"))"
-      else
-        fail=1
-      fi
-      ;;
-    sigstore)
-      if verify_sigstore "$key"; then
-        echo "verify-provenance: $key: verified (cosign signature)"
-      else
-        fail=1
-      fi
-      ;;
-    git-source)
-      # Intentional no-op: git-fetched sources have no separate provenance
-      # artifact; the nvfetcher-pinned commit SHA is the integrity proof.
-      echo "verify-provenance: $key: skipped (git source, SHA pin is integrity)"
-      ;;
-    none-no-provenance-published)
-      # Intentional no-op with explicit gap log. Audit 2026-06-18: this
-      # upstream publishes neither GitHub attestations, checksums.txt, nor
-      # cosign signatures. Re-audit if upstream changes their release
-      # pipeline (see this file's header comment for context).
-      echo "verify-provenance: $key: skipped (no upstream provenance as of 2026-06-18 audit)"
-      ;;
-    *)
-      echo "verify-provenance: $key: unknown method '$method'" >&2
-      fail=1
-      ;;
-    esac
+  local -a keys=() failed=()
+  local key
+  if [ "$#" -gt 0 ]; then
+    keys=("$@")
+  else
+    keys=("${!METHODS[@]}")
+  fi
+
+  for key in "${keys[@]}"; do
+    if ! verify_key "$key"; then
+      echo "verify-provenance: $key: FAILED" >&2
+      failed+=("$key")
+    fi
   done
 
-  if [ "$fail" -ne 0 ]; then
-    # Exit non-zero WITHOUT touching git history. Under ul_run_step this
-    # rolls back the failed step and fails the whole update-locks run, so the
-    # PR step never fires (see the header note on the removed HEAD~1 reset,
-    # bead pg2-iy3yf).
-    echo "verify-provenance: at least one upstream failed provenance check" >&2
+  if [ "${#failed[@]}" -ne 0 ]; then
+    # Exit non-zero WITHOUT touching git history (bead pg2-iy3yf). The caller
+    # decides what a failure means: refresh-dependent-hashes.sh holds ONLY the
+    # failed keys; the standalone every-run step fails its own step.
+    echo "verify-provenance: at least one upstream failed provenance check: ${failed[*]}" >&2
     return 1
   fi
 
-  echo "verify-provenance: all configured upstreams verified."
+  if [ "$#" -gt 0 ]; then
+    echo "verify-provenance: verified: ${keys[*]}"
+  else
+    echo "verify-provenance: all configured upstreams verified."
+  fi
 }
 
 # Only run the verification loop when executed directly. Sourcing the script

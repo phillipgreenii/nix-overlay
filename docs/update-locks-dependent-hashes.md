@@ -18,8 +18,19 @@ it.
 - The step MUST NOT override pnpm's `minimumReleaseAge` policy and MUST NOT write a guessed hash.
 - A source that is new (no earlier entry to revert to) MUST fail the step when it does not build.
 - A source whose version the locked `nix-repo-base` does not pin MUST be held (see "Pin guard").
-- The provenance gate (`verify-provenance.sh`) MUST run before any build of a bumped source, and it
-  is unchanged. The separate `verify-provenance` step still runs every time.
+- The provenance gate (`verify-provenance.sh <key>`) MUST run per changed key before any build of a
+  bumped source. A key failing it MUST be held alone (reverted exactly like a failed build); the
+  other keys MUST still land (operator ruling, Phillip, 2026-10-28: "nightly updates should be able
+  to update as much as possible. it isn't all or nothing.").
+- A provenance hold MUST print `PROVENANCE-HELD <key>: <reason>` (stderr and the run summary) and
+  the overall run MUST be flagged failed. `refresh-dependent-hashes.sh` itself exits non-zero; under
+  `update-locks.sh` it runs with `--held-report FILE` and exits 0, because the framework rolls back
+  every change of a step that exits non-zero, and the later `provenance-held` step (which changes
+  nothing) fails the run from that file instead.
+- A provenance failure of a key that is new (no earlier entry to restore) MUST fail the step.
+- The separate `verify-provenance` step still runs every time, over every key. A held key's entry is
+  restored to the previously landed, previously verified one first, so a held bump does not re-fail
+  that step.
 
 ## Flow
 
@@ -28,9 +39,11 @@ flowchart TD
   A["snapshot _sources and dependent hash files"] --> B["run nvfetcher"]
   B --> C{"any key changed?"}
   C -- no --> Z["done"]
-  C -- yes --> D["gate: verify-provenance.sh"]
-  D -- fails --> F["step fails, framework rolls back"]
+  C -- yes --> D{"per key gate: verify-provenance.sh KEY"}
+  D -- "fails, key has an earlier entry" --> F["PROVENANCE-HELD: revert that key only, run flagged failed"]
+  D -- "fails, key is new" --> X["hard failure, step fails"]
   D -- passes --> E["per changed key"]
+  F --> Z
   E --> P{"pin guard: version equals locked pin?"}
   P -- no --> J
   P -- yes --> G["write placeholder hash, build package"]

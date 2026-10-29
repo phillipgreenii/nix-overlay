@@ -307,7 +307,7 @@ EOF
   [[ "$output" == *"updater failed with exit 7"* ]]
 }
 
-@test "a failing provenance gate stops the step before any hash is touched" {
+@test "a failing provenance gate holds that key (PROVENANCE-HELD) before any hash is touched" {
   cat >"${FX}/gate.sh" <<'EOF'
 #!/usr/bin/env bash
 exit 1
@@ -316,10 +316,11 @@ EOF
   run "$SCRIPT" --gate "${FX}/gate.sh" -- "${FX}/bump.sh" fresh=v2
   echo "$output"
   [ "$status" -eq 1 ]
-  [[ "$output" == *"refusing to build or land the bump"* ]]
-  # The framework rolls the step back; this script must not have started
-  # rewriting hashes.
+  [[ "$output" == *"PROVENANCE-HELD fresh: "* ]]
+  # The key is reverted per key; this script must not have started rewriting
+  # hashes.
   cmp packages/fresh/default.nix _baseline_packages/fresh/default.nix
+  cmp _sources/generated.json _baseline_sources/generated.json
 }
 
 # --- pin guard (pg2-bvudh): a bump the locked input does not pin never lands ---

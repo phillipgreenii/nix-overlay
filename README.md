@@ -69,9 +69,9 @@ Integrity today rests on two mechanisms:
 
 `ci.yml` additionally runs `nix flake check --all-systems` (which builds every package as a check on the runner's own system) on every push to and pull request against `main`. It is for visibility only: `main` has no branch protection and no required checks, so CI is **not** a merge gate.
 
-`verify-provenance.sh` (run in `update-locks.sh` as the `--gate` of `refresh-dependent-hashes.sh`, after `nvfetcher` and before any build, and again as its own idempotent step before `nix flake update`) is an _additional_, per-upstream provenance hook layered on top. Each upstream has a method in the `METHODS` table at the top of the script:
+`verify-provenance.sh` (run in `update-locks.sh` as the per-key `--gate` of `refresh-dependent-hashes.sh`, as `verify-provenance.sh <key>` for each changed key after `nvfetcher` and before any build, and again with no arguments as its own idempotent step before `nix flake update`) is an _additional_, per-upstream provenance hook layered on top. A key that fails the gate is held alone: its bump is reverted, a `PROVENANCE-HELD <key>: <reason>` line is printed, the other keys' bumps still land, and the run is flagged failed (a later `provenance-held` step; it changes nothing, so the passing keys' commits stay). A brand-new key (no earlier entry to restore) cannot be held and fails the step. Each upstream has a method in the `METHODS` table at the top of the script:
 
-- `checksums` — the download is compared against the release-dir hash manifest the upstream publishes. A fetch failure or a mismatch fails the run (and the framework rolls the step back).
+- `checksums` — the download is compared against the release-dir hash manifest the upstream publishes. A fetch failure or a mismatch holds that key's bump (`PROVENANCE-HELD`) and flags the run failed.
 - `none-no-provenance-published` — the upstream publishes no usable attestation, checksum manifest, or signature. The helper logs the gap and continues; the nvfetcher SRI pin remains the integrity proof.
 - `git-source` — explicitly skipped: the nvfetcher-pinned commit SHA is the integrity proof.
 
