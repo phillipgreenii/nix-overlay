@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Standalone developer utility — not Nix-wrapped intentionally
+# (see "Bash scripts outside mkBashBuilders" in AGENTS.md)
 # Refresh (or hold) the fixed-output hashes that DEPEND on an nvfetcher source
 # bump (bead pg2-g39wh).
 #

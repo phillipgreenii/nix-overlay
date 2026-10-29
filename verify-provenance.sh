@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Standalone developer utility — not Nix-wrapped intentionally
+# (see "Bash scripts outside mkBashBuilders" in AGENTS.md)
 # Provenance verification for binary upstreams (S3/M6).
 # Runs after the nvfetcher step in update-locks.sh; verifies every
 # configured upstream against its per-upstream method assigned at audit

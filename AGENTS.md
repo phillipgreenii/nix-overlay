@@ -51,6 +51,39 @@ cp -rf source dest          # NOT: cp -r source dest
 - `apt-get` - use `-y` flag
 - `brew` - use `HOMEBREW_NO_AUTO_UPDATE=1` env var
 
+## Bash scripts outside mkBashBuilders
+
+`update-locks.sh`, `refresh-dependent-hashes.sh` and `verify-provenance.sh` (repo root) are steps of
+ONE updater pipeline. They are standalone developer utilities, not hooks, and are intentionally NOT
+packaged with `mkBashScript`/`mkBashBuilders`.
+
+Reason (operator ruling Phillip, 2026-10-28, pg2-sh005n row S1; verified in pg2-62pyym): the
+builder could express them, but packaging is not practical. The pipeline MUST keep working when
+this flake or its `flake.lock` is itself the artifact being repaired. `update-locks.sh` resolves
+its library through `nix run`, re-execs into the devShell, and falls back to
+`nix run nixpkgs#nvfetcher` so the updater stays bootstrappable. It then invokes
+`"$SCRIPT_DIR/refresh-dependent-hashes.sh"` and `"$SCRIPT_DIR/verify-provenance.sh"` by path, and
+runs `verify-provenance.sh` BEFORE `nix flake update`. Packaging the two sub-scripts would force
+that step to depend on the overlay flake evaluating with a valid lock, the dependency
+`update-locks.sh` removes. The bats checks also copy each script into a sandbox and source it by
+relative path, which the current layout serves directly.
+
+```mermaid
+flowchart LR
+  A["update-locks.sh"] --> B["refresh-dependent-hashes.sh --gate verify-provenance.sh -- nvfetcher"]
+  A --> C["verify-provenance.sh (before nix flake update)"]
+```
+
+Rules:
+
+- These three scripts MAY stay outside `mkBashScript` while the contract above holds (invoked by
+  `$SCRIPT_DIR` path from `update-locks.sh`, usable when the flake or lock is broken).
+- A script added to this pipeline MUST be listed in this section.
+- Each listed script MUST carry the header line `# Standalone developer utility — not Nix-wrapped intentionally`
+  with a pointer to this section.
+- A script that is not part of the pipeline, or that no longer needs to run with a broken
+  flake/lock, SHOULD use `mkBashScript`.
+
 <!-- BEGIN BEADS INTEGRATION v:1 profile:minimal hash:ca08a54f -->
 
 ## Beads Issue Tracker
