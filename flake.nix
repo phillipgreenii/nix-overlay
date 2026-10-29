@@ -215,9 +215,11 @@
               # drift guards that keep docs/update-locks-dependent-hashes.md and
               # the registry complete against nvfetcher.toml, packages/ and
               # flake.nix -- so those files are staged beside the script. The
-              # real-nix half (tests/refresh-dependent-hashes-nix.bats) needs a
-              # daemon that can run a builder and skips itself in this sandbox;
-              # it runs from source via the run-unit-tests commit hook.
+              # real-nix half (tests/refresh-dependent-hashes-nix.bats) is
+              # type:integration: it needs a daemon that can run a builder, so it
+              # skips itself in this sandbox and is NOT run by the unit-tier
+              # run-unit-tests commit hook. Opt in with
+              # `nix run .#refresh-dependent-hashes-nix-tests` (the `apps` output).
               refresh-dependent-hashes-tests =
                 pkgs.runCommand "refresh-dependent-hashes-tests"
                   {
@@ -344,6 +346,35 @@
                   touch "$out"
                 '';
             };
+
+          # Opt-in runner for the real-nix integration suite (pg2-om5ith, V-4):
+          # real `nix build` against a throwaway fixture flake, so it needs the
+          # caller's nix daemon and cannot be a sandboxed checks.* entry.
+          apps.refresh-dependent-hashes-nix-tests = {
+            type = "app";
+            program = "${
+              pkgs.writeShellApplication {
+                name = "refresh-dependent-hashes-nix-tests";
+                runtimeInputs = [
+                  pkgs.bats
+                  pkgs.jq
+                  pkgs.coreutils
+                  pkgs.gnugrep
+                  pkgs.gnused
+                  pkgs.gawk
+                  pkgs.findutils
+                ];
+                text = ''
+                  root="''${REPO_ROOT:-$PWD}"
+                  if [ ! -f "$root/tests/refresh-dependent-hashes-nix.bats" ]; then
+                    echo "run from the nix-overlay checkout root (or set REPO_ROOT)" >&2
+                    exit 2
+                  fi
+                  exec bats --filter-tags type:integration "$root/tests/refresh-dependent-hashes-nix.bats" "$@"
+                '';
+              }
+            }/bin/refresh-dependent-hashes-nix-tests";
+          };
 
           packages = {
             inherit (extended.phillipgreenii)

@@ -103,6 +103,21 @@ Recompute (and build-verify) one package's dependent hash without a source bump:
 pg-nix-log-wrapped ./refresh-dependent-hashes.sh --force pint
 ```
 
+## Real-nix integration suite
+
+`tests/refresh-dependent-hashes-nix.bats` runs the real script with a real `nix build` and real
+fixed-output `got:` mismatches against a throwaway fixture flake. It is tagged `type:integration`
+(rule V-4), so the unit-tier `run-unit-tests` commit hook and `pg-hooks run pre-land` do NOT run it,
+and it cannot be a sandboxed `checks.*` entry (it needs a nix daemon that can run a local builder).
+The pure half (`tests/refresh-dependent-hashes.bats`) stays `type:unit` and is the
+`refresh-dependent-hashes-tests` check. Run the integration half on demand, from the repo root:
+
+```bash
+pg-nix-log-wrapped nix run .#refresh-dependent-hashes-nix-tests
+# equivalent, with bats on PATH:
+bats --filter-tags type:integration tests/refresh-dependent-hashes-nix.bats
+```
+
 ## Inventory
 
 Every overlay package whose build input depends on its source in a way `nvfetcher` does not itself

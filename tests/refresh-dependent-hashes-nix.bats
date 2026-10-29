@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-# bats file_tags=type:unit
+# bats file_tags=type:integration
 # Runs the REAL refresh-dependent-hashes.sh step -- real `nix build`, real
 # fixed-output `got:` mismatch output -- against a throwaway fixture flake
 # (bead pg2-g39wh). Nothing is mocked except the source updater (a stand-in for
@@ -13,6 +13,11 @@
 #
 # Offline, but it needs a nix daemon that can run a local builder, so it is
 # skipped inside the nix build sandbox (the checks.* tier cannot nest builds).
+#
+# type:integration (V-4: a real nix build is not a unit test; operator ruling
+# 2026-10-28, bead pg2-om5ith), so the unit-tier run-unit-tests commit hook and
+# pre-land never select it. Opt in with `nix run .#refresh-dependent-hashes-nix-tests`
+# (docs/update-locks-dependent-hashes.md, "Real-nix integration suite").
 
 setup() {
   if [ -n "${IN_NIX_BUILD:-}" ] || [ -n "${NIX_BUILD_TOP:-}" ]; then
