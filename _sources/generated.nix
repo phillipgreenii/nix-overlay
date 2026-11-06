@@ -132,15 +132,15 @@
   };
   mermaid-live-editor = {
     pname = "mermaid-live-editor";
-    version = "b54ef0beb3b80115dc08b56da5862fdf7c74e484";
+    version = "4e94efb6d7a20fb22fd743ac335065d24b80eb6a";
     src = fetchFromGitHub {
       owner = "mermaid-js";
       repo = "mermaid-live-editor";
-      rev = "b54ef0beb3b80115dc08b56da5862fdf7c74e484";
+      rev = "4e94efb6d7a20fb22fd743ac335065d24b80eb6a";
       fetchSubmodules = false;
-      sha256 = "sha256-YpNIVmLkm/2kOh216lp7XDqDvPas629igasyekboZ6Y=";
+      sha256 = "sha256-orxJO+7loXUAUARy5HUzkD0v3csvCzL5PDU3Lbp5t+0=";
     };
-    date = "2026-10-26";
+    date = "2026-11-04";
   };
   pint = {
     pname = "pint";
@@ -155,15 +155,15 @@
   };
   tmux-mouse-swipe = {
     pname = "tmux-mouse-swipe";
-    version = "6d7394923d2c9bda653515e3bd658490ba511c2a";
+    version = "de6e70aea0a1675bc0a9ff339183a71f0e2e1658";
     src = fetchFromGitHub {
       owner = "jaclu";
       repo = "tmux-mouse-swipe";
-      rev = "6d7394923d2c9bda653515e3bd658490ba511c2a";
+      rev = "de6e70aea0a1675bc0a9ff339183a71f0e2e1658";
       fetchSubmodules = false;
-      sha256 = "sha256-vLEcaQS/zgcJ5t57MsiY7hMS648l+zwrS1r1v0KZs/4=";
+      sha256 = "sha256-wiLA0aveP7Y4AWh9g6vBqpibdL0FBu4hXg1luV8tL3U=";
     };
-    date = "2026-08-01";
+    date = "2026-11-05";
   };
   tmux-nerd-font-window-name = {
     pname = "tmux-nerd-font-window-name";

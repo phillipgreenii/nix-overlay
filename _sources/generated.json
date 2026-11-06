@@ -229,7 +229,7 @@
     },
     "mermaid-live-editor": {
         "cargoLock": null,
-        "date": "2026-10-26",
+        "date": "2026-11-04",
         "extract": null,
         "name": "mermaid-live-editor",
         "passthru": null,
@@ -241,12 +241,12 @@
             "name": null,
             "owner": "mermaid-js",
             "repo": "mermaid-live-editor",
-            "rev": "b54ef0beb3b80115dc08b56da5862fdf7c74e484",
-            "sha256": "sha256-YpNIVmLkm/2kOh216lp7XDqDvPas629igasyekboZ6Y=",
+            "rev": "4e94efb6d7a20fb22fd743ac335065d24b80eb6a",
+            "sha256": "sha256-orxJO+7loXUAUARy5HUzkD0v3csvCzL5PDU3Lbp5t+0=",
             "sparseCheckout": [],
             "type": "github"
         },
-        "version": "b54ef0beb3b80115dc08b56da5862fdf7c74e484"
+        "version": "4e94efb6d7a20fb22fd743ac335065d24b80eb6a"
     },
     "pint": {
         "cargoLock": null,
@@ -271,7 +271,7 @@
     },
     "tmux-mouse-swipe": {
         "cargoLock": null,
-        "date": "2026-08-01",
+        "date": "2026-11-05",
         "extract": null,
         "name": "tmux-mouse-swipe",
         "passthru": null,
@@ -283,12 +283,12 @@
             "name": null,
             "owner": "jaclu",
             "repo": "tmux-mouse-swipe",
-            "rev": "6d7394923d2c9bda653515e3bd658490ba511c2a",
-            "sha256": "sha256-vLEcaQS/zgcJ5t57MsiY7hMS648l+zwrS1r1v0KZs/4=",
+            "rev": "de6e70aea0a1675bc0a9ff339183a71f0e2e1658",
+            "sha256": "sha256-wiLA0aveP7Y4AWh9g6vBqpibdL0FBu4hXg1luV8tL3U=",
             "sparseCheckout": [],
             "type": "github"
         },
-        "version": "6d7394923d2c9bda653515e3bd658490ba511c2a"
+        "version": "de6e70aea0a1675bc0a9ff339183a71f0e2e1658"
     },
     "tmux-nerd-font-window-name": {
         "cargoLock": null,
