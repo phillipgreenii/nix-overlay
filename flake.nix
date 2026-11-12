@@ -347,6 +347,42 @@
                 '';
             };
 
+          # Opt-in runner for the real-tool conflict-rule suite of .pg-git-lander.toml
+          # (type:integration: real pg-git-lander, git, `nix flake lock`/`update` and
+          # `go mod tidy` against throwaway fixture repos), so it cannot be a sandboxed
+          # checks.* entry and the unit tier and pre-land never select it. Run it with
+          # `nix run .#pg-git-lander-conflict-rules-tests` from the checkout root; the
+          # machine's `pg-git-lander` and `nix` must be on PATH (the suite fails loudly
+          # when either is missing).
+          apps.pg-git-lander-conflict-rules-tests = {
+            type = "app";
+            program = "${
+              pkgs.writeShellApplication {
+                name = "pg-git-lander-conflict-rules-tests";
+                runtimeInputs = [
+                  pkgs.bats
+                  pkgs.jq
+                  pkgs.git
+                  pkgs.go
+                  pkgs.zip
+                  pkgs.gawk
+                  pkgs.coreutils
+                ];
+                text = ''
+                  root="''${REPO_ROOT:-$PWD}"
+                  if [ ! -f "$root/tests/pg-git-lander-conflict-rules.bats" ]; then
+                    echo "run from the checkout root (or set REPO_ROOT)" >&2
+                    exit 2
+                  fi
+                  export GFH_LIB="''${GFH_LIB:-${
+                    inputs.phillipgreenii-nix-base.packages.${pkgs.stdenv.hostPlatform.system}.git-fixture-harness
+                  }/lib/scripts/git-fixture-harness.bash}"
+                  exec bats --filter-tags type:integration "$root/tests/pg-git-lander-conflict-rules.bats" "$@"
+                '';
+              }
+            }/bin/pg-git-lander-conflict-rules-tests";
+          };
+
           # Opt-in runner for the real-nix integration suite (pg2-om5ith, V-4):
           # real `nix build` against a throwaway fixture flake, so it needs the
           # caller's nix daemon and cannot be a sandboxed checks.* entry.
