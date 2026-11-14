@@ -100,7 +100,12 @@
       # config store path that a later reinstall can orphan ("config file not
       # found"). No stampPaths: every hook is defined in flake.nix, which the
       # staleness stamp already covers.
-      phillipgreenii.pre-commit.bundle.enable = true;
+      phillipgreenii.pre-commit = {
+        bundle.enable = true;
+        # run-unit-tests (the only extraHooks entry) only runs tests and never
+        # rewrites the tree, so it is `check`.
+        hookKinds.run-unit-tests = "check";
+      };
 
       perSystem =
         {
