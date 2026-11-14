@@ -5,7 +5,7 @@
 # the next land.
 
 [hooks.land]
-before_move = [
+pre-merge-verify = [
   # The repo's pre-land hooks over the diff from TARGET's tip (the tool rebases first, so
   # the hooks must see the rebased result). `sh -c` because hook argv has no shell
   # expansion. Exit 13 (no hook bundle) and 127 (pg-hooks not installed) skip; 75 (host
