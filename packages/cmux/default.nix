@@ -13,20 +13,25 @@ stdenvNoCC.mkDerivation {
   # APFS, so extract with `7zz` instead.
   nativeBuildInputs = [ _7zz ];
 
+  # Extract with the flags nixpkgs' shared `_7zz` setup hook uses:
+  #   -sns-  do not store NTFS alternate streams. 7zz would otherwise write each
+  #          macOS extended attribute as a stray `<file>:com.apple.*` sidecar
+  #          file, which is not part of the notarized CodeResources seal and
+  #          makes Gatekeeper reject the bundle ("cmux.app is damaged").
+  #   -snld  allow symlinks whose target stays inside the extraction folder.
+  #          Since 0.65.1 the app bundle holds relative links such as
+  #          `Resources/bin/PostHog_PostHog.bundle -> ../PostHog_PostHog.bundle`,
+  #          which plain `7zz x` rejects ("Dangerous link path was ignored").
+  # `-snld` also lets the DMG's top-level `Applications` link through; its
+  # target is an absolute path into the extraction folder, so it is dropped
+  # here (it is never installed) rather than left dangling in the store.
   unpackPhase = ''
     runHook preUnpack
-    7zz x "$src"
+    7zz x -sns- -snld "$src"
 
-    # 7zz cannot restore macOS extended attributes, so it materializes each
-    # one as a sidecar file named `<file>:<xattr>`. cmux signs its non-Mach-O
-    # helper scripts (Contents/Resources/bin/{cmux-claude-wrapper,grok,open})
-    # by storing the signature in `com.apple.cs.*` xattrs, which 7zz turns into
-    # stray files. Those files are not part of the notarized CodeResources
-    # seal, so Gatekeeper rejects the bundle ("a sealed resource is missing or
-    # invalid" -> "cmux.app is damaged and can't be opened"). Drop them so the
-    # bundle matches its original seal again; the scripts stay sealed by their
-    # content hash in CodeResources.
-    find . -name '*:com.apple.cs.*' -delete
+    if [ -L Applications ]; then
+      rm Applications
+    fi
 
     runHook postUnpack
   '';
@@ -40,6 +45,19 @@ stdenvNoCC.mkDerivation {
     cp -r *.app $out/Applications/
     ln -s $out/Applications/cmux.app/Contents/Resources/bin/cmux $out/bin/cmux
     ln -s $out/Applications/cmux.app/Contents/Resources/bin/claude $out/bin/cmux-claude
+
+    # Fail clearly if any link in the output points at an absolute path
+    # outside the store output (the extraction tree is gone after the build).
+    while IFS= read -r link; do
+      target=$(readlink "$link")
+      case "$target" in
+        "$out"/*) ;;
+        /*)
+          echo "cmux: symlink $link has absolute target $target outside $out" >&2
+          exit 1
+          ;;
+      esac
+    done < <(find $out -type l)
     runHook postInstall
   '';
 

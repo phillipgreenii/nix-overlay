@@ -137,7 +137,15 @@
             gomu.command = "gomu version";
             mdr-rs.command = "mdr --version";
             pint.command = "pint version";
-            cmux.command = "cmux --version";
+            # The release tag has a 4th component (0.65.2.2) but the binary
+            # reports only the first three (`cmux 0.65.2 (113) [...]`), so
+            # match on that prefix.
+            cmux = {
+              command = "cmux --version";
+              version = builtins.head (
+                builtins.match "([0-9]+\\.[0-9]+\\.[0-9]+).*" config.packages.cmux.version
+              );
+            };
           };
           versionChecks = pkgs.lib.mapAttrs' (
             name: args:
