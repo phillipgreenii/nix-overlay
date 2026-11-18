@@ -120,15 +120,15 @@
   };
   mermaid-ink = {
     pname = "mermaid-ink";
-    version = "cbb2c61d3e0a8d868e568f24953746c41fae7393";
+    version = "588671e2c23bbe8ef61fac38f1cecf47fa0fafdd";
     src = fetchFromGitHub {
       owner = "jihchi";
       repo = "mermaid.ink";
-      rev = "cbb2c61d3e0a8d868e568f24953746c41fae7393";
+      rev = "588671e2c23bbe8ef61fac38f1cecf47fa0fafdd";
       fetchSubmodules = false;
-      sha256 = "sha256-2OHaWrDpCru3EsQXRpJ6JePr36YChVqwVymLZz28YVg=";
+      sha256 = "sha256-0RB3hgw0VcPqvHU/OR0C8520KyM7mCO3u9NtYlm1+Do=";
     };
-    date = "2026-10-31";
+    date = "2026-11-14";
   };
   mermaid-live-editor = {
     pname = "mermaid-live-editor";
@@ -144,13 +144,13 @@
   };
   pint = {
     pname = "pint";
-    version = "v0.89.4";
+    version = "v0.90.0";
     src = fetchFromGitHub {
       owner = "cloudflare";
       repo = "pint";
-      rev = "v0.89.4";
+      rev = "v0.90.0";
       fetchSubmodules = false;
-      sha256 = "sha256-2xdPv03AkbAlPV+1azBHYMvPnAxZS77c0wW5rj/HvcM=";
+      sha256 = "sha256-uyntGYUoBvjh8/L3uyWxWHfiTm5Ga+0oVy/Rrfq8CR8=";
     };
   };
   tmux-mouse-swipe = {
