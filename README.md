@@ -30,6 +30,7 @@ After that, `pkgs.phillipgreenii.bat-gherkin-syntax`, `pkgs.phillipgreenii.pint`
 | -------------------------------------------- | -------------- | ------------------------------------------------------------------------------------------------------ |
 | `phillipgreenii.bat-gherkin-syntax`          | unix           | [keith-hall/SublimeGherkinSyntax](https://github.com/keith-hall/SublimeGherkinSyntax)                  |
 | `phillipgreenii.cmux`                        | aarch64-darwin | [manaflow-ai/cmux](https://github.com/manaflow-ai/cmux)                                                |
+| `phillipgreenii.cmux-cli`                    | aarch64-darwin | (in this repo, `packages/cmux-cli`: the CLI inside the cmux app, installed as `cmux-cli`)              |
 | `phillipgreenii.eclipse-java`                | aarch64-darwin | [Eclipse EPP 2026-06-R .dmg](https://download.eclipse.org/technology/epp/downloads/release/2026-06/R/) |
 | `phillipgreenii.eclipse-gradleimport-plugin` | aarch64-darwin | (in this repo, `packages/eclipse-gradleimport-plugin`)                                                 |
 | `phillipgreenii.eclipse-with-gradleimport`   | aarch64-darwin | (composed: `eclipse-java` + `eclipse-gradleimport-plugin`)                                             |

@@ -2,6 +2,7 @@
   lib,
   stdenvNoCC,
   _7zz,
+  makeBinaryWrapper,
   sources,
 }:
 stdenvNoCC.mkDerivation {
@@ -11,7 +12,10 @@ stdenvNoCC.mkDerivation {
   # cmux ships an APFS-formatted .dmg; `undmg` only supports HFS+
   # images (fails with "only HFS file systems are supported"). 7-Zip reads
   # APFS, so extract with `7zz` instead.
-  nativeBuildInputs = [ _7zz ];
+  nativeBuildInputs = [
+    _7zz
+    makeBinaryWrapper
+  ];
 
   # Extract with the flags nixpkgs' shared `_7zz` setup hook uses:
   #   -sns-  do not store NTFS alternate streams. 7zz would otherwise write each
@@ -43,8 +47,14 @@ stdenvNoCC.mkDerivation {
     runHook preInstall
     mkdir -p $out/Applications $out/bin
     cp -r *.app $out/Applications/
-    ln -s $out/Applications/cmux.app/Contents/Resources/bin/cmux $out/bin/cmux
-    ln -s $out/Applications/cmux.app/Contents/Resources/bin/claude $out/bin/cmux-claude
+    # Same layout as nixpkgs' cmux: bin/cmux launches the GUI app executable.
+    # The command-line client is a different program inside the bundle
+    # (Contents/Resources/bin/cmux); it is exposed by the cmux-cli package as
+    # `cmux-cli`. The bundle's bin/claude helper is not linked: nothing in the
+    # workspace used the former cmux-claude link.
+    makeBinaryWrapper \
+      "$out/Applications/cmux.app/Contents/MacOS/cmux" \
+      "$out/bin/cmux"
 
     # Fail clearly if any link in the output points at an absolute path
     # outside the store output (the extraction tree is gone after the build).

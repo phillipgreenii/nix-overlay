@@ -139,11 +139,12 @@
             pint.command = "pint version";
             # The release tag has a 4th component (0.65.2.2) but the binary
             # reports only the first three (`cmux 0.65.2 (113) [...]`), so
-            # match on that prefix.
-            cmux = {
-              command = "cmux --version";
+            # match on that prefix. bin/cmux is the GUI wrapper (as in nixpkgs),
+            # so the version check runs the CLI, `cmux-cli`.
+            cmux-cli = {
+              command = "cmux-cli --version";
               version = builtins.head (
-                builtins.match "([0-9]+\\.[0-9]+\\.[0-9]+).*" config.packages.cmux.version
+                builtins.match "([0-9]+\\.[0-9]+\\.[0-9]+).*" config.packages.cmux-cli.version
               );
             };
           };
@@ -302,6 +303,32 @@
                     touch "$out"
                   '';
             }
+            // pkgs.lib.optionalAttrs (pkgs.stdenv.hostPlatform.system == "aarch64-darwin") {
+              # Layout contract shared with nixpkgs' cmux: bin/cmux is a wrapper
+              # for the GUI executable (a regular file, not a link to the CLI),
+              # and the CLI is only reachable as bin/cmux-cli, which resolves to
+              # the bundle's own CLI. Callers rely on both names.
+              cmux-layout =
+                pkgs.runCommand "cmux-layout"
+                  {
+                    cmux = config.packages.cmux;
+                    cli = config.packages.cmux-cli;
+                  }
+                  ''
+                    set -eu
+                    test -x "$cmux/bin/cmux"
+                    if test -L "$cmux/bin/cmux"; then
+                      echo "bin/cmux must be the GUI wrapper, not a symlink" >&2
+                      exit 1
+                    fi
+                    grep -aqF "$cmux/Applications/cmux.app/Contents/MacOS/cmux" "$cmux/bin/cmux"
+                    test ! -e "$cmux/bin/cmux-claude"
+                    test -L "$cli/bin/cmux-cli"
+                    test "$(readlink "$cli/bin/cmux-cli")" = "$cmux/Applications/cmux.app/Contents/Resources/bin/cmux"
+                    test -x "$cli/bin/cmux-cli"
+                    touch "$out"
+                  '';
+            }
             // pkgs.lib.optionalAttrs pkgs.stdenv.hostPlatform.isDarwin {
               # Eval-only smoke check for the opt-in firefox-binary-wrapper
               # overlay (bead pg2-pimam). Forcing firefox.drvPath instantiates
@@ -451,6 +478,7 @@
           // pkgs.lib.optionalAttrs (pkgs.stdenv.hostPlatform.system == "aarch64-darwin") {
             inherit (extended.phillipgreenii)
               cmux
+              cmux-cli
               eclipse-java
               eclipse-gradleimport-plugin
               eclipse-with-gradleimport
@@ -516,6 +544,8 @@
             }
             // prev.lib.optionalAttrs (prev.stdenv.hostPlatform.system == "aarch64-darwin") {
               cmux = final.callPackage ./packages/cmux { inherit sources; };
+              # The CLI inside the cmux app, tied to this cmux's version.
+              cmux-cli = final.callPackage ./packages/cmux-cli { inherit (final.phillipgreenii) cmux; };
               # Eclipse trio. eclipse-java is the repackaged .dmg; the plugin and
               # the composed app take their Eclipse dependency explicitly (same
               # explicit-pass precedent as yaziPlugins), since these packages live
@@ -575,6 +605,7 @@
             # use pkgs.eclipse-with-gradleimport directly.
             inherit (final.phillipgreenii)
               cmux
+              cmux-cli
               eclipse-java
               eclipse-gradleimport-plugin
               eclipse-with-gradleimport
