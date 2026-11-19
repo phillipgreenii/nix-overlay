@@ -82,6 +82,7 @@ declare -A METHODS=(
   ["tmux-mouse-swipe"]="git-source"
   ["tmux-nerd-font-window-name"]="git-source"
   ["bat-gherkin-syntax"]="git-source"
+  ["beads"]="git-source"
   ["pint"]="git-source"
   ["glowm"]="git-source"
   ["gomu"]="git-source"

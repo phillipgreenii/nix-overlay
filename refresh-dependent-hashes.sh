@@ -89,6 +89,7 @@ set -euo pipefail
 # means "registered, but nothing to build" (none today).
 declare -gA BUILD_ATTRS=(
   ["bat-gherkin-syntax"]="bat-gherkin-syntax"
+  ["beads"]="beads"
   ["bunny"]="yaziPlugins-bunny"
   ["cmux"]="cmux"
   ["eclipse-java"]="eclipse-java eclipse-with-gradleimport"
@@ -111,6 +112,7 @@ declare -gA BUILD_ATTRS=(
 # entries: the fixed-output hash literal that depends on the key's source, and
 # the package to build to recompute it.
 declare -gA HASH_DEPS=(
+  ["beads"]="packages/beads/default.nix:vendorHash:beads"
   ["gh-stack"]="packages/gh-stack/default.nix:vendorHash:gh-stack"
   ["glowm"]="packages/glowm/default.nix:vendorHash:glowm"
   ["gomu"]="packages/gomu/default.nix:vendorHash:gomu"

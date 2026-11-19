@@ -20,6 +20,27 @@
         },
         "version": "ec3fae90209136a89a5027f61167e04790c83382"
     },
+    "beads": {
+        "cargoLock": null,
+        "date": null,
+        "extract": null,
+        "name": "beads",
+        "passthru": null,
+        "pinned": false,
+        "src": {
+            "deepClone": false,
+            "fetchSubmodules": false,
+            "leaveDotGit": false,
+            "name": null,
+            "owner": "gastownhall",
+            "repo": "beads",
+            "rev": "v1.3.1",
+            "sha256": "sha256-k3WUy0FWPoO7Ymu+FFgS2yYZ4u10Fb7mPBYqs17IP2U=",
+            "sparseCheckout": [],
+            "type": "github"
+        },
+        "version": "v1.3.1"
+    },
     "bunny": {
         "cargoLock": null,
         "date": "2026-10-20",

@@ -132,6 +132,7 @@
           # mermaid-ink / mermaid-live-editor (servers; no version flag), and
           # logseq (an Electron .app bundle, not a CLI).
           versionSmokeTests = {
+            beads.command = "bd --version"; # prints "bd version <v> (nix:<identity>)"
             gh-stack = { }; # needs the cmd.Version ldflag in packages/gh-stack
             glowm = { };
             gomu.command = "gomu version";
@@ -455,6 +456,7 @@
           packages = {
             inherit (extended.phillipgreenii)
               bat-gherkin-syntax
+              beads
               gh-stack
               glowm
               gomu
@@ -532,6 +534,7 @@
 
             phillipgreenii = {
               bat-gherkin-syntax = final.callPackage ./packages/bat-gherkin-syntax { inherit sources; };
+              beads = final.callPackage ./packages/beads { inherit sources; };
               gh-stack = final.callPackage ./packages/gh-stack { inherit sources; };
               glowm = final.callPackage ./packages/glowm { inherit sources; };
               gomu = final.callPackage ./packages/gomu { inherit sources; };
@@ -616,6 +619,8 @@
             # back-compat bridge above, and not aarch64-only) so downstream
             # consumers can reference pkgs.gh-stack directly.
             gh-stack = final.phillipgreenii.gh-stack;
+            # beads (bd) likewise: consumers reference pkgs.beads directly.
+            beads = final.phillipgreenii.beads;
           };
       };
     };

@@ -160,3 +160,14 @@ fetch.github = "mermaid-js/mermaid-live-editor"
 src.git = "https://github.com/jihchi/mermaid.ink"
 src.branch = "main"
 fetch.github = "jihchi/mermaid.ink"
+
+# gastownhall/beads (the `bd` issue tracker). Pinned to a release tag manually
+# (`src.manual`), so the nightly updater never auto-bumps it: a bd bump can run
+# database schema migrations on every tracker the new binary touches (see the
+# upstream release notes and migration directory), so each bump is a deliberate,
+# reviewed change made together with the trackers it affects. fetch.github
+# fetches that exact tag; the leading "v" is kept (see [pint]) and
+# packages/beads strips it for the version.
+[beads]
+src.manual = "v1.3.1"
+fetch.github = "gastownhall/beads"

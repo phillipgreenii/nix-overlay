@@ -143,6 +143,7 @@ pnpm/npm/yarn fetch, or cargo lock MUST be in `HASH_DEPS` or `MANUAL_DEPS`.
 
 | nvfetcher key         | File                                       | Literal      | Kind                        |
 | --------------------- | ------------------------------------------ | ------------ | --------------------------- |
+| `beads`               | `packages/beads/default.nix`               | `vendorHash` | `buildGoModule` vendor tree |
 | `gh-stack`            | `packages/gh-stack/default.nix`            | `vendorHash` | `buildGoModule` vendor tree |
 | `glowm`               | `packages/glowm/default.nix`               | `vendorHash` | `buildGoModule` vendor tree |
 | `gomu`                | `packages/gomu/default.nix`                | `vendorHash` | `buildGoModule` vendor tree |
