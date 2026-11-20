@@ -18,17 +18,6 @@
     };
     date = "2024-10-12";
   };
-  beads = {
-    pname = "beads";
-    version = "v1.3.1";
-    src = fetchFromGitHub {
-      owner = "gastownhall";
-      repo = "beads";
-      rev = "v1.3.1";
-      fetchSubmodules = false;
-      sha256 = "sha256-k3WUy0FWPoO7Ymu+FFgS2yYZ4u10Fb7mPBYqs17IP2U=";
-    };
-  };
   bunny = {
     pname = "bunny";
     version = "8f3f84e20ea0545d032c134cf184784eaff55d13";
