@@ -1,8 +1,9 @@
 # ADR Index
 
-| ADR                                                      | Title                                                                             | Status   |
-| -------------------------------------------------------- | --------------------------------------------------------------------------------- | -------- |
-| [0000](0000-use-architecture-decision-records.md)        | Use Architecture Decision Records at Repository Root                              | Accepted |
-| [0001](0001-purpose-of-this-repo.md)                     | Purpose: Third-Party Package Repository                                           | Accepted |
-| [0002](0002-firefox-binary-wrapper-rcodesign-signing.md) | firefox-binary-wrapper: sign the Firefox.app bundle with rcodesign (sandbox-safe) | Accepted |
-| [0003](0003-no-binary-cache-for-consumers.md)            | No binary cache for consumers (for now)                                           | Proposed |
+| ADR                                                               | Title                                                                             | Status             |
+| ----------------------------------------------------------------- | --------------------------------------------------------------------------------- | ------------------ |
+| [0000](0000-use-architecture-decision-records.md)                 | Use Architecture Decision Records at Repository Root                              | Accepted           |
+| [0001](0001-purpose-of-this-repo.md)                              | Purpose: Third-Party Package Repository                                           | Accepted           |
+| [0002](0002-firefox-binary-wrapper-rcodesign-signing.md)          | firefox-binary-wrapper: sign the Firefox.app bundle with rcodesign (sandbox-safe) | Accepted           |
+| [0003](0003-no-binary-cache-for-consumers.md)                     | No binary cache for consumers (for now)                                           | Superseded by 0004 |
+| [0004](0004-pre-build-from-source-packages-after-nixpkgs-bump.md) | Pre-build the overlay's from-source packages after a nixpkgs bump                 | Proposed           |

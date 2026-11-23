@@ -1,6 +1,6 @@
 # No binary cache for consumers (for now)
 
-**Status**: Proposed
+**Status**: Superseded by [ADR 0004](0004-pre-build-from-source-packages-after-nixpkgs-bump.md)
 **Date**: 2026-10-28
 **Deciders**: Phillip Green II (acknowledgement pending); drafted by an agent under bead pg2-7t8zys
 **Bead**: pg2-7t8zys (also tracked as pg2-od2h0x, deep review finding U6)
