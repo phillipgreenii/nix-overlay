@@ -488,6 +488,19 @@
 
           legacyPackages = {
             yaziPlugins = { inherit (extended.yaziPlugins) icons-brew bunny; };
+
+            # Opt-in integration suites (ADR 0024 in nix-repo-base): built by
+            # name (`nix build .#integration-checks.<name>`), NOT under `checks`,
+            # so `nix flake check` neither builds nor evaluates them (V-4).
+            integration-checks = pkgs.lib.optionalAttrs pkgs.stdenv.hostPlatform.isLinux {
+              # NixOS VM: mdr --backend gui (egui) and --backend web (webview) each open a
+              # window (Xvfb + mesa llvmpipe via hardware.graphics) with no
+              # dlopen / missing-library error. Needs /dev/kvm to be fast.
+              mdr-gui-backends-vm-test = import ./tests/vm/mdr-gui-backends.nix {
+                inherit pkgs;
+                mdr = config.packages.mdr-rs;
+              };
+            };
           };
         };
 
